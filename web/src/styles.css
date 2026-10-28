@@ -1,0 +1,283 @@
+/**
+ * 全局样式 —— 色值**严格取自 `UI-Spec §3.1` 色板**（不再是 AntD 默认值）；
+ * 布局与交互形态**参照飞书开放平台开发者后台**（2026-10-22 实测）。
+ *
+ * 令牌对照（`UI-Spec §3.1` / §3.3）：
+ *   C-01 主色 #2563EB ｜ C-02 按下 #1D4ED8 ｜ C-03 主色浅底 #EFF6FF
+ *   C-09 页面底 #F5F6F8 ｜ C-10 表面 #FFFFFF ｜ C-11 表面次 #F9FAFB
+ *   C-12 边框 #E5E7EB ｜ C-13 分割线 #EEF0F3 ｜ C-14 文字主 #1F2329
+ *   C-15 文字次 #4E5969 ｜ C-16 文字弱 #6B7280 ｜ C-17 禁用底 #F2F3F5
+ *   C-18 禁用文字 #8A9099 ｜ C-20 焦点描边 #2563EB（2px）｜ C-21 手机外框描边 #D0D3D9
+ *   R-4 圆角 4px（输入框 / 按钮）｜ R-8 卡片 / 面板 ｜ SH-1 / SH-2 阴影
+ *
+ * 约束（沿用 `UI-Spec §3`）：**无动效**（除指示器自身旋转）；中文全角标点；
+ * 无障碍（`REQ-NF-002`）：键盘可达、不只靠颜色传递信息。以下过渡仅用于**指针/焦点反馈**，
+ * 不引入位移动画或循环动画。
+ */
+
+:root {
+  /* ---- 色板（= UI-Spec §3.1） ---- */
+  --ad-primary: #2563EB;          /* C-01 */
+  --ad-primary-hover: #3B82F6;
+  --ad-primary-active: #1D4ED8;   /* C-02 */
+  --ad-primary-bg: #EFF6FF;       /* C-03 */
+
+  --ad-text: #1F2329;             /* C-14 */
+  --ad-text-secondary: #4E5969;   /* C-15 */
+  --ad-text-tertiary: #6B7280;    /* C-16 */
+  --ad-text-disabled: #8A9099;    /* C-18 */
+
+  --ad-border: #E5E7EB;           /* C-12 */
+  --ad-border-light: #EEF0F3;     /* C-13 */
+  --ad-border-strong: #D0D3D9;    /* C-21 */
+
+  --ad-bg-page: #F5F6F8;          /* C-09 */
+  --ad-bg-container: #FFFFFF;     /* C-10 */
+  --ad-bg-subtle: #F9FAFB;        /* C-11 */
+  --ad-bg-hover: #F5F6F8;
+  --ad-bg-disabled: #F2F3F5;      /* C-17 */
+  --ad-code-bg: #F0F1F3;
+
+  /* 语义色底（提示条 / 气泡 / 状态块）——深色下另有取值 */
+  --ad-bubble-agent: #E5E7EB;
+  --ad-danger-bg: #FFF1F0;
+  --ad-danger-border: #FFCCC7;
+  --ad-warn-bg: #FFFBE6;
+  --ad-warn-bg-2: #FFF7E6;
+  --ad-warn-border: #FFE58F;
+  --ad-success-bg: #F6FFED;
+
+  /* ---- 尺寸（= UI-Spec §3.3） ---- */
+  --ad-radius-sm: 2px;            /* R-2 */
+  --ad-radius: 4px;               /* R-4 输入框 / 按钮 / 小标签 */
+  --ad-radius-card: 8px;          /* R-8 卡片 / 面板 */
+
+  --ad-shadow-1: 0 1px 2px rgba(15, 17, 21, 0.06);   /* SH-1 */
+  --ad-shadow-2: 0 4px 12px rgba(15, 17, 21, 0.10);  /* SH-2 */
+
+  --ad-header-h: 64px;
+  --ad-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  color-scheme: light;
+}
+
+/*
+ * 深色主题（系统设置 → 主题：浅色 / 深色 / 跟随系统）。
+ *
+ * 做法：**只换变量**，不改组件 —— 所有自定义样式都走 `var(--ad-*)`，
+ * AntD 组件由 `main.tsx` 切到 `darkAlgorithm` 跟着走。
+ * 触发条件：`<html data-ad-theme="dark">`（由 `theme.ts` 按「浅色 / 深色 / 跟随系统」写入）。
+ */
+html[data-ad-theme="dark"] {
+  --ad-primary: #3B82F6;
+  --ad-primary-hover: #60A5FA;
+  --ad-primary-active: #2563EB;
+  --ad-primary-bg: #1B2A45;
+
+  --ad-text: #E5E6EB;
+  --ad-text-secondary: #A9AEB8;
+  --ad-text-tertiary: #8A9099;
+  --ad-text-disabled: #6B7280;
+
+  --ad-border: #2B2F36;
+  --ad-border-light: #23262B;
+  --ad-border-strong: #3A3F46;
+
+  --ad-bg-page: #17181A;
+  --ad-bg-container: #1D1F23;
+  --ad-bg-subtle: #23262B;
+  --ad-bg-hover: #23262B;
+  --ad-bg-disabled: #2A2D33;
+  --ad-code-bg: #26292E;
+
+  --ad-bubble-agent: #2A2D33;
+  --ad-danger-bg: #3A1D1E;
+  --ad-danger-border: #5C2B2D;
+  --ad-warn-bg: #3A3220;
+  --ad-warn-bg-2: #3A3220;
+  --ad-warn-border: #5C4A22;
+  --ad-success-bg: #1E3323;
+
+  --ad-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --ad-shadow-2: 0 4px 12px rgba(0, 0, 0, 0.45);
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;      /* FS-4 */
+  line-height: 1.5715;
+  background: var(--ad-bg-page);
+  color: var(--ad-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 无障碍（REQ-NF-002）：键盘可达、不只靠颜色传递信息；焦点环 2px（C-20） */
+:focus-visible {
+  outline: 2px solid var(--ad-primary);
+  outline-offset: 2px;
+  border-radius: var(--ad-radius-sm);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--ad-code-bg);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.92em;
+}
+
+/* ---------- 滚动条 ---------- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb {
+  background: var(--ad-border-strong);   /* C-21 */
+  border-radius: 4px;
+  transition: background var(--ad-transition);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--ad-text-disabled); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- 顶栏（形态参照飞书后台：64px、白底、1px 分隔） ---------- */
+.ad-header {
+  height: var(--ad-header-h);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  background: var(--ad-bg-container);
+  border-bottom: 1px solid var(--ad-border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.ad-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ad-text);
+  font-weight: 600;
+  font-size: 16px;               /* FS-2 */
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--ad-transition);
+}
+.ad-brand:hover { color: var(--ad-primary); }
+.ad-brand-mark {
+  width: 22px; height: 22px;
+  border-radius: var(--ad-radius);
+  background: linear-gradient(135deg, #2563EB, #60A5FA);
+  color: #FFFFFF; font-size: 12px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: none;
+}
+
+/* 顶栏导航：选中项用**下方蓝色指示条**（同飞书后台） */
+.ad-nav.ant-menu-horizontal {
+  border-bottom: none;
+  flex: 1;
+  min-width: 0;
+  line-height: calc(var(--ad-header-h) - 2px);
+}
+.ad-nav.ant-menu-horizontal > .ant-menu-item::after { inset-inline: 12px !important; }
+
+/* ---------- 内容区（页面外边距 SP-32） ---------- */
+.ad-content {
+  background: var(--ad-bg-page);
+  padding: 32px;
+  min-height: calc(100vh - var(--ad-header-h));
+}
+
+/*
+ * 页面**底部操作条**（右对齐的主/次操作）：全局悬浮对话框**停靠右下**时，
+ * 让出面板宽度并把按钮**换行**收起，避免「提交复审 / 一键采纳全部建议」被浮层压住点不到。
+ * 面板被拖动到别处（`data-ad-chat="dragged"`）或收起时不生效。
+ */
+.ad-action-bar {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  transition: padding-right var(--ad-transition);
+}
+html[data-ad-chat="docked"] .ad-action-bar { padding-right: 448px; }
+.ad-page { max-width: 1180px; margin: 0 auto; }
+
+/* 页面标题行（FS-1：20px / 600） */
+.ad-page-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.ad-page-title {
+  margin: 0 !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: var(--ad-text) !important;
+  margin-right: 8px !important;
+}
+
+/* ---------- 卡片：R-8 + 1px 描边 + SH-1，悬浮升到 SH-2 ---------- */
+.ad-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.ad-card-grid .ant-card {
+  border-radius: var(--ad-radius-card);
+  box-shadow: var(--ad-shadow-1);
+  transition: box-shadow var(--ad-transition), border-color var(--ad-transition);
+}
+.ad-card-grid .ant-card:hover {
+  border-color: var(--ad-border-strong);   /* C-21 */
+  box-shadow: var(--ad-shadow-2);
+}
+
+/* 卡片操作区：加大点击热区 */
+.ant-card-actions > li { margin: 8px 0; }
+.ant-card-actions > li > span > button { transition: all var(--ad-transition); }
+
+/* ---------- 表格：表头 C-11、行悬浮 C-09 ---------- */
+.ant-table-thead > tr > th {
+  background: var(--ad-bg-subtle) !important;   /* C-11 */
+  color: var(--ad-text-secondary) !important;
+  font-weight: 500 !important;
+}
+.ant-table-tbody > tr:hover > td { background: var(--ad-bg-page) !important; }
+
+/* ---------- 标签圆角（R-2） ---------- */
+.ant-tag { border-radius: var(--ad-radius-sm); }
+
+/* ---------- 空态留白 ---------- */
+.ant-empty { padding: 32px 0; }
+.ant-empty-description { color: var(--ad-text-secondary); }
+
+/* ---------- 控件过渡（仅颜色/阴影，不做位移） ---------- */
+.ant-btn, .ant-input, .ant-select-selector, .ant-segmented, .ant-switch {
+  transition: background-color var(--ad-transition), border-color var(--ad-transition),
+    color var(--ad-transition), box-shadow var(--ad-transition);
+}
+
+.ant-btn-link { color: var(--ad-primary); }
+
+/* ---------- 顶栏右侧用户区 ---------- */
+.ad-user {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--ad-radius);
+  transition: background var(--ad-transition);
+  white-space: nowrap;
+}
+.ad-user:hover { background: var(--ad-bg-hover); }
+
+/* 顶栏内不换行（窄屏下模型选择器 / 用户名不得折行） */
+.ad-header .ant-space, .ad-header .ant-typography, .ad-header .ant-tag { white-space: nowrap; }
+.ad-header .ant-space-item { display: inline-flex; align-items: center; }

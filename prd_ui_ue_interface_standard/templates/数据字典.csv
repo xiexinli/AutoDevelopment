@@ -1,0 +1,6 @@
+字段中文名,字段英文名,类型,长度精度,必填,可空性,默认值,枚举值,校验规则,示例值,所属实体
+订单号,orderNo,string,32,是,必填,,,仅数字,2026102200001,Order
+订单状态,status,enum,,是,必填,PENDING,PENDING|PAID|CANCELLED,,PENDING,Order
+订单金额,amount,string,20,是,必填,,,仅数字（单位：分）,19900,Order
+创建时间,createdAt,datetime,,是,必填,,,ISO8601含时区,2026-10-22T11:45:00+08:00,Order
+备注,remark,string,200,否,可空null,,,长度≤200,,Order

@@ -1,0 +1,182 @@
+# OpenAPI 3.x 契约模板
+#
+# 机检脚本依赖两个约定，请勿改动：
+#  1) 每个接口用 x-error-codes 声明全部业务错误码
+#  2) 全部字段名出现在 components/schemas/*/properties 中
+# 字段英文名必须与 docs/数据字典.csv 完全一致。
+
+openapi: 3.0.3
+
+info:
+  title: 业务接口契约
+  version: 1.0.0
+  description: |
+    ## 全局约定（必须填写，前端据此生成代码）
+    - 统一响应包体：{ code, message, data, traceId }
+    - 鉴权方式：Bearer Token（Authorization: Bearer <token>）
+    - 分页参数：page（从 1 开始）、pageSize（默认 20，最大 100）
+    - 分页返回：{ list, total, hasMore }
+    - 时间格式：ISO 8601 + 时区，如 2026-10-22T11:45:00+08:00
+    - 金额：单位「分」，传输类型 string
+    - ID：类型 string（避免 JS Number 精度丢失）
+    - 空值约定：无值用 null；空集合用 []；不返回未定义字段
+    - CORS：允许来源由网关配置；鉴权走 Header，不使用 Cookie/CSRF
+
+servers:
+  - url: https://api.example.com
+    description: 生产
+  - url: https://api-test.example.com
+    description: 测试
+
+tags:
+  - name: order
+    description: 订单
+
+paths:
+  /order/list:
+    get:
+      tags: [order]
+      summary: 查询订单列表
+      description: 按创建时间倒序返回当前用户的订单。
+      operationId: listOrders
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - name: status
+          in: query
+          required: false
+          description: 订单状态，不传表示全部
+          schema:
+            type: string
+            enum: [PENDING, PAID, CANCELLED]
+      x-error-codes: [OK, AUTH_401, ORDER_2001, SYS_500]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/OrderListData' }
+              example:
+                code: OK
+                message: success
+                data:
+                  list:
+                    - orderNo: "2026102200001"
+                      status: PENDING
+                      amount: "19900"
+                      createdAt: "2026-10-22T11:45:00+08:00"
+                  total: 1
+                  hasMore: false
+                traceId: "3f2a1b"
+
+  /order/detail:
+    get:
+      tags: [order]
+      summary: 查询订单详情
+      description: 按订单号查询。订单不存在或不属于当前用户时返回 ORDER_2001。
+      operationId: getOrderDetail
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderNo
+          in: query
+          required: true
+          schema: { type: string, maxLength: 32 }
+      x-error-codes: [OK, AUTH_401, ORDER_2001, SYS_500]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Order' }
+              example:
+                code: OK
+                message: success
+                data:
+                  orderNo: "2026102200001"
+                  status: PENDING
+                  amount: "19900"
+                  createdAt: "2026-10-22T11:45:00+08:00"
+                  remark: null
+                traceId: "3f2a1b"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponse:
+      type: object
+      required: [code, message, traceId]
+      properties:
+        code:
+          type: string
+          description: 业务码，OK 表示成功，其余见错误码文案表
+          example: OK
+        message:
+          type: string
+          description: 面向开发者的说明，不直接展示给用户
+        traceId:
+          type: string
+          description: 链路 ID，排查问题用
+
+    OrderListData:
+      type: object
+      required: [list, total, hasMore]
+      properties:
+        list:
+          type: array
+          items: { $ref: '#/components/schemas/Order' }
+        total:
+          type: integer
+          description: 总条数
+        hasMore:
+          type: boolean
+          description: 是否还有下一页
+
+    Order:
+      type: object
+      required: [orderNo, status, amount, createdAt]
+      properties:
+        orderNo:
+          type: string
+          description: 订单号。string 类型，避免 JS Number 精度丢失
+          example: "2026102200001"
+        status:
+          type: string
+          description: 订单状态
+          enum: [PENDING, PAID, CANCELLED]
+        amount:
+          type: string
+          description: 订单金额，单位「分」，string 传输
+          example: "19900"
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间，ISO 8601 + 时区
+          example: "2026-10-22T11:45:00+08:00"
+        remark:
+          type: string
+          nullable: true
+          description: 备注。可空，null 表示用户未填写

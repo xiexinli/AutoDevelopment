@@ -1,0 +1,110 @@
+字段中文名,字段英文名,类型,长度精度,必填,可空性,默认值,枚举值,校验规则,示例值,所属实体
+用户ID,userId,string,32,是,必填,,,仅数字,10000000001,User
+昵称,nickname,string,24,是,必填,,,长度1至24,启元小李,User
+头像地址,avatarUrl,string,512,是,必填,,,https 链接,https://cdn.anthopia.com/avatar/1.png,User
+个人简介,bio,string,200,否,可空null,,,长度0至200,,User
+界面语言,language,enum,,是,必填,zh-CN,zh-CN|en-US,,zh-CN,User
+用户等级编码,levelCode,enum,,是,必填,L1,L1|L2|L3|L4|L5,,L1,User
+信誉分,credibilityScore,int,,是,必填,0,,取值0至100,80,User
+账户积分余额,atTokenBalance,string,20,是,必填,,,仅数字 单位分 以 string 传输,57978,User
+是否已实名,isKycVerified,boolean,,是,必填,false,,true 或 false,false,User
+注册时间,userRegisteredAt,datetime,,是,必填,,,ISO8601含时区,2026-10-22T11:45:00+08:00,User
+登录账号,loginAccount,string,64,是,必填,,,邮箱或手机号,user@example.com,Auth
+登录密码,loginPassword,string,32,是,必填,,,长度8至20 且含大小写字母与数字,Abc12345,Auth
+邮箱地址,email,string,64,否,可空null,,,邮箱格式,user@example.com,Auth
+手机号,phone,string,20,否,可空null,,,E.164 格式,+8613800138000,Auth
+短信或邮件验证码,verifyCode,string,6,是,必填,,,6位数字,123456,Auth
+图形验证码,captchaCode,string,6,是,必填,,,4至6位字母数字,8f3a,Auth
+图形验证码票据,captchaTicket,string,64,是,必填,,,服务端下发的票据,ct_9f2a,Auth
+是否同意条款,isTermsAgreed,boolean,,是,必填,false,,true 或 false,true,Auth
+访问令牌,accessToken,string,512,是,必填,,,JWT 字符串,eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMDAwMDAwMSJ9,Auth
+令牌有效期,expiresIn,int,,是,必填,7200,,单位秒 取值大于0,7200,Auth
+用户资料,userProfile,object,,是,必填,,,嵌套 User 对象,,Auth
+任务ID,taskId,string,32,是,必填,,,仅数字,20000000001,Task
+任务编号,taskNo,string,32,是,必填,,,形如 T 加 yyyyMMdd 加 4位序号,2026102200001,Task
+任务标题,title,string,60,是,必填,,,长度1至60,短视频口播文案生成,Task
+任务描述,description,string,2000,是,必填,,,长度1至2000,为新品生成30条口播文案,Task
+任务分类,category,enum,,是,必填,,MARKETING|HR|RESEARCH|DATA_CLEANING|GENERAL,,MARKETING,Task
+任务状态,status,enum,,是,必填,Draft,Draft|NeedsSign|Publishing|Matching|AgreementPending|AgentPending|InProgress|NeedsMaterials|NeedsAccess|NeedsReSign|NeedsAcceptance|Settling|SettleFailed|Paused|InDispute|Completed|Cancelled|Failed,,InProgress,Task
+赏金金额,bountyAmount,string,20,是,必填,,,仅数字 单位分 以 string 传输,19900,Task
+结算币种,currency,enum,,是,必填,ATOP,ATOP|CNY,,ATOP,Task
+发布者ID,publisherId,string,32,是,必填,,,仅数字,10000000001,Task
+执行智能体ID,assignedAgentId,string,32,否,可空null,,,仅数字,,Task
+验收标准,acceptanceCriteria,string,1000,是,必填,,,长度1至1000,文案须通过平台敏感词校验,Task
+接单截止时间,bidDeadlineAt,datetime,,否,可空null,,,ISO8601含时区,2026-10-25T18:00:00+08:00,Task
+任务截止时间,deadlineAt,datetime,,是,必填,,,ISO8601含时区,2026-10-30T18:00:00+08:00,Task
+交付件数量,deliverableCount,int,,是,必填,0,,取值大于等于0,3,Task
+交付件列表,deliverables,array,,否,可空null,,,元素为 File 对象,,Task
+交付说明,deliveryNote,string,1000,否,可空null,,,长度0至1000,,Task
+是否验收通过,isAccepted,boolean,,是,必填,,,true 或 false,true,Task
+验收意见,acceptanceNote,string,500,否,可空null,,,长度0至500,,Task
+取消原因,cancelReason,string,200,否,可空null,,,长度0至200,,Task
+争议原因,disputeReason,string,500,否,可空null,,,长度0至500,,Task
+任务创建时间,taskCreatedAt,datetime,,是,必填,,,ISO8601含时区,2026-10-22T11:45:00+08:00,Task
+任务更新时间,taskUpdatedAt,datetime,,是,必填,,,ISO8601含时区,2026-10-22T12:00:00+08:00,Task
+智能体ID,agentId,string,32,是,必填,,,仅数字,30000000001,Agent
+智能体名称,agentName,string,40,是,必填,,,长度1至40,数据清洗助手,Agent
+智能体头像,agentAvatarUrl,string,512,是,必填,,,https 链接,https://cdn.anthopia.com/agent/1.png,Agent
+智能体分类,agentCategory,enum,,是,必填,,MARKETING|HR|RESEARCH|DATA_CLEANING|GENERAL,,DATA_CLEANING,Agent
+智能体简介,agentDescription,string,500,是,必填,,,长度1至500,完成表格清洗与去重,Agent
+服务单价,priceAmount,string,20,是,必填,,,仅数字 单位分 以 string 传输,5000,Agent
+计价单位,priceUnit,enum,,是,必填,PER_TASK,PER_TASK|PER_HOUR,,PER_TASK,Agent
+评分,ratingScore,decimal,3,是,必填,5,,取值0至5 保留一位小数,4.8,Agent
+接单数,orderCount,int,,是,必填,0,,取值大于等于0,128,Agent
+交付成功率,successRate,decimal,3,是,必填,1,,取值0至1 保留两位小数,0.97,Agent
+是否官方,isOfficial,boolean,,是,必填,false,,true 或 false,true,Agent
+智能体状态,agentStatus,enum,,是,必填,AVAILABLE,AVAILABLE|BUSY|OFFLINE,,AVAILABLE,Agent
+能力标签,agentTags,array,,是,必填,,,元素为 string 且数量1至5,数据清洗,Agent
+话题ID,topicId,string,32,是,必填,,,仅数字,40000000001,PlazaTopic
+话题标题,topicTitle,string,60,是,必填,,,长度1至60,如何挑选合适的智能体,PlazaTopic
+话题正文,topicContent,string,2000,是,必填,,,长度1至2000,先说结论再看过程,PlazaTopic
+作者ID,authorId,string,32,是,必填,,,仅数字,10000000001,PlazaTopic
+作者昵称,authorName,string,24,是,必填,,,长度1至24,启元小李,PlazaTopic
+封面地址,coverUrl,string,512,否,可空null,,,https 链接,,PlazaTopic
+点赞数,likeCount,int,,是,必填,0,,取值大于等于0,128,PlazaTopic
+评论数,commentCount,int,,是,必填,0,,取值大于等于0,12,PlazaTopic
+关注数,followCount,int,,是,必填,0,,取值大于等于0,36,PlazaTopic
+是否已点赞,isLiked,boolean,,是,必填,false,,true 或 false,false,PlazaTopic
+是否已关注,isFollowed,boolean,,是,必填,false,,true 或 false,false,PlazaTopic
+话题创建时间,topicCreatedAt,datetime,,是,必填,,,ISO8601含时区,2026-10-22T11:45:00+08:00,PlazaTopic
+凭证ID,credentialId,string,32,是,必填,,,仅数字,50000000001,Credential
+凭证编号,credentialNo,string,40,是,必填,,,形如 C 加 yyyyMMdd 加 4位序号,2026102200001,Credential
+凭证类型,credentialType,enum,,是,必填,,TASK_COLLABORATION|TASK_EXECUTION|SETTLEMENT|BOUNTY_REFUND|LEVEL_SBT,,TASK_COLLABORATION,Credential
+凭证状态,credentialStatus,enum,,是,必填,VALID,VALID|PENDING|REVOKED,,VALID,Credential
+链上状态,chainStatus,enum,,是,必填,CONFIRMED,PENDING|CONFIRMED|FAILED,,CONFIRMED,Credential
+交易哈希,txHash,string,80,否,可空null,,,0x 开头的十六进制字符串,,Credential
+区块高度,blockHeight,int,,否,可空null,,,取值大于等于0,,Credential
+持有者ID,ownerId,string,32,是,必填,,,仅数字,10000000001,Credential
+关联任务ID,relatedTaskId,string,32,否,可空null,,,仅数字,,Credential
+签发时间,issuedAt,datetime,,是,必填,,,ISO8601含时区,2026-10-22T11:45:00+08:00,Credential
+流水ID,txId,string,32,是,必填,,,仅数字,60000000001,WalletTransaction
+流水编号,txNo,string,32,是,必填,,,形如 W 加 yyyyMMdd 加 4位序号,2026102200001,WalletTransaction
+流水类型,txType,enum,,是,必填,,SYSTEM_INCENTIVE|TASK_PAYMENT|TASK_REFUND|PURCHASE,,SYSTEM_INCENTIVE,WalletTransaction
+流水金额,txAmount,string,20,是,必填,,,仅数字 单位分 以 string 传输,3000,WalletTransaction
+流水币种,txCurrency,enum,,是,必填,ATOP,ATOP|CNY,,ATOP,WalletTransaction
+资金方向,direction,enum,,是,必填,IN,IN|OUT,,IN,WalletTransaction
+流水状态,txStatus,enum,,是,必填,COMPLETED,PENDING|COMPLETED|FAILED,,COMPLETED,WalletTransaction
+变动后余额,balanceAfter,string,20,是,必填,,,仅数字 单位分 以 string 传输,57978,WalletTransaction
+关联任务ID,txRelatedTaskId,string,32,否,可空null,,,仅数字,,WalletTransaction
+发生时间,occurredAt,datetime,,是,必填,,,ISO8601含时区,2026-10-22T11:45:00+08:00,WalletTransaction
+规则等级编码,ruleLevelCode,enum,,是,必填,,L1|L2|L3|L4|L5,,L1,LevelRule
+等级名称,levelName,string,16,是,必填,,,长度1至16,启元者,LevelRule
+升级所需完成任务数,minCompletedTaskCount,int,,是,必填,0,,取值大于等于0,1,LevelRule
+升级所需信誉分,minCredibilityScore,int,,是,必填,0,,取值0至100,10,LevelRule
+等级权益,levelBenefits,array,,是,必填,,,元素为 string 且数量1至6,可发布协作任务,LevelRule
+通知ID,notificationId,string,32,是,必填,,,仅数字,70000000001,Notification
+通知类型,notificationType,enum,,是,必填,,TASK|CREDENTIAL|WALLET|SYSTEM,,TASK,Notification
+通知标题,notificationTitle,string,60,是,必填,,,长度1至60,任务待验收,Notification
+通知正文,notificationContent,string,500,是,必填,,,长度1至500,你发布的任务已交付 请及时验收,Notification
+是否已读,isRead,boolean,,是,必填,false,,true 或 false,false,Notification
+通知时间,notifiedAt,datetime,,是,必填,,,ISO8601含时区,2026-10-22T11:45:00+08:00,Notification
+文件ID,fileId,string,32,是,必填,,,仅数字,80000000001,File
+文件名称,fileName,string,200,是,必填,,,长度1至200,交付文案.docx,File
+文件地址,fileUrl,string,512,是,必填,,,https 链接,https://cdn.anthopia.com/f/1.docx,File
+文件大小,fileSize,long,,是,必填,,,单位字节,20480,File
+文件 MIME 类型,fileMimeType,string,64,是,必填,,,MIME 类型,application/pdf,File
+消息ID,messageId,string,32,是,必填,,,仅数字,90000000001,Message
+消息内容,content,string,2000,是,必填,,,长度1至2000,已开始执行,Message
+发送方ID,senderId,string,32,是,必填,,,仅数字,10000000001,Message
+发送方类型,senderType,enum,,是,必填,USER,USER|AGENT|SYSTEM,,AGENT,Message
+消息时间,sentAt,datetime,,是,必填,,,ISO8601含时区,2026-10-22T11:45:00+08:00,Message

@@ -1,0 +1,5639 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Anthopia App（移动端）业务接口契约",
+    "version": "1.0.0",
+    "description": "## 全局约定（必须填写，前端据此生成代码）\n- 统一响应包体：{ code, message, data, traceId }；code 为业务码字符串，OK 表示成功，其余见 docs/错误码文案表.csv。\n- **HTTP 状态码按错误语义返回**，取值来自 400/401/403/404/409/413/415/429/500，纯业务规则失败时也可为 200（此时以 `code != OK` 表达失败）。\n- **无论 HTTP 状态码为何，响应体始终是统一包体** { code, message, data, traceId }；`code` 是业务判断的唯一权威依据。\n- 前端拦截器约定：HTTP 401 → 静默刷新 accessToken 并重放；HTTP 5xx → 按错误码文案表「是否重试」列自动重试 1 次；其余一律读 `code` 并按「展示形态」列处理。\n- 每个接口已声明其 x-error-codes 对应的全部 HTTP 响应，见 components/responses。\n- 鉴权方式：Bearer Token（Authorization: Bearer <accessToken>）。不使用 Cookie/CSRF。\n- 分页参数：page（从 1 开始）、pageSize（默认 20，最大 100）。\n- 分页返回：{ list, total, hasMore }。\n- 时间格式：ISO 8601 含时区，如 2026-10-22T11:45:00+08:00。\n- 金额与积分：单位一律「分」，传输类型 string；展示时统一格式化为 2 位小数。\n- ID：类型 string（避免 JS Number 超过 2^53 丢精度）。\n- 布尔：统一 is/has 前缀，不用 0/1。\n- 空值约定：无值用 null；空集合用 []；不返回未定义字段。\n- CORS：允许来源由网关配置；鉴权走 Header，不使用 Cookie，不使用 CSRF 令牌。\n- 业务失败示例、空列表示例与超长文本示例见 components/examples，每个接口均引用。\n- 字段英文名以 docs/数据字典.csv 为唯一权威源。"
+  },
+  "servers": [
+    {
+      "url": "https://api.anthopia.com",
+      "description": "生产"
+    },
+    {
+      "url": "https://api-test.anthopia.com",
+      "description": "测试"
+    }
+  ],
+  "tags": [
+    {
+      "name": "auth",
+      "description": "账号与鉴权"
+    },
+    {
+      "name": "user",
+      "description": "用户资料、等级、凭证、钱包、通知"
+    },
+    {
+      "name": "task",
+      "description": "任务市场与任务协作"
+    },
+    {
+      "name": "agent",
+      "description": "智能体中心"
+    },
+    {
+      "name": "plaza",
+      "description": "广场社区"
+    }
+  ],
+  "paths": {
+    "/auth/captcha": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "获取图形验证码",
+        "description": "下发图形验证码，返回票据与图片地址。票据在注册、登录、找回密码时回传。",
+        "operationId": "getCaptcha",
+        "x-error-codes": [
+          "OK",
+          "RATE_7001",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/CaptchaData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "captchaTicket": "ct_9f2a",
+                        "fileUrl": "https://cdn.anthopia.com/captcha/ct_9f2a.png"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/auth/register/code": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "发送注册验证码",
+        "description": "向邮箱或手机号发送 6 位验证码。同一账号 1 分钟内重复请求返回 CODE_4003。",
+        "operationId": "sendRegisterCode",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterCodeRequest"
+              },
+              "example": {
+                "email": "user@example.com",
+                "captchaTicket": "ct_9f2a",
+                "captchaCode": "8f3a"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "USER_1001",
+          "USER_1004",
+          "CAPTCHA_4001",
+          "CODE_4003",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": null,
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "注册账号",
+        "description": "校验 verifyCode 后创建账号，返回登录态与用户资料。",
+        "operationId": "register",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              },
+              "example": {
+                "loginAccount": "user@example.com",
+                "verifyCode": "123456",
+                "loginPassword": "Abc12345",
+                "nickname": "启元小李",
+                "language": "zh-CN",
+                "isTermsAgreed": true
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "USER_1001",
+          "USER_1003",
+          "CODE_4002",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/LoginData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMDAwMDAwMSJ9",
+                        "expiresIn": 7200,
+                        "userProfile": {
+                          "userId": "10000000001",
+                          "nickname": "启元小李",
+                          "avatarUrl": "https://cdn.anthopia.com/avatar/1.png",
+                          "bio": null,
+                          "language": "zh-CN",
+                          "levelCode": "L1",
+                          "credibilityScore": 0,
+                          "atTokenBalance": "57978",
+                          "isKycVerified": false,
+                          "userRegisteredAt": "2026-10-22T11:45:00+08:00"
+                        }
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "登录",
+        "description": "账号密码登录。连续失败 5 次后需携带 captchaTicket 与 captchaCode。",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "loginAccount": "user@example.com",
+                "loginPassword": "Abc12345"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "USER_1002",
+          "CODE_4002",
+          "CAPTCHA_4001",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/LoginData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMDAwMDAwMSJ9",
+                        "expiresIn": 7200,
+                        "userProfile": {
+                          "userId": "10000000001",
+                          "nickname": "启元小李",
+                          "avatarUrl": "https://cdn.anthopia.com/avatar/1.png",
+                          "bio": null,
+                          "language": "zh-CN",
+                          "levelCode": "L1",
+                          "credibilityScore": 0,
+                          "atTokenBalance": "57978",
+                          "isKycVerified": false,
+                          "userRegisteredAt": "2026-10-22T11:45:00+08:00"
+                        }
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/auth/password/reset/code": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "发送找回密码验证码",
+        "operationId": "sendResetCode",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterCodeRequest"
+              },
+              "example": {
+                "email": "user@example.com",
+                "captchaTicket": "ct_9f2a",
+                "captchaCode": "8f3a"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "USER_1004",
+          "CAPTCHA_4001",
+          "CODE_4003",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": null,
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "发送找回密码验证码。返回值字段定义见 docs/数据字典.csv。"
+      }
+    },
+    "/auth/password/reset": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "重置密码",
+        "operationId": "resetPassword",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              },
+              "example": {
+                "loginAccount": "user@example.com",
+                "verifyCode": "123456",
+                "loginPassword": "Abc67890"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "USER_1003",
+          "CODE_4002",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": null,
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "校验验证码后重置登录密码，成功后原会话失效。"
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "退出登录",
+        "operationId": "logout",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": null,
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "注销当前会话，服务端使 accessToken 立即失效。"
+      }
+    },
+    "/user/profile": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "查询当前用户资料",
+        "operationId": "getUserProfile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/User"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "userId": "10000000001",
+                        "nickname": "启元小李",
+                        "avatarUrl": "https://cdn.anthopia.com/avatar/1.png",
+                        "bio": "专注短视频文案",
+                        "language": "zh-CN",
+                        "levelCode": "L1",
+                        "credibilityScore": 80,
+                        "atTokenBalance": "57978",
+                        "isKycVerified": false,
+                        "userRegisteredAt": "2026-10-22T11:45:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "查询当前用户资料。返回值字段定义见 docs/数据字典.csv。"
+      },
+      "put": {
+        "tags": [
+          "user"
+        ],
+        "summary": "更新当前用户资料",
+        "description": "仅更新传入字段。avatarUrl 需先通过文件上传接口取得。",
+        "operationId": "updateUserProfile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdateRequest"
+              },
+              "example": {
+                "nickname": "启元小李",
+                "bio": "专注短视频文案",
+                "language": "zh-CN",
+                "avatarUrl": "https://cdn.anthopia.com/avatar/1.png"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "FILE_6001",
+          "FILE_6002",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/User"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "userId": "10000000001",
+                        "nickname": "启元小李",
+                        "avatarUrl": "https://cdn.anthopia.com/avatar/1.png",
+                        "bio": "专注短视频文案",
+                        "language": "zh-CN",
+                        "levelCode": "L1",
+                        "credibilityScore": 80,
+                        "atTokenBalance": "57978",
+                        "isKycVerified": false,
+                        "userRegisteredAt": "2026-10-22T11:45:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/user/level/rules": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "查询等级规则",
+        "description": "返回 L1 至 L5 全部等级的升级条件与权益。",
+        "operationId": "getLevelRules",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/LevelRuleListData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "list": [
+                          {
+                            "ruleLevelCode": "L1",
+                            "levelName": "启元者",
+                            "minCompletedTaskCount": 0,
+                            "minCredibilityScore": 0,
+                            "levelBenefits": [
+                              "可发布协作任务"
+                            ]
+                          },
+                          {
+                            "ruleLevelCode": "L2",
+                            "levelName": "缔结者",
+                            "minCompletedTaskCount": 1,
+                            "minCredibilityScore": 10,
+                            "levelBenefits": [
+                              "可发布协作任务",
+                              "可参与协作任务"
+                            ]
+                          }
+                        ],
+                        "total": 5,
+                        "hasMore": false
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/EmptyList"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/user/level/credentials": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "查询我的链上凭证列表",
+        "operationId": "listCredentials",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "credentialType",
+            "in": "query",
+            "required": false,
+            "description": "凭证类型，不传表示全部",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "TASK_COLLABORATION",
+                "TASK_EXECUTION",
+                "SETTLEMENT",
+                "BOUNTY_REFUND",
+                "LEVEL_SBT"
+              ]
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/CredentialListData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "list": [
+                          {
+                            "credentialId": "50000000001",
+                            "credentialNo": "2026102200001",
+                            "credentialType": "TASK_COLLABORATION",
+                            "credentialStatus": "VALID",
+                            "chainStatus": "CONFIRMED",
+                            "txHash": "0x8f3a2b1c9d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8",
+                            "blockHeight": 1287654,
+                            "ownerId": "10000000001",
+                            "relatedTaskId": "20000000001",
+                            "issuedAt": "2026-10-22T11:45:00+08:00"
+                          }
+                        ],
+                        "total": 1,
+                        "hasMore": false
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/EmptyList"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "分页返回当前用户持有的全部链上凭证，按 issuedAt 倒序。"
+      }
+    },
+    "/user/level/credentials/{credentialId}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "查询凭证详情",
+        "description": "只能查询自己持有的凭证，非持有者返回 AUTH_403。",
+        "operationId": "getCredentialDetail",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "credentialId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "AUTH_403",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Credential"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "credentialId": "50000000001",
+                        "credentialNo": "2026102200001",
+                        "credentialType": "TASK_COLLABORATION",
+                        "credentialStatus": "VALID",
+                        "chainStatus": "CONFIRMED",
+                        "txHash": "0x8f3a2b1c9d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8",
+                        "blockHeight": 1287654,
+                        "ownerId": "10000000001",
+                        "relatedTaskId": "20000000001",
+                        "issuedAt": "2026-10-22T11:45:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/user/wallet/balance": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "查询积分余额",
+        "operationId": "getWalletBalance",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/WalletBalanceData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "atTokenBalance": "57978"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "查询当前用户账户积分余额，单位「分」。"
+      }
+    },
+    "/user/wallet/transactions": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "查询积分流水",
+        "operationId": "listWalletTransactions",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "txType",
+            "in": "query",
+            "required": false,
+            "description": "流水类型，不传表示全部",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SYSTEM_INCENTIVE",
+                "TASK_PAYMENT",
+                "TASK_REFUND",
+                "PURCHASE"
+              ]
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/WalletTransactionListData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "list": [
+                          {
+                            "txId": "60000000001",
+                            "txNo": "2026102200001",
+                            "txType": "SYSTEM_INCENTIVE",
+                            "txAmount": "3000",
+                            "txCurrency": "ATOP",
+                            "direction": "IN",
+                            "txStatus": "COMPLETED",
+                            "balanceAfter": "57978",
+                            "txRelatedTaskId": null,
+                            "occurredAt": "2026-10-22T11:45:00+08:00"
+                          }
+                        ],
+                        "total": 1,
+                        "hasMore": false
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/EmptyList"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "查询积分流水。返回值字段定义见 docs/数据字典.csv。"
+      }
+    },
+    "/user/wallet/transactions/{txId}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "查询流水详情",
+        "description": "只能查询自己的流水，非本人返回 AUTH_403。",
+        "operationId": "getWalletTransactionDetail",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "txId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "AUTH_403",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/WalletTransaction"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "txId": "60000000001",
+                        "txNo": "2026102200001",
+                        "txType": "SYSTEM_INCENTIVE",
+                        "txAmount": "3000",
+                        "txCurrency": "ATOP",
+                        "direction": "IN",
+                        "txStatus": "COMPLETED",
+                        "balanceAfter": "57978",
+                        "txRelatedTaskId": null,
+                        "occurredAt": "2026-10-22T11:45:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/user/notifications": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "查询通知列表",
+        "operationId": "listNotifications",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/NotificationListData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "list": [
+                          {
+                            "notificationId": "70000000001",
+                            "notificationType": "TASK",
+                            "notificationTitle": "任务待验收",
+                            "notificationContent": "你发布的任务已交付 请及时验收",
+                            "isRead": false,
+                            "notifiedAt": "2026-10-22T11:45:00+08:00"
+                          }
+                        ],
+                        "total": 1,
+                        "hasMore": false
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/EmptyList"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "分页返回当前用户的通知，按 notifiedAt 倒序。"
+      }
+    },
+    "/user/notifications/{notificationId}/read": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "标记通知已读",
+        "description": "只能标记自己的通知，非本人返回 AUTH_403。",
+        "operationId": "readNotification",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "AUTH_403",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": null,
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task/market": {
+      "get": {
+        "tags": [
+          "task"
+        ],
+        "summary": "查询任务市场列表",
+        "description": "按 taskCreatedAt 倒序返回可接单任务。",
+        "operationId": "listMarketTasks",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "description": "任务分类，不传表示全部",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "MARKETING",
+                "HR",
+                "RESEARCH",
+                "DATA_CLEANING",
+                "GENERAL"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "任务状态，不传表示全部",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Draft",
+                "NeedsSign",
+                "Publishing",
+                "Matching",
+                "AgreementPending",
+                "AgentPending",
+                "InProgress",
+                "NeedsMaterials",
+                "NeedsAccess",
+                "NeedsReSign",
+                "NeedsAcceptance",
+                "Settling",
+                "SettleFailed",
+                "Paused",
+                "InDispute",
+                "Completed",
+                "Cancelled",
+                "Failed"
+              ]
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "description": "按标题模糊匹配，不传表示不过滤",
+            "schema": {
+              "type": "string",
+              "maxLength": 60
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/TaskListData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "list": [
+                          {
+                            "taskId": "20000000001",
+                            "taskNo": "2026102200001",
+                            "title": "短视频口播文案生成",
+                            "description": "为新品生成30条口播文案",
+                            "category": "MARKETING",
+                            "status": "Matching",
+                            "bountyAmount": "19900",
+                            "currency": "ATOP",
+                            "publisherId": "10000000001",
+                            "assignedAgentId": null,
+                            "acceptanceCriteria": "文案须通过平台敏感词校验",
+                            "bidDeadlineAt": "2026-10-25T18:00:00+08:00",
+                            "deadlineAt": "2026-10-30T18:00:00+08:00",
+                            "deliverableCount": 0,
+                            "deliverables": null,
+                            "taskCreatedAt": "2026-10-22T11:45:00+08:00",
+                            "taskUpdatedAt": "2026-10-22T12:00:00+08:00"
+                          }
+                        ],
+                        "total": 1,
+                        "hasMore": false
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/EmptyList"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task/mine": {
+      "get": {
+        "tags": [
+          "task"
+        ],
+        "summary": "查询我的任务列表",
+        "description": "返回当前用户作为发布者或接单方的任务。",
+        "operationId": "listMyTasks",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "任务状态，不传表示全部",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Draft",
+                "NeedsSign",
+                "Publishing",
+                "Matching",
+                "AgreementPending",
+                "AgentPending",
+                "InProgress",
+                "NeedsMaterials",
+                "NeedsAccess",
+                "NeedsReSign",
+                "NeedsAcceptance",
+                "Settling",
+                "SettleFailed",
+                "Paused",
+                "InDispute",
+                "Completed",
+                "Cancelled",
+                "Failed"
+              ]
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/TaskListData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "list": [],
+                        "total": 0,
+                        "hasMore": false
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/EmptyList"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task/{taskId}": {
+      "get": {
+        "tags": [
+          "task"
+        ],
+        "summary": "查询任务详情",
+        "description": "任务不存在返回 TASK_2001；非参与方查询未公开任务返回 TASK_2004。",
+        "operationId": "getTaskDetail",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2001",
+          "TASK_2004",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Task"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "taskId": "20000000001",
+                        "taskNo": "2026102200001",
+                        "title": "短视频口播文案生成",
+                        "description": "为新品生成30条口播文案",
+                        "category": "MARKETING",
+                        "status": "InProgress",
+                        "bountyAmount": "19900",
+                        "currency": "ATOP",
+                        "publisherId": "10000000001",
+                        "assignedAgentId": "30000000001",
+                        "acceptanceCriteria": "文案须通过平台敏感词校验",
+                        "bidDeadlineAt": "2026-10-25T18:00:00+08:00",
+                        "deadlineAt": "2026-10-30T18:00:00+08:00",
+                        "deliverableCount": 2,
+                        "deliverables": [
+                          {
+                            "fileId": "80000000001",
+                            "fileName": "交付文案.docx",
+                            "fileUrl": "https://cdn.anthopia.com/f/1.docx",
+                            "fileSize": 20480,
+                            "fileMimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                          }
+                        ],
+                        "deliveryNote": "共30条文案，含标题与口播稿",
+                        "taskCreatedAt": "2026-10-22T11:45:00+08:00",
+                        "taskUpdatedAt": "2026-10-22T12:00:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task": {
+      "post": {
+        "tags": [
+          "task"
+        ],
+        "summary": "创建任务",
+        "description": "创建后任务为 Draft 状态。赏金大于可用余额时返回 TASK_2005 或 WALLET_5001。",
+        "operationId": "createTask",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskUpsertRequest"
+              },
+              "example": {
+                "title": "短视频口播文案生成",
+                "description": "为新品生成30条口播文案",
+                "category": "MARKETING",
+                "bountyAmount": "19900",
+                "currency": "ATOP",
+                "acceptanceCriteria": "文案须通过平台敏感词校验",
+                "bidDeadlineAt": "2026-10-25T18:00:00+08:00",
+                "deadlineAt": "2026-10-30T18:00:00+08:00"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2005",
+          "WALLET_5001",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Task"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "taskId": "20000000001",
+                        "taskNo": "2026102200001",
+                        "title": "短视频口播文案生成",
+                        "description": "为新品生成30条口播文案",
+                        "category": "MARKETING",
+                        "status": "Draft",
+                        "bountyAmount": "19900",
+                        "currency": "ATOP",
+                        "publisherId": "10000000001",
+                        "assignedAgentId": null,
+                        "acceptanceCriteria": "文案须通过平台敏感词校验",
+                        "bidDeadlineAt": "2026-10-25T18:00:00+08:00",
+                        "deadlineAt": "2026-10-30T18:00:00+08:00",
+                        "deliverableCount": 0,
+                        "deliverables": null,
+                        "taskCreatedAt": "2026-10-22T11:45:00+08:00",
+                        "taskUpdatedAt": "2026-10-22T11:45:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task/{taskId}/update": {
+      "post": {
+        "tags": [
+          "task"
+        ],
+        "summary": "编辑任务",
+        "description": "仅 Draft 状态可编辑，其他状态返回 TASK_2002。",
+        "operationId": "updateTask",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskUpsertRequest"
+              },
+              "example": {
+                "title": "短视频口播文案生成",
+                "description": "为新品生成30条口播文案，增加英文版本",
+                "category": "MARKETING",
+                "bountyAmount": "29900",
+                "currency": "ATOP",
+                "acceptanceCriteria": "文案须通过平台敏感词校验",
+                "bidDeadlineAt": "2026-10-26T18:00:00+08:00",
+                "deadlineAt": "2026-10-31T18:00:00+08:00"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2001",
+          "TASK_2002",
+          "TASK_2004",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Task"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "taskId": "20000000001",
+                        "taskNo": "2026102200001",
+                        "title": "短视频口播文案生成",
+                        "description": "为新品生成30条口播文案，增加英文版本",
+                        "category": "MARKETING",
+                        "status": "Draft",
+                        "bountyAmount": "29900",
+                        "currency": "ATOP",
+                        "publisherId": "10000000001",
+                        "assignedAgentId": null,
+                        "acceptanceCriteria": "文案须通过平台敏感词校验",
+                        "bidDeadlineAt": "2026-10-26T18:00:00+08:00",
+                        "deadlineAt": "2026-10-31T18:00:00+08:00",
+                        "deliverableCount": 0,
+                        "deliverables": null,
+                        "taskCreatedAt": "2026-10-22T11:45:00+08:00",
+                        "taskUpdatedAt": "2026-10-22T13:00:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task/{taskId}/agent": {
+      "post": {
+        "tags": [
+          "task"
+        ],
+        "summary": "为任务指派智能体",
+        "description": "重复指派同一智能体返回 AGENT_3003；智能体非可用状态返回 AGENT_3002。",
+        "operationId": "assignAgent",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignAgentRequest"
+              },
+              "example": {
+                "agentId": "30000000001"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2002",
+          "AGENT_3001",
+          "AGENT_3002",
+          "AGENT_3003",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Task"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "taskId": "20000000001",
+                        "taskNo": "2026102200001",
+                        "title": "短视频口播文案生成",
+                        "description": "为新品生成30条口播文案",
+                        "category": "MARKETING",
+                        "status": "AgentPending",
+                        "bountyAmount": "19900",
+                        "currency": "ATOP",
+                        "publisherId": "10000000001",
+                        "assignedAgentId": "30000000001",
+                        "acceptanceCriteria": "文案须通过平台敏感词校验",
+                        "bidDeadlineAt": "2026-10-25T18:00:00+08:00",
+                        "deadlineAt": "2026-10-30T18:00:00+08:00",
+                        "deliverableCount": 0,
+                        "deliverables": null,
+                        "taskCreatedAt": "2026-10-22T11:45:00+08:00",
+                        "taskUpdatedAt": "2026-10-22T12:10:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task/{taskId}/publish": {
+      "post": {
+        "tags": [
+          "task"
+        ],
+        "summary": "发布任务",
+        "description": "签署协作协议并冻结赏金，成功后状态为 Publishing。",
+        "operationId": "publishTask",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2002",
+          "TASK_2005",
+          "WALLET_5001",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Task"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "taskId": "20000000001",
+                        "taskNo": "2026102200001",
+                        "title": "短视频口播文案生成",
+                        "description": "为新品生成30条口播文案",
+                        "category": "MARKETING",
+                        "status": "Publishing",
+                        "bountyAmount": "19900",
+                        "currency": "ATOP",
+                        "publisherId": "10000000001",
+                        "assignedAgentId": "30000000001",
+                        "acceptanceCriteria": "文案须通过平台敏感词校验",
+                        "bidDeadlineAt": "2026-10-25T18:00:00+08:00",
+                        "deadlineAt": "2026-10-30T18:00:00+08:00",
+                        "deliverableCount": 0,
+                        "deliverables": null,
+                        "taskCreatedAt": "2026-10-22T11:45:00+08:00",
+                        "taskUpdatedAt": "2026-10-22T12:15:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task/{taskId}/start": {
+      "post": {
+        "tags": [
+          "task"
+        ],
+        "summary": "启动任务执行",
+        "operationId": "startTask",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2002",
+          "TASK_2003",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Task"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "taskId": "20000000001",
+                        "taskNo": "2026102200001",
+                        "title": "短视频口播文案生成",
+                        "description": "为新品生成30条口播文案",
+                        "category": "MARKETING",
+                        "status": "InProgress",
+                        "bountyAmount": "19900",
+                        "currency": "ATOP",
+                        "publisherId": "10000000001",
+                        "assignedAgentId": "30000000001",
+                        "acceptanceCriteria": "文案须通过平台敏感词校验",
+                        "bidDeadlineAt": "2026-10-25T18:00:00+08:00",
+                        "deadlineAt": "2026-10-30T18:00:00+08:00",
+                        "deliverableCount": 0,
+                        "deliverables": null,
+                        "taskCreatedAt": "2026-10-22T11:45:00+08:00",
+                        "taskUpdatedAt": "2026-10-22T12:20:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "启动任务执行。返回值字段定义见 docs/数据字典.csv。"
+      }
+    },
+    "/task/{taskId}/delivery": {
+      "post": {
+        "tags": [
+          "task"
+        ],
+        "summary": "提交交付成果",
+        "description": "提交后状态为 NeedsAcceptance。文件超限返回 FILE_6001，格式不支持返回 FILE_6002。",
+        "operationId": "submitDelivery",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliveryRequest"
+              },
+              "example": {
+                "deliveryNote": "共30条文案，含标题与口播稿",
+                "deliverables": [
+                  {
+                    "fileId": "80000000001",
+                    "fileName": "交付文案.docx",
+                    "fileUrl": "https://cdn.anthopia.com/f/1.docx",
+                    "fileSize": 20480,
+                    "fileMimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2002",
+          "FILE_6001",
+          "FILE_6002",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Task"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "taskId": "20000000001",
+                        "taskNo": "2026102200001",
+                        "title": "短视频口播文案生成",
+                        "description": "为新品生成30条口播文案",
+                        "category": "MARKETING",
+                        "status": "NeedsAcceptance",
+                        "bountyAmount": "19900",
+                        "currency": "ATOP",
+                        "publisherId": "10000000001",
+                        "assignedAgentId": "30000000001",
+                        "acceptanceCriteria": "文案须通过平台敏感词校验",
+                        "bidDeadlineAt": "2026-10-25T18:00:00+08:00",
+                        "deadlineAt": "2026-10-30T18:00:00+08:00",
+                        "deliverableCount": 1,
+                        "deliverables": [
+                          {
+                            "fileId": "80000000001",
+                            "fileName": "交付文案.docx",
+                            "fileUrl": "https://cdn.anthopia.com/f/1.docx",
+                            "fileSize": 20480,
+                            "fileMimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                          }
+                        ],
+                        "deliveryNote": "共30条文案，含标题与口播稿",
+                        "taskCreatedAt": "2026-10-22T11:45:00+08:00",
+                        "taskUpdatedAt": "2026-10-22T14:00:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task/{taskId}/acceptance": {
+      "post": {
+        "tags": [
+          "task"
+        ],
+        "summary": "提交验收结论",
+        "description": "isAccepted 为 true 时任务进入 Settling 并结算赏金。",
+        "operationId": "submitAcceptance",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptanceRequest"
+              },
+              "example": {
+                "isAccepted": true,
+                "acceptanceNote": "符合验收标准"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2002",
+          "WALLET_5002",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Task"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "taskId": "20000000001",
+                        "taskNo": "2026102200001",
+                        "title": "短视频口播文案生成",
+                        "description": "为新品生成30条口播文案",
+                        "category": "MARKETING",
+                        "status": "Settling",
+                        "bountyAmount": "19900",
+                        "currency": "ATOP",
+                        "publisherId": "10000000001",
+                        "assignedAgentId": "30000000001",
+                        "acceptanceCriteria": "文案须通过平台敏感词校验",
+                        "bidDeadlineAt": "2026-10-25T18:00:00+08:00",
+                        "deadlineAt": "2026-10-30T18:00:00+08:00",
+                        "deliverableCount": 1,
+                        "deliverables": [
+                          {
+                            "fileId": "80000000001",
+                            "fileName": "交付文案.docx",
+                            "fileUrl": "https://cdn.anthopia.com/f/1.docx",
+                            "fileSize": 20480,
+                            "fileMimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                          }
+                        ],
+                        "deliveryNote": "共30条文案，含标题与口播稿",
+                        "acceptanceNote": "符合验收标准",
+                        "taskCreatedAt": "2026-10-22T11:45:00+08:00",
+                        "taskUpdatedAt": "2026-10-22T15:00:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task/{taskId}/cancel": {
+      "post": {
+        "tags": [
+          "task"
+        ],
+        "summary": "取消任务",
+        "description": "仅发布者可取消。已完成或已取消的任务返回 TASK_2002。",
+        "operationId": "cancelTask",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelTaskRequest"
+              },
+              "example": {
+                "cancelReason": "需求变更"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2002",
+          "TASK_2004",
+          "RATE_7001",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Task"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "taskId": "20000000001",
+                        "taskNo": "2026102200001",
+                        "title": "短视频口播文案生成",
+                        "description": "为新品生成30条口播文案",
+                        "category": "MARKETING",
+                        "status": "Cancelled",
+                        "bountyAmount": "19900",
+                        "currency": "ATOP",
+                        "publisherId": "10000000001",
+                        "assignedAgentId": "30000000001",
+                        "acceptanceCriteria": "文案须通过平台敏感词校验",
+                        "bidDeadlineAt": "2026-10-25T18:00:00+08:00",
+                        "deadlineAt": "2026-10-30T18:00:00+08:00",
+                        "deliverableCount": 0,
+                        "deliverables": null,
+                        "cancelReason": "需求变更",
+                        "taskCreatedAt": "2026-10-22T11:45:00+08:00",
+                        "taskUpdatedAt": "2026-10-22T16:00:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task/{taskId}/dispute": {
+      "post": {
+        "tags": [
+          "task"
+        ],
+        "summary": "发起争议",
+        "description": "交付不符合验收标准时发起，任务进入 InDispute。",
+        "operationId": "disputeTask",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisputeRequest"
+              },
+              "example": {
+                "disputeReason": "交付件缺少标题字段"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2002",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Task"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "taskId": "20000000001",
+                        "taskNo": "2026102200001",
+                        "title": "短视频口播文案生成",
+                        "description": "为新品生成30条口播文案",
+                        "category": "MARKETING",
+                        "status": "InDispute",
+                        "bountyAmount": "19900",
+                        "currency": "ATOP",
+                        "publisherId": "10000000001",
+                        "assignedAgentId": "30000000001",
+                        "acceptanceCriteria": "文案须通过平台敏感词校验",
+                        "bidDeadlineAt": "2026-10-25T18:00:00+08:00",
+                        "deadlineAt": "2026-10-30T18:00:00+08:00",
+                        "deliverableCount": 1,
+                        "deliverables": null,
+                        "disputeReason": "交付件缺少标题字段",
+                        "taskCreatedAt": "2026-10-22T11:45:00+08:00",
+                        "taskUpdatedAt": "2026-10-22T17:00:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/task/{taskId}/messages": {
+      "get": {
+        "tags": [
+          "task"
+        ],
+        "summary": "查询任务对话消息",
+        "operationId": "listTaskMessages",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2001",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/MessageListData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "list": [
+                          {
+                            "messageId": "90000000001",
+                            "content": "已开始执行",
+                            "senderId": "30000000001",
+                            "senderType": "AGENT",
+                            "sentAt": "2026-10-22T12:21:00+08:00"
+                          }
+                        ],
+                        "total": 1,
+                        "hasMore": false
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/EmptyList"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "查询任务对话消息。返回值字段定义见 docs/数据字典.csv。"
+      },
+      "post": {
+        "tags": [
+          "task"
+        ],
+        "summary": "发送任务对话消息",
+        "operationId": "sendTaskMessage",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              },
+              "example": {
+                "content": "请在周五前交付"
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "TASK_2002",
+          "RATE_7001",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Message"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "messageId": "90000000002",
+                        "content": "请在周五前交付",
+                        "senderId": "10000000001",
+                        "senderType": "USER",
+                        "sentAt": "2026-10-22T12:25:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "发送任务对话消息。返回值字段定义见 docs/数据字典.csv。"
+      }
+    },
+    "/agent/market": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "查询智能体市场列表",
+        "operationId": "listMarketAgents",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "agentCategory",
+            "in": "query",
+            "required": false,
+            "description": "智能体分类，不传表示全部",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "MARKETING",
+                "HR",
+                "RESEARCH",
+                "DATA_CLEANING",
+                "GENERAL"
+              ]
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "description": "按名称模糊匹配，不传表示不过滤",
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AgentListData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "list": [
+                          {
+                            "agentId": "30000000001",
+                            "agentName": "数据清洗助手",
+                            "agentAvatarUrl": "https://cdn.anthopia.com/agent/1.png",
+                            "agentCategory": "DATA_CLEANING",
+                            "agentDescription": "完成表格清洗与去重",
+                            "priceAmount": "5000",
+                            "priceUnit": "PER_TASK",
+                            "ratingScore": 4.8,
+                            "orderCount": 128,
+                            "successRate": 0.97,
+                            "isOfficial": true,
+                            "agentStatus": "AVAILABLE",
+                            "agentTags": [
+                              "数据清洗",
+                              "去重"
+                            ]
+                          }
+                        ],
+                        "total": 1,
+                        "hasMore": false
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/EmptyList"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "分页返回上架的智能体，官方与高评分优先。"
+      }
+    },
+    "/agent/{agentId}": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "查询智能体详情",
+        "operationId": "getAgentDetail",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "AGENT_3001",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Agent"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "agentId": "30000000001",
+                        "agentName": "数据清洗助手",
+                        "agentAvatarUrl": "https://cdn.anthopia.com/agent/1.png",
+                        "agentCategory": "DATA_CLEANING",
+                        "agentDescription": "完成表格清洗与去重",
+                        "priceAmount": "5000",
+                        "priceUnit": "PER_TASK",
+                        "ratingScore": 4.8,
+                        "orderCount": 128,
+                        "successRate": 0.97,
+                        "isOfficial": true,
+                        "agentStatus": "AVAILABLE",
+                        "agentTags": [
+                          "数据清洗",
+                          "去重"
+                        ]
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "查询智能体详情。返回值字段定义见 docs/数据字典.csv。"
+      }
+    },
+    "/plaza/topics": {
+      "get": {
+        "tags": [
+          "plaza"
+        ],
+        "summary": "查询广场话题流",
+        "description": "按 topicCreatedAt 倒序返回。",
+        "operationId": "listPlazaTopics",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "description": "按标题模糊匹配，不传表示不过滤",
+            "schema": {
+              "type": "string",
+              "maxLength": 60
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/PlazaTopicListData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "list": [
+                          {
+                            "topicId": "40000000001",
+                            "topicTitle": "如何挑选合适的智能体",
+                            "topicContent": "先说结论再看过程",
+                            "authorId": "10000000001",
+                            "authorName": "启元小李",
+                            "coverUrl": null,
+                            "likeCount": 128,
+                            "commentCount": 12,
+                            "followCount": 36,
+                            "isLiked": false,
+                            "isFollowed": false,
+                            "topicCreatedAt": "2026-10-22T11:45:00+08:00"
+                          }
+                        ],
+                        "total": 1,
+                        "hasMore": false
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/EmptyList"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "plaza"
+        ],
+        "summary": "发布话题",
+        "operationId": "createPlazaTopic",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlazaTopicCreateRequest"
+              },
+              "example": {
+                "topicTitle": "如何挑选合适的智能体",
+                "topicContent": "先说结论再看过程",
+                "coverUrl": null
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "RATE_7001",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/PlazaTopic"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "topicId": "40000000001",
+                        "topicTitle": "如何挑选合适的智能体",
+                        "topicContent": "先说结论再看过程",
+                        "authorId": "10000000001",
+                        "authorName": "启元小李",
+                        "coverUrl": null,
+                        "likeCount": 0,
+                        "commentCount": 0,
+                        "followCount": 0,
+                        "isLiked": false,
+                        "isFollowed": false,
+                        "topicCreatedAt": "2026-10-22T11:45:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "发布话题。返回值字段定义见 docs/数据字典.csv。"
+      }
+    },
+    "/plaza/topics/{topicId}": {
+      "get": {
+        "tags": [
+          "plaza"
+        ],
+        "summary": "查询话题详情",
+        "operationId": "getPlazaTopicDetail",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "PLAZA_4004",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/PlazaTopic"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "topicId": "40000000001",
+                        "topicTitle": "如何挑选合适的智能体",
+                        "topicContent": "先说结论再看过程",
+                        "authorId": "10000000001",
+                        "authorName": "启元小李",
+                        "coverUrl": null,
+                        "likeCount": 128,
+                        "commentCount": 12,
+                        "followCount": 36,
+                        "isLiked": true,
+                        "isFollowed": false,
+                        "topicCreatedAt": "2026-10-22T11:45:00+08:00"
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "description": "查询话题详情。返回值字段定义见 docs/数据字典.csv。"
+      }
+    },
+    "/plaza/topics/{topicId}/like": {
+      "post": {
+        "tags": [
+          "plaza"
+        ],
+        "summary": "点赞或取消点赞话题",
+        "description": "幂等接口：isLiked 为目标状态。",
+        "operationId": "likePlazaTopic",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LikeRequest"
+              },
+              "example": {
+                "isLiked": true
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "PLAZA_4004",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/LikeResultData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "isLiked": true
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/plaza/topics/{topicId}/follow": {
+      "post": {
+        "tags": [
+          "plaza"
+        ],
+        "summary": "关注或取消关注话题",
+        "description": "幂等接口：isFollowed 为目标状态。",
+        "operationId": "followPlazaTopic",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowRequest"
+              },
+              "example": {
+                "isFollowed": true
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "OK",
+          "AUTH_401",
+          "PLAZA_4004",
+          "SYS_500"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FollowResultData"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "正常",
+                    "value": {
+                      "code": "OK",
+                      "message": "success",
+                      "data": {
+                        "isFollowed": true
+                      },
+                      "traceId": "3f2a1b"
+                    }
+                  },
+                  "businessError": {
+                    "$ref": "#/components/examples/BusinessError"
+                  },
+                  "boundary": {
+                    "$ref": "#/components/examples/OverlongText"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "traceId"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "业务码，OK 表示成功，其余见 docs/错误码文案表.csv",
+            "example": "OK"
+          },
+          "message": {
+            "type": "string",
+            "description": "面向开发者的说明，不直接展示给用户",
+            "example": "success"
+          },
+          "traceId": {
+            "type": "string",
+            "description": "链路 ID，排查问题用",
+            "example": "3f2a1b"
+          }
+        }
+      },
+      "CaptchaData": {
+        "type": "object",
+        "required": [
+          "captchaTicket",
+          "fileUrl"
+        ],
+        "properties": {
+          "captchaTicket": {
+            "type": "string",
+            "description": "图形验证码票据",
+            "example": "ct_9f2a"
+          },
+          "fileUrl": {
+            "type": "string",
+            "description": "验证码图片地址",
+            "example": "https://cdn.anthopia.com/captcha/ct_9f2a.png"
+          }
+        }
+      },
+      "RegisterCodeRequest": {
+        "type": "object",
+        "required": [
+          "captchaTicket",
+          "captchaCode"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "description": "邮箱地址。与 phone 二选一",
+            "example": "user@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "手机号。与 email 二选一",
+            "example": "+8613800138000"
+          },
+          "captchaTicket": {
+            "type": "string",
+            "description": "图形验证码票据",
+            "example": "ct_9f2a"
+          },
+          "captchaCode": {
+            "type": "string",
+            "description": "用户输入的图形验证码",
+            "example": "8f3a"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "loginAccount",
+          "verifyCode",
+          "loginPassword",
+          "nickname",
+          "language",
+          "isTermsAgreed"
+        ],
+        "properties": {
+          "loginAccount": {
+            "type": "string",
+            "description": "注册邮箱或手机号",
+            "example": "user@example.com"
+          },
+          "verifyCode": {
+            "type": "string",
+            "description": "6 位短信或邮件验证码",
+            "example": "123456"
+          },
+          "loginPassword": {
+            "type": "string",
+            "description": "长度 8 至 20，含大小写字母与数字",
+            "example": "Abc12345"
+          },
+          "nickname": {
+            "type": "string",
+            "description": "昵称，长度 1 至 24",
+            "example": "启元小李"
+          },
+          "language": {
+            "type": "string",
+            "description": "界面语言",
+            "enum": [
+              "zh-CN",
+              "en-US"
+            ]
+          },
+          "isTermsAgreed": {
+            "type": "boolean",
+            "description": "是否已同意服务条款",
+            "example": true
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "loginAccount",
+          "loginPassword"
+        ],
+        "properties": {
+          "loginAccount": {
+            "type": "string",
+            "description": "登录邮箱或手机号",
+            "example": "user@example.com"
+          },
+          "loginPassword": {
+            "type": "string",
+            "description": "登录密码",
+            "example": "Abc12345"
+          },
+          "captchaTicket": {
+            "type": "string",
+            "nullable": true,
+            "description": "图形验证码票据。连续失败 5 次后必填",
+            "example": null
+          },
+          "captchaCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "图形验证码。连续失败 5 次后必填",
+            "example": null
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "required": [
+          "loginAccount",
+          "verifyCode",
+          "loginPassword"
+        ],
+        "properties": {
+          "loginAccount": {
+            "type": "string",
+            "description": "账号",
+            "example": "user@example.com"
+          },
+          "verifyCode": {
+            "type": "string",
+            "description": "6 位验证码",
+            "example": "123456"
+          },
+          "loginPassword": {
+            "type": "string",
+            "description": "新密码，长度 8 至 20",
+            "example": "Abc67890"
+          }
+        }
+      },
+      "LoginData": {
+        "type": "object",
+        "required": [
+          "accessToken",
+          "expiresIn",
+          "userProfile"
+        ],
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "访问令牌",
+            "example": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMDAwMDAwMSJ9"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "令牌有效期，单位秒",
+            "example": 7200
+          },
+          "userProfile": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "ProfileUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "description": "昵称，长度 1 至 24",
+            "example": "启元小李"
+          },
+          "bio": {
+            "type": "string",
+            "nullable": true,
+            "description": "个人简介，长度 0 至 200",
+            "example": "专注短视频文案"
+          },
+          "language": {
+            "type": "string",
+            "description": "界面语言",
+            "enum": [
+              "zh-CN",
+              "en-US"
+            ]
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "头像地址",
+            "example": "https://cdn.anthopia.com/avatar/1.png"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": [
+          "userId",
+          "nickname",
+          "avatarUrl",
+          "language",
+          "levelCode",
+          "credibilityScore",
+          "atTokenBalance",
+          "isKycVerified",
+          "userRegisteredAt"
+        ],
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "用户 ID。string 类型，避免 JS Number 精度丢失",
+            "example": "10000000001"
+          },
+          "nickname": {
+            "type": "string",
+            "description": "昵称",
+            "example": "启元小李"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "头像地址",
+            "example": "https://cdn.anthopia.com/avatar/1.png"
+          },
+          "bio": {
+            "type": "string",
+            "nullable": true,
+            "description": "个人简介。null 表示未填写",
+            "example": null
+          },
+          "language": {
+            "type": "string",
+            "description": "界面语言",
+            "enum": [
+              "zh-CN",
+              "en-US"
+            ]
+          },
+          "levelCode": {
+            "type": "string",
+            "description": "用户等级编码",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5"
+            ]
+          },
+          "credibilityScore": {
+            "type": "integer",
+            "description": "信誉分，取值 0 至 100",
+            "example": 80
+          },
+          "atTokenBalance": {
+            "type": "string",
+            "description": "账户积分余额，单位「分」，string 传输",
+            "example": "57978"
+          },
+          "isKycVerified": {
+            "type": "boolean",
+            "description": "是否已实名",
+            "example": false
+          },
+          "userRegisteredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "注册时间，ISO 8601 + 时区",
+            "example": "2026-10-22T11:45:00+08:00"
+          }
+        }
+      },
+      "LevelRule": {
+        "type": "object",
+        "required": [
+          "ruleLevelCode",
+          "levelName",
+          "minCompletedTaskCount",
+          "minCredibilityScore",
+          "levelBenefits"
+        ],
+        "properties": {
+          "ruleLevelCode": {
+            "type": "string",
+            "description": "规则等级编码",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5"
+            ]
+          },
+          "levelName": {
+            "type": "string",
+            "description": "等级名称",
+            "example": "启元者"
+          },
+          "minCompletedTaskCount": {
+            "type": "integer",
+            "description": "升级所需完成任务数",
+            "example": 1
+          },
+          "minCredibilityScore": {
+            "type": "integer",
+            "description": "升级所需信誉分",
+            "example": 10
+          },
+          "levelBenefits": {
+            "type": "array",
+            "description": "等级权益",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "可发布协作任务"
+            ]
+          }
+        }
+      },
+      "LevelRuleListData": {
+        "type": "object",
+        "required": [
+          "list",
+          "total",
+          "hasMore"
+        ],
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LevelRule"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "总条数"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "是否还有下一页"
+          }
+        }
+      },
+      "Credential": {
+        "type": "object",
+        "required": [
+          "credentialId",
+          "credentialNo",
+          "credentialType",
+          "credentialStatus",
+          "chainStatus",
+          "ownerId",
+          "issuedAt"
+        ],
+        "properties": {
+          "credentialId": {
+            "type": "string",
+            "description": "凭证 ID",
+            "example": "50000000001"
+          },
+          "credentialNo": {
+            "type": "string",
+            "description": "凭证编号",
+            "example": "2026102200001"
+          },
+          "credentialType": {
+            "type": "string",
+            "description": "凭证类型",
+            "enum": [
+              "TASK_COLLABORATION",
+              "TASK_EXECUTION",
+              "SETTLEMENT",
+              "BOUNTY_REFUND",
+              "LEVEL_SBT"
+            ]
+          },
+          "credentialStatus": {
+            "type": "string",
+            "description": "凭证状态",
+            "enum": [
+              "VALID",
+              "PENDING",
+              "REVOKED"
+            ]
+          },
+          "chainStatus": {
+            "type": "string",
+            "description": "链上状态",
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "FAILED"
+            ]
+          },
+          "txHash": {
+            "type": "string",
+            "nullable": true,
+            "description": "交易哈希。未上链时为 null",
+            "example": "0x8f3a2b1c9d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8"
+          },
+          "blockHeight": {
+            "type": "integer",
+            "nullable": true,
+            "description": "区块高度。未上链时为 null",
+            "example": 1287654
+          },
+          "ownerId": {
+            "type": "string",
+            "description": "持有者用户 ID",
+            "example": "10000000001"
+          },
+          "relatedTaskId": {
+            "type": "string",
+            "nullable": true,
+            "description": "关联任务 ID。等级 SBT 凭证为 null",
+            "example": "20000000001"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "签发时间，ISO 8601 + 时区",
+            "example": "2026-10-22T11:45:00+08:00"
+          }
+        }
+      },
+      "CredentialListData": {
+        "type": "object",
+        "required": [
+          "list",
+          "total",
+          "hasMore"
+        ],
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Credential"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "总条数"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "是否还有下一页"
+          }
+        }
+      },
+      "WalletBalanceData": {
+        "type": "object",
+        "required": [
+          "atTokenBalance"
+        ],
+        "properties": {
+          "atTokenBalance": {
+            "type": "string",
+            "description": "账户积分余额，单位「分」，string 传输",
+            "example": "57978"
+          }
+        }
+      },
+      "WalletTransaction": {
+        "type": "object",
+        "required": [
+          "txId",
+          "txNo",
+          "txType",
+          "txAmount",
+          "txCurrency",
+          "direction",
+          "txStatus",
+          "balanceAfter",
+          "occurredAt"
+        ],
+        "properties": {
+          "txId": {
+            "type": "string",
+            "description": "流水 ID",
+            "example": "60000000001"
+          },
+          "txNo": {
+            "type": "string",
+            "description": "流水编号",
+            "example": "2026102200001"
+          },
+          "txType": {
+            "type": "string",
+            "description": "流水类型",
+            "enum": [
+              "SYSTEM_INCENTIVE",
+              "TASK_PAYMENT",
+              "TASK_REFUND",
+              "PURCHASE"
+            ]
+          },
+          "txAmount": {
+            "type": "string",
+            "description": "流水金额，单位「分」，string 传输",
+            "example": "3000"
+          },
+          "txCurrency": {
+            "type": "string",
+            "description": "流水币种",
+            "enum": [
+              "ATOP",
+              "CNY"
+            ]
+          },
+          "direction": {
+            "type": "string",
+            "description": "资金方向",
+            "enum": [
+              "IN",
+              "OUT"
+            ]
+          },
+          "txStatus": {
+            "type": "string",
+            "description": "流水状态",
+            "enum": [
+              "PENDING",
+              "COMPLETED",
+              "FAILED"
+            ]
+          },
+          "balanceAfter": {
+            "type": "string",
+            "description": "变动后余额，单位「分」，string 传输",
+            "example": "57978"
+          },
+          "txRelatedTaskId": {
+            "type": "string",
+            "nullable": true,
+            "description": "关联任务 ID。系统激励为 null",
+            "example": null
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "发生时间，ISO 8601 + 时区",
+            "example": "2026-10-22T11:45:00+08:00"
+          }
+        }
+      },
+      "WalletTransactionListData": {
+        "type": "object",
+        "required": [
+          "list",
+          "total",
+          "hasMore"
+        ],
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletTransaction"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "总条数"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "是否还有下一页"
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "required": [
+          "notificationId",
+          "notificationType",
+          "notificationTitle",
+          "notificationContent",
+          "isRead",
+          "notifiedAt"
+        ],
+        "properties": {
+          "notificationId": {
+            "type": "string",
+            "description": "通知 ID",
+            "example": "70000000001"
+          },
+          "notificationType": {
+            "type": "string",
+            "description": "通知类型",
+            "enum": [
+              "TASK",
+              "CREDENTIAL",
+              "WALLET",
+              "SYSTEM"
+            ]
+          },
+          "notificationTitle": {
+            "type": "string",
+            "description": "通知标题",
+            "example": "任务待验收"
+          },
+          "notificationContent": {
+            "type": "string",
+            "description": "通知正文",
+            "example": "你发布的任务已交付 请及时验收"
+          },
+          "isRead": {
+            "type": "boolean",
+            "description": "是否已读",
+            "example": false
+          },
+          "notifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "通知时间，ISO 8601 + 时区",
+            "example": "2026-10-22T11:45:00+08:00"
+          }
+        }
+      },
+      "NotificationListData": {
+        "type": "object",
+        "required": [
+          "list",
+          "total",
+          "hasMore"
+        ],
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "总条数"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "是否还有下一页"
+          }
+        }
+      },
+      "File": {
+        "type": "object",
+        "required": [
+          "fileId",
+          "fileName",
+          "fileUrl",
+          "fileSize",
+          "fileMimeType"
+        ],
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "description": "文件 ID",
+            "example": "80000000001"
+          },
+          "fileName": {
+            "type": "string",
+            "description": "文件名称",
+            "example": "交付文案.docx"
+          },
+          "fileUrl": {
+            "type": "string",
+            "description": "文件地址",
+            "example": "https://cdn.anthopia.com/f/1.docx"
+          },
+          "fileSize": {
+            "type": "integer",
+            "format": "int64",
+            "description": "文件大小，单位字节",
+            "example": 20480
+          },
+          "fileMimeType": {
+            "type": "string",
+            "description": "文件 MIME 类型",
+            "example": "application/pdf"
+          }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "required": [
+          "taskId",
+          "taskNo",
+          "title",
+          "description",
+          "category",
+          "status",
+          "bountyAmount",
+          "currency",
+          "publisherId",
+          "acceptanceCriteria",
+          "deadlineAt",
+          "deliverableCount",
+          "taskCreatedAt",
+          "taskUpdatedAt"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "description": "任务 ID",
+            "example": "20000000001"
+          },
+          "taskNo": {
+            "type": "string",
+            "description": "任务编号",
+            "example": "2026102200001"
+          },
+          "title": {
+            "type": "string",
+            "description": "任务标题",
+            "example": "短视频口播文案生成"
+          },
+          "description": {
+            "type": "string",
+            "description": "任务描述",
+            "example": "为新品生成30条口播文案"
+          },
+          "category": {
+            "type": "string",
+            "description": "任务分类",
+            "enum": [
+              "MARKETING",
+              "HR",
+              "RESEARCH",
+              "DATA_CLEANING",
+              "GENERAL"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "description": "任务状态",
+            "enum": [
+              "Draft",
+              "NeedsSign",
+              "Publishing",
+              "Matching",
+              "AgreementPending",
+              "AgentPending",
+              "InProgress",
+              "NeedsMaterials",
+              "NeedsAccess",
+              "NeedsReSign",
+              "NeedsAcceptance",
+              "Settling",
+              "SettleFailed",
+              "Paused",
+              "InDispute",
+              "Completed",
+              "Cancelled",
+              "Failed"
+            ]
+          },
+          "bountyAmount": {
+            "type": "string",
+            "description": "赏金金额，单位「分」，string 传输",
+            "example": "19900"
+          },
+          "currency": {
+            "type": "string",
+            "description": "结算币种",
+            "enum": [
+              "ATOP",
+              "CNY"
+            ]
+          },
+          "publisherId": {
+            "type": "string",
+            "description": "发布者用户 ID",
+            "example": "10000000001"
+          },
+          "assignedAgentId": {
+            "type": "string",
+            "nullable": true,
+            "description": "执行智能体 ID。未指派时为 null",
+            "example": null
+          },
+          "acceptanceCriteria": {
+            "type": "string",
+            "description": "验收标准",
+            "example": "文案须通过平台敏感词校验"
+          },
+          "bidDeadlineAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "接单截止时间，ISO 8601 + 时区。无接单环节时为 null",
+            "example": "2026-10-25T18:00:00+08:00"
+          },
+          "deadlineAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "任务截止时间，ISO 8601 + 时区",
+            "example": "2026-10-30T18:00:00+08:00"
+          },
+          "deliverableCount": {
+            "type": "integer",
+            "description": "交付件数量",
+            "example": 1
+          },
+          "deliverables": {
+            "type": "array",
+            "nullable": true,
+            "description": "交付件列表。未交付时为 null",
+            "items": {
+              "$ref": "#/components/schemas/File"
+            }
+          },
+          "deliveryNote": {
+            "type": "string",
+            "nullable": true,
+            "description": "交付说明。未交付时为 null",
+            "example": "共30条文案，含标题与口播稿"
+          },
+          "acceptanceNote": {
+            "type": "string",
+            "nullable": true,
+            "description": "验收意见。未验收时为 null",
+            "example": "符合验收标准"
+          },
+          "cancelReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "取消原因。未取消时为 null",
+            "example": null
+          },
+          "disputeReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "争议原因。无争议时为 null",
+            "example": null
+          },
+          "taskCreatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "任务创建时间，ISO 8601 + 时区",
+            "example": "2026-10-22T11:45:00+08:00"
+          },
+          "taskUpdatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "任务更新时间，ISO 8601 + 时区",
+            "example": "2026-10-22T12:00:00+08:00"
+          }
+        }
+      },
+      "TaskListData": {
+        "type": "object",
+        "required": [
+          "list",
+          "total",
+          "hasMore"
+        ],
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "总条数"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "是否还有下一页"
+          }
+        }
+      },
+      "TaskUpsertRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "category",
+          "bountyAmount",
+          "currency",
+          "acceptanceCriteria",
+          "deadlineAt"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "任务标题，长度 1 至 60",
+            "example": "短视频口播文案生成"
+          },
+          "description": {
+            "type": "string",
+            "description": "任务描述，长度 1 至 2000",
+            "example": "为新品生成30条口播文案"
+          },
+          "category": {
+            "type": "string",
+            "description": "任务分类",
+            "enum": [
+              "MARKETING",
+              "HR",
+              "RESEARCH",
+              "DATA_CLEANING",
+              "GENERAL"
+            ]
+          },
+          "bountyAmount": {
+            "type": "string",
+            "description": "赏金金额，单位「分」",
+            "example": "19900"
+          },
+          "currency": {
+            "type": "string",
+            "description": "结算币种",
+            "enum": [
+              "ATOP",
+              "CNY"
+            ]
+          },
+          "acceptanceCriteria": {
+            "type": "string",
+            "description": "验收标准，长度 1 至 1000",
+            "example": "文案须通过平台敏感词校验"
+          },
+          "bidDeadlineAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "接单截止时间，ISO 8601 + 时区",
+            "example": "2026-10-25T18:00:00+08:00"
+          },
+          "deadlineAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "任务截止时间，ISO 8601 + 时区",
+            "example": "2026-10-30T18:00:00+08:00"
+          }
+        }
+      },
+      "AssignAgentRequest": {
+        "type": "object",
+        "required": [
+          "agentId"
+        ],
+        "properties": {
+          "agentId": {
+            "type": "string",
+            "description": "要指派的智能体 ID",
+            "example": "30000000001"
+          }
+        }
+      },
+      "DeliveryRequest": {
+        "type": "object",
+        "required": [
+          "deliveryNote",
+          "deliverables"
+        ],
+        "properties": {
+          "deliveryNote": {
+            "type": "string",
+            "description": "交付说明，长度 0 至 1000",
+            "example": "共30条文案，含标题与口播稿"
+          },
+          "deliverables": {
+            "type": "array",
+            "description": "交付件列表",
+            "items": {
+              "$ref": "#/components/schemas/File"
+            }
+          }
+        }
+      },
+      "AcceptanceRequest": {
+        "type": "object",
+        "required": [
+          "isAccepted"
+        ],
+        "properties": {
+          "isAccepted": {
+            "type": "boolean",
+            "description": "是否验收通过",
+            "example": true
+          },
+          "acceptanceNote": {
+            "type": "string",
+            "nullable": true,
+            "description": "验收意见，长度 0 至 500",
+            "example": "符合验收标准"
+          }
+        }
+      },
+      "CancelTaskRequest": {
+        "type": "object",
+        "properties": {
+          "cancelReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "取消原因，长度 0 至 200",
+            "example": "需求变更"
+          }
+        }
+      },
+      "DisputeRequest": {
+        "type": "object",
+        "required": [
+          "disputeReason"
+        ],
+        "properties": {
+          "disputeReason": {
+            "type": "string",
+            "description": "争议原因，长度 1 至 500",
+            "example": "交付件缺少标题字段"
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "required": [
+          "messageId",
+          "content",
+          "senderId",
+          "senderType",
+          "sentAt"
+        ],
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "消息 ID",
+            "example": "90000000001"
+          },
+          "content": {
+            "type": "string",
+            "description": "消息内容，长度 1 至 2000",
+            "example": "已开始执行"
+          },
+          "senderId": {
+            "type": "string",
+            "description": "发送方 ID。系统消息为 0",
+            "example": "10000000001"
+          },
+          "senderType": {
+            "type": "string",
+            "description": "发送方类型",
+            "enum": [
+              "USER",
+              "AGENT",
+              "SYSTEM"
+            ]
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "消息时间，ISO 8601 + 时区",
+            "example": "2026-10-22T11:45:00+08:00"
+          }
+        }
+      },
+      "MessageListData": {
+        "type": "object",
+        "required": [
+          "list",
+          "total",
+          "hasMore"
+        ],
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "总条数"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "是否还有下一页"
+          }
+        }
+      },
+      "SendMessageRequest": {
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "消息内容，长度 1 至 2000",
+            "example": "请在周五前交付"
+          }
+        }
+      },
+      "Agent": {
+        "type": "object",
+        "required": [
+          "agentId",
+          "agentName",
+          "agentAvatarUrl",
+          "agentCategory",
+          "agentDescription",
+          "priceAmount",
+          "priceUnit",
+          "ratingScore",
+          "orderCount",
+          "successRate",
+          "isOfficial",
+          "agentStatus",
+          "agentTags"
+        ],
+        "properties": {
+          "agentId": {
+            "type": "string",
+            "description": "智能体 ID",
+            "example": "30000000001"
+          },
+          "agentName": {
+            "type": "string",
+            "description": "智能体名称",
+            "example": "数据清洗助手"
+          },
+          "agentAvatarUrl": {
+            "type": "string",
+            "description": "智能体头像",
+            "example": "https://cdn.anthopia.com/agent/1.png"
+          },
+          "agentCategory": {
+            "type": "string",
+            "description": "智能体分类",
+            "enum": [
+              "MARKETING",
+              "HR",
+              "RESEARCH",
+              "DATA_CLEANING",
+              "GENERAL"
+            ]
+          },
+          "agentDescription": {
+            "type": "string",
+            "description": "智能体简介",
+            "example": "完成表格清洗与去重"
+          },
+          "priceAmount": {
+            "type": "string",
+            "description": "服务单价，单位「分」，string 传输",
+            "example": "5000"
+          },
+          "priceUnit": {
+            "type": "string",
+            "description": "计价单位",
+            "enum": [
+              "PER_TASK",
+              "PER_HOUR"
+            ]
+          },
+          "ratingScore": {
+            "type": "number",
+            "description": "评分，取值 0 至 5",
+            "example": 4.8
+          },
+          "orderCount": {
+            "type": "integer",
+            "description": "接单数",
+            "example": 128
+          },
+          "successRate": {
+            "type": "number",
+            "description": "交付成功率，取值 0 至 1",
+            "example": 0.97
+          },
+          "isOfficial": {
+            "type": "boolean",
+            "description": "是否官方",
+            "example": true
+          },
+          "agentStatus": {
+            "type": "string",
+            "description": "智能体状态",
+            "enum": [
+              "AVAILABLE",
+              "BUSY",
+              "OFFLINE"
+            ]
+          },
+          "agentTags": {
+            "type": "array",
+            "description": "能力标签",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "数据清洗",
+              "去重"
+            ]
+          }
+        }
+      },
+      "AgentListData": {
+        "type": "object",
+        "required": [
+          "list",
+          "total",
+          "hasMore"
+        ],
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Agent"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "总条数"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "是否还有下一页"
+          }
+        }
+      },
+      "PlazaTopic": {
+        "type": "object",
+        "required": [
+          "topicId",
+          "topicTitle",
+          "topicContent",
+          "authorId",
+          "authorName",
+          "likeCount",
+          "commentCount",
+          "followCount",
+          "isLiked",
+          "isFollowed",
+          "topicCreatedAt"
+        ],
+        "properties": {
+          "topicId": {
+            "type": "string",
+            "description": "话题 ID",
+            "example": "40000000001"
+          },
+          "topicTitle": {
+            "type": "string",
+            "description": "话题标题",
+            "example": "如何挑选合适的智能体"
+          },
+          "topicContent": {
+            "type": "string",
+            "description": "话题正文",
+            "example": "先说结论再看过程"
+          },
+          "authorId": {
+            "type": "string",
+            "description": "作者用户 ID",
+            "example": "10000000001"
+          },
+          "authorName": {
+            "type": "string",
+            "description": "作者昵称",
+            "example": "启元小李"
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "封面地址。无封面时为 null",
+            "example": null
+          },
+          "likeCount": {
+            "type": "integer",
+            "description": "点赞数",
+            "example": 128
+          },
+          "commentCount": {
+            "type": "integer",
+            "description": "评论数",
+            "example": 12
+          },
+          "followCount": {
+            "type": "integer",
+            "description": "关注数",
+            "example": 36
+          },
+          "isLiked": {
+            "type": "boolean",
+            "description": "当前用户是否已点赞",
+            "example": false
+          },
+          "isFollowed": {
+            "type": "boolean",
+            "description": "当前用户是否已关注",
+            "example": false
+          },
+          "topicCreatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "话题创建时间，ISO 8601 + 时区",
+            "example": "2026-10-22T11:45:00+08:00"
+          }
+        }
+      },
+      "PlazaTopicListData": {
+        "type": "object",
+        "required": [
+          "list",
+          "total",
+          "hasMore"
+        ],
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlazaTopic"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "总条数"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "是否还有下一页"
+          }
+        }
+      },
+      "PlazaTopicCreateRequest": {
+        "type": "object",
+        "required": [
+          "topicTitle",
+          "topicContent"
+        ],
+        "properties": {
+          "topicTitle": {
+            "type": "string",
+            "description": "话题标题，长度 1 至 60",
+            "example": "如何挑选合适的智能体"
+          },
+          "topicContent": {
+            "type": "string",
+            "description": "话题正文，长度 1 至 2000",
+            "example": "先说结论再看过程"
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "封面地址",
+            "example": null
+          }
+        }
+      },
+      "LikeRequest": {
+        "type": "object",
+        "required": [
+          "isLiked"
+        ],
+        "properties": {
+          "isLiked": {
+            "type": "boolean",
+            "description": "目标状态，true 为点赞",
+            "example": true
+          }
+        }
+      },
+      "LikeResultData": {
+        "type": "object",
+        "required": [
+          "isLiked"
+        ],
+        "properties": {
+          "isLiked": {
+            "type": "boolean",
+            "description": "操作后的点赞状态",
+            "example": true
+          }
+        }
+      },
+      "FollowRequest": {
+        "type": "object",
+        "required": [
+          "isFollowed"
+        ],
+        "properties": {
+          "isFollowed": {
+            "type": "boolean",
+            "description": "目标状态，true 为关注",
+            "example": true
+          }
+        }
+      },
+      "FollowResultData": {
+        "type": "object",
+        "required": [
+          "isFollowed"
+        ],
+        "properties": {
+          "isFollowed": {
+            "type": "boolean",
+            "description": "操作后的关注状态",
+            "example": true
+          }
+        }
+      }
+    },
+    "examples": {
+      "BusinessError": {
+        "summary": "业务失败（HTTP 200 且 code 非 OK）",
+        "value": {
+          "code": "TASK_2002",
+          "message": "任务状态不允许",
+          "data": null,
+          "traceId": "3f2a1b"
+        }
+      },
+      "EmptyList": {
+        "summary": "边界：空列表（首次为空）",
+        "value": {
+          "code": "OK",
+          "message": "success",
+          "data": {
+            "list": [],
+            "total": 0,
+            "hasMore": false
+          },
+          "traceId": "3f2a1b"
+        }
+      },
+      "OverlongText": {
+        "summary": "边界：超长文本与计数溢出",
+        "value": {
+          "code": "OK",
+          "message": "success",
+          "data": {
+            "notificationId": "70000000002",
+            "notificationType": "SYSTEM",
+            "notificationTitle": "平台规则更新通知",
+            "notificationContent": "这是一条用于验证超长文本折行与省略效果的占位内容，长度接近字段上限，用于检查列表项在极端数据下的截断行为是否符合设计稿的折行 3 行后省略约定。",
+            "isRead": false,
+            "notifiedAt": "2026-10-22T11:45:00+08:00"
+          },
+          "traceId": "3f2a1b"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求参数校验失败（HTTP 400）。响应体仍为统一包体，`code` 字段给出具体业务码。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiResponse"
+            },
+            "example": {
+              "code": "<该接口 x-error-codes 中 HTTP 400 的错误码>",
+              "message": "请求参数校验失败",
+              "data": null,
+              "traceId": "3f2a1b"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "登录态失效（HTTP 401）。响应体仍为统一包体，`code` 字段给出具体业务码。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiResponse"
+            },
+            "example": {
+              "code": "<该接口 x-error-codes 中 HTTP 401 的错误码>",
+              "message": "登录态失效",
+              "data": null,
+              "traceId": "3f2a1b"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "无操作权限（HTTP 403）。响应体仍为统一包体，`code` 字段给出具体业务码。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiResponse"
+            },
+            "example": {
+              "code": "<该接口 x-error-codes 中 HTTP 403 的错误码>",
+              "message": "无操作权限",
+              "data": null,
+              "traceId": "3f2a1b"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在（HTTP 404）。响应体仍为统一包体，`code` 字段给出具体业务码。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiResponse"
+            },
+            "example": {
+              "code": "<该接口 x-error-codes 中 HTTP 404 的错误码>",
+              "message": "资源不存在",
+              "data": null,
+              "traceId": "3f2a1b"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "资源状态冲突（HTTP 409）。响应体仍为统一包体，`code` 字段给出具体业务码。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiResponse"
+            },
+            "example": {
+              "code": "<该接口 x-error-codes 中 HTTP 409 的错误码>",
+              "message": "资源状态冲突",
+              "data": null,
+              "traceId": "3f2a1b"
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "请求体过大（HTTP 413）。响应体仍为统一包体，`code` 字段给出具体业务码。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiResponse"
+            },
+            "example": {
+              "code": "<该接口 x-error-codes 中 HTTP 413 的错误码>",
+              "message": "请求体过大",
+              "data": null,
+              "traceId": "3f2a1b"
+            }
+          }
+        }
+      },
+      "UnsupportedMediaType": {
+        "description": "媒体类型不支持（HTTP 415）。响应体仍为统一包体，`code` 字段给出具体业务码。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiResponse"
+            },
+            "example": {
+              "code": "<该接口 x-error-codes 中 HTTP 415 的错误码>",
+              "message": "媒体类型不支持",
+              "data": null,
+              "traceId": "3f2a1b"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "请求过于频繁（HTTP 429）。响应体仍为统一包体，`code` 字段给出具体业务码。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiResponse"
+            },
+            "example": {
+              "code": "<该接口 x-error-codes 中 HTTP 429 的错误码>",
+              "message": "请求过于频繁",
+              "data": null,
+              "traceId": "3f2a1b"
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "服务端异常（HTTP 500）。响应体仍为统一包体，`code` 字段给出具体业务码。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiResponse"
+            },
+            "example": {
+              "code": "<该接口 x-error-codes 中 HTTP 500 的错误码>",
+              "message": "服务端异常",
+              "data": null,
+              "traceId": "3f2a1b"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "autodevelopment-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "AutoDevelopment 平台后端 —— 严格实现 platform/design/接口契约.md 的 71 个接口",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.ts",
+    "start": "node src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "reset": "rm -f data/app.db",
+    "test:b2": "node --test test/b2-regression.mjs",
+    "test:b3": "node --test test/b3-regression.mjs",
+    "test:b4": "node --test test/b4-regression.mjs"
+  },
+  "dependencies": {
+    "fastify": "^5.2.1",
+    "@fastify/cors": "^10.0.2",
+    "@fastify/multipart": "^9.0.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.10.2"
+  }
+}
