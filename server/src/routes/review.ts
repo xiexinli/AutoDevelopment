@@ -16,14 +16,16 @@ import { loadRevision, revisionText, digest, writeMeta, assertReviewCurrent, mat
 import { assertIfMatch } from "../core/idempotency.ts";
 import { all, get, json, nowIso, run, tx, uid } from "../db/index.ts";
 import { createTask, startTask } from "../core/tasks.ts";
-import { createLlmAdapter, type Level, type LlmAdapter, type ReviewLevel } from "../adapters/llm.ts";
+import { createLlmAdapter, type Level, type LlmAdapter, type ReviewLevel, type ReviewDraft } from "../adapters/llm.ts";
 import { assertEgressEnabled } from "./ai-egress.ts";
 import { modelFor } from "../core/llm-models.ts";
 import { traceLlm } from "../core/ai-trace.ts";
+import { constraintsNoteFor } from "./constraints.ts";
 
 const GROUP_TITLES: Record<string, string> = {
   A: "需求完整性", B: "状态穷举与迁移", C: "数据与字段", D: "页面级元素与文案",
   E: "平台接口契约", F: "角色与权限", G: "生成与验证", H: "角落收敛", I: "假设集中确认",
+  J: "工程一致性（仅严格档）",
   Q: "可实现性与一致性（简审）",
 };
 
@@ -39,6 +41,7 @@ const DEFAULT_ITEM_TITLES: Record<string, string> = {
   D1: "页面级元素构成", D2: "逐字文案字样",
   E1: "接口契约", F1: "角色与权限矩阵", G1: "生成与验证",
   H1: "角落组合收敛", I1: "假设集中确认",
+  J1: "与既有工程约束一致", J2: "冲突项已显式列为待澄清",
   Q1: "可实现性", Q2: "内部一致性 / 冲突",
 };
 
@@ -107,6 +110,9 @@ const FULL_STANDARD_EXTRA: { code: string; group: string; title: string; level: 
   { code: "I2", group: "I", title: "完善后 PRD 中无「无来源标签」的实质段落", level: "blocking" },
   { code: "I3", group: "I", title: "所有 [平台补充] 与 [assumption] 都进了假设确认清单", level: "blocking" },
   { code: "I4", group: "I", title: "假设清单无空白未选项", level: "blocking" },
+  // 工程一致性（F18 / D4=A / D6=C）：**仅严格档**运行；仅当项目接入了既有工程时才判定。
+  { code: "J1", group: "J", title: "产出与既有工程约束一致（依赖 / 包名 / minSdk / 命名）", level: "major" },
+  { code: "J2", group: "J", title: "与既有工程冲突处已显式列为待澄清（未擅自改写工程）", level: "major" },
 ];
 
 /** 本次等级下**应评**的检查项（简审=专项 2 项；标准=门禁标准；严格=门禁标准 + 完整表细则） */
@@ -128,6 +134,18 @@ export function isBlocking(level: ReviewLevel, itemLevel: Level): boolean {
   if (level === "standard") return itemLevel === "blocking";         // 标准：表内 blocking
   return itemLevel === "blocking" || itemLevel === "major";          // 严格：blocking + major
 }
+
+/**
+ * 审核任务的最大尝试次数（2026-10-28 真机实测：6 次真实审核中 1 次返回结构不合法）。
+ * 只在**上游结构问题**（`UPSTREAM_UNAVAILABLE`）时重跑，且**至多 1 次额外调用**；
+ * 超时（`UPSTREAM_TIMEOUT`，单次调用内已有退避重试）与取消**不在此处重跑**。
+ */
+export const REVIEW_MAX_ATTEMPTS = 2;
+
+/** 重跑时给模型的格式强化提示 */
+const REVIEW_RETRY_HINT =
+  "上一次返回的 JSON 不合法或结构不完整。请严格只输出符合给定结构的 JSON，"
+  + "`items` 必须逐条覆盖给定的检查项清单（条数一致、item_code 逐字相同），不要输出任何解释文字。";
 
 /**
  * 把 `text` 作为 `## {title}` 小节写进 `md`：
@@ -299,21 +317,44 @@ export function registerReviewRoutes(app: FastifyInstance, adapter?: LlmAdapter)
       const task = createTask({ projectId: rev.project_id, type: "review" });
       startTask(task.task_id, async ({ progress, commit }) => {
         progress(20);
-        const draft = await traceLlm(rev.project_id, task.task_id, "调用大模型审核 PRD", usedModel,
-          () => llm.review({markdown, level, extended, standardItems:standardItems.map(i=>({code:i.code,level:i.level,title:i.title})),model:usedModel}),
+        // 结构校验（抽成函数，供「结构非法 → 自动重跑一次」复用）
+        const validateDraft = (draft: ReviewDraft | null): ReviewDraft => {
+          if (!draft || !Array.isArray(draft.items) || !Array.isArray(draft.questions) || !Array.isArray(draft.assumptions) || draft.items.length !== standardItems.length)
+            throw new ApiError("UPSTREAM_UNAVAILABLE", "审核返回结构不完整，未应用结果。");
+          const expected = new Map(standardItems.map(i=>[i.code,i])); const seen = new Set<string>();
+          for (const it of draft.items) {
+            const standard = expected.get(it.item_code);
+            if (!standard || seen.has(it.item_code) || !["pass","fail","na"].includes(it.verdict) || typeof it.evidence_ref !== "string" || !it.evidence_ref.trim() || typeof it.suggestion !== "string")
+              throw new ApiError("UPSTREAM_UNAVAILABLE", "审核条目校验失败，未应用结果。");
+            seen.add(it.item_code); it.level=standard.level; it.group=standard.group;
+          }
+          for (const q of draft.questions) if (!q.question_code || !["blocking","major","suggestion"].includes(q.level) || typeof q.title!=="string" || !Array.isArray(q.options) || typeof q.impact!=="string" || typeof q.fallback!=="string") throw new ApiError("UPSTREAM_UNAVAILABLE", "待澄清结构无效。");
+          for (const a of draft.assumptions) if (!a.assumption_code || typeof a.content!=="string" || typeof a.source_tag!=="string") throw new ApiError("UPSTREAM_UNAVAILABLE", "假设结构无效。");
+          return draft;
+        };
+        const callOnce = (retryHint?: string) => traceLlm(rev.project_id, task.task_id,
+          retryHint ? "调用大模型审核 PRD · 自动重试" : "调用大模型审核 PRD", usedModel,
+          // `retryHint` 只在重跑时带上（首次调用的入参形状保持不变）
+          () => llm.review({markdown, level, extended, ...(retryHint ? { retryHint } : {}), standardItems:standardItems.map(i=>({code:i.code,level:i.level,title:i.title})),model:usedModel,constraints:constraintsNoteFor(rev.project_id) ?? undefined}),
           (d) => `条目 ${Array.isArray(d?.items) ? d.items.length : 0} 条 · 待澄清 ${Array.isArray(d?.questions) ? d.questions.length : 0} 条`);
-        progress(70);
-        if (!draft || !Array.isArray(draft.items) || !Array.isArray(draft.questions) || !Array.isArray(draft.assumptions) || draft.items.length !== standardItems.length)
-          throw new ApiError("UPSTREAM_UNAVAILABLE", "审核返回结构不完整，未应用结果。");
-        const expected = new Map(standardItems.map(i=>[i.code,i])); const seen = new Set<string>();
-        for (const it of draft.items) {
-          const standard = expected.get(it.item_code);
-          if (!standard || seen.has(it.item_code) || !["pass","fail","na"].includes(it.verdict) || typeof it.evidence_ref !== "string" || !it.evidence_ref.trim() || typeof it.suggestion !== "string")
-            throw new ApiError("UPSTREAM_UNAVAILABLE", "审核条目校验失败，未应用结果。");
-          seen.add(it.item_code); it.level=standard.level; it.group=standard.group;
+
+        // ---- 自动重跑（2026-10-28 真机实测：真实模型偶发吐回不合法结构）----
+        // 只在**上游结构问题**时重跑；`check()` 在 progress/callOnce 内会拦截已取消的任务。
+        let draft: ReviewDraft | null = null;
+        for (let attempt = 1; ; attempt++) {
+          try {
+            draft = validateDraft(await callOnce(attempt > 1 ? REVIEW_RETRY_HINT : undefined));
+            break;
+          } catch (e) {
+            const retryable = e instanceof ApiError && e.code === "UPSTREAM_UNAVAILABLE";
+            if (!retryable || attempt >= REVIEW_MAX_ATTEMPTS) throw e;
+            // 可观测：真实模型的结构性失败不常见但确实会发生，日志要留痕（不含 PRD 正文）
+            console.warn(`[review] 上游结构不合法，自动重跑一次（project=${rev.project_id} task=${task.task_id} 第 ${attempt} 次）：${e.message}`);
+            progress(40);   // 也顺带 `check()` 一次：任务被取消/超时就不再重跑
+          }
         }
-        for (const q of draft.questions) if (!q.question_code || !["blocking","major","suggestion"].includes(q.level) || typeof q.title!=="string" || !Array.isArray(q.options) || typeof q.impact!=="string" || typeof q.fallback!=="string") throw new ApiError("UPSTREAM_UNAVAILABLE", "待澄清结构无效。");
-        for (const a of draft.assumptions) if (!a.assumption_code || typeof a.content!=="string" || typeof a.source_tag!=="string") throw new ApiError("UPSTREAM_UNAVAILABLE", "假设结构无效。");
+        if (!draft) throw new ApiError("UPSTREAM_UNAVAILABLE", "审核未产出可用结论，未应用结果。");
+        progress(70);
         return commit(() => {
           assertReviewCurrent(loadReview(user,reviewId));
           // 计数：按**条目自身等级**统计（与旧口径一致）+ `na` 数；阻断判定另用本次等级的**门槛**

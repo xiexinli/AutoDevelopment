@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  App as AntApp, Button, Card, Empty, Form, Input, Modal, Pagination, Popconfirm,
+  App as AntApp, Button, Card, Checkbox, Empty, Form, Input, Modal, Pagination, Popconfirm,
   Select, Skeleton, Space, Tag, Typography,
 } from "antd";
-import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
-import { createProject, deleteProject, listProjects, patchProject, type ProjectListItem } from "@/store/session";
+import { ImportOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { createProject, deleteProject, engineeringIntake, listProjects, patchProject, type ProjectListItem } from "@/store/session";
 import { ApiError } from "@/api/client";
 import { stageMeta } from "@/domain/stage";
 import { track } from "@/track";
@@ -55,6 +55,66 @@ export default function ProjectListPage() {
   const [renameVal, setRenameVal] = useState("");
   const [form] = Form.useForm<{ name: string; description?: string }>();
   const timerRef = useRef<number | null>(null);
+
+  // ---- 接入已有工程（F17）----
+  const [intakeOpen, setIntakeOpen] = useState(false);
+  const [intakeRoot, setIntakeRoot] = useState("");
+  const [intakeName, setIntakeName] = useState("");
+  const [intakeConsent, setIntakeConsent] = useState(false);
+  const [intakeBusy, setIntakeBusy] = useState(false);
+  const [intakePid, setIntakePid] = useState<string | null>(null);
+
+
+  /** 服务端返回的失败原因 → `埋点-Spec §3.2` 的 `block_reason` 枚举 */
+  function intakeBlockReason(msg: string): "no_root" | "no_consent" | "not_android" | "other" {
+    if (msg.includes("没找到 Android 工程")) return "not_android";
+    if (msg.includes("授权")) return "no_consent";
+    if (msg.includes("根目录")) return "no_root";
+    return "other";
+  }
+
+  /** 接入已有工程：先建项目，再登记路径并只读扫描（失败可重试，不重复建项目） */
+  async function doIntake() {
+    const root = intakeRoot.trim();
+    const name = (intakeName.trim() || root.split("/").filter(Boolean).pop() || "").slice(0, 50);
+    // 前置拦截两个**互斥**分支：均不发请求、均保留已填内容，各报一次 `EVT_intake_failed`
+    if (!root) {
+      message.error("请填写本机 Android 工程的根目录（绝对路径）。");
+      track("EVT_intake_failed", { error_code: "INVALID_ARGUMENT", block_reason: "no_root" }, { dedupWindowMs: 1000, immediate: true });
+      return;
+    }
+    if (!intakeConsent) {
+      message.error("请先确认授权平台只读扫描这个目录。");
+      track("EVT_intake_failed", { error_code: "INVALID_ARGUMENT", block_reason: "no_consent" }, { dedupWindowMs: 1000, immediate: true });
+      return;
+    }
+    setIntakeBusy(true);
+    const startedAt = Date.now();
+    try {
+      let pid = intakePid;
+      if (!pid) { const c = await createProject(name || "接入的工程", `接入自 ${root}`); pid = c.project_id; setIntakePid(pid); }
+      const r = await engineeringIntake(pid, root);
+      message.success(`已接入工程${r.project_name ? `：${r.project_name}` : ""}，提取约束 ${r.counts.items} 项。`);
+      // 成功：Toast 渲染之后、列表刷新之前（**只报工程名长度，不上报工程名/路径文本**）
+      track("EVT_intake_done", {
+        project_id: pid,
+        project_name_chars: [...(r.project_name ?? "")].length,
+        counts_items: r.counts.items, counts_modules: r.counts.modules,
+        counts_dependencies: r.counts.dependencies, warnings_count: r.warnings.length,
+        duration_ms: Date.now() - startedAt,
+      }, { dedupKey: `intake_done:${pid}`, immediate: true });
+      setIntakeOpen(false); setIntakeRoot(""); setIntakeName(""); setIntakeConsent(false); setIntakePid(null);
+      setPage(1); void load();
+    } catch (e) {
+      const err = e as ApiError;
+      const msg = err.message || "接入没成功。";
+      message.error(msg);
+      track("EVT_intake_failed", { error_code: err.code || "INTERNAL", block_reason: intakeBlockReason(msg) },
+        { dedupWindowMs: 1000, immediate: true });
+    } finally {
+      setIntakeBusy(false);
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true); setError(null); setElapsed(0);
@@ -167,6 +227,7 @@ export default function ProjectListPage() {
         />
 
         <div style={{ flex: 1 }} />
+        <Button icon={<ImportOutlined />} onClick={() => { track("EVT_intake_click", { entry: "header" }, { dedupWindowMs: 300 }); setIntakePid(null); setIntakeOpen(true); }}>接入已有工程</Button>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => { track("EVT_proj_create_click", { entry: "header" }, { dedupWindowMs: 300 }); setCreateOpen(true); }}>新建项目</Button>
       </div>
 
@@ -270,9 +331,12 @@ export default function ProjectListPage() {
                     </Popconfirm>,
                   ]}
                 >
-                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                    {relTime(p.updated_at)}
-                  </Typography.Text>
+                  <Space size={8} align="center">
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                      {relTime(p.updated_at)}
+                    </Typography.Text>
+                    {p.source_kind === "imported" && <Tag color="blue">已接入工程</Tag>}
+                  </Space>
                 </Card>
               );
             })}
@@ -290,6 +354,42 @@ export default function ProjectListPage() {
           </div>
         </>
       )}
+
+      {/* EL-PROJ-037 接入已有工程弹窗（F17） */}
+      <Modal
+        title="接入已有工程" open={intakeOpen} confirmLoading={intakeBusy}
+        okText="扫描并接入" cancelText="取消"
+        onOk={() => void doIntake()}
+        onCancel={() => { setIntakeOpen(false); setIntakeRoot(""); setIntakeName(""); setIntakeConsent(false); setIntakePid(null); }}
+        destroyOnHidden
+      >
+        <Form layout="vertical" requiredMark={false}>
+          <Form.Item label="工程根目录（绝对路径）" required>
+            <Input
+              value={intakeRoot}
+              onChange={(e) => {
+                const v = e.target.value;
+                setIntakeRoot(v);
+                if (!intakeName) setIntakeName(v.split("/").filter(Boolean).pop() ?? "");
+              }}
+              placeholder="/Users/you/StudioProjects/MyApp"
+              allowClear
+            />
+          </Form.Item>
+          <Form.Item label="项目名">
+            <Input maxLength={50} value={intakeName} onChange={(e) => setIntakeName(e.target.value)} showCount placeholder="默认取目录名" />
+          </Form.Item>
+          <Form.Item>
+            <Checkbox checked={intakeConsent} onChange={(e) => setIntakeConsent(e.target.checked)}>
+              我确认授权平台**只读**扫描这个目录，提取 agent 配置与框架约束（一期不写任何工程文件）
+            </Checkbox>
+          </Form.Item>
+        </Form>
+        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          平台会提取：AGP / Kotlin / Gradle 版本、compileSdk / minSdk / targetSdk、模块与包名、依赖与版本锁定、
+          AGENTS.md 等 agent 配置、代码风格工具、既有控件命名。每项都带来源，可在「知识库 · 工程约束」查看与编辑。
+        </Typography.Text>
+      </Modal>
 
       {/* EL-PROJ-036 新建项目弹窗 */}
       <Modal

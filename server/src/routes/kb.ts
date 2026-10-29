@@ -12,7 +12,7 @@ import { assertIfMatch } from "../core/idempotency.ts";
 import { parsePage, withMeta } from "../core/pagination.ts";
 import { all, get, nowIso, run, tx } from "../db/index.ts";
 
-const SECTORS = new Set(["prd", "spec", "glossary", "domain"]);
+const SECTORS = new Set(["prd", "spec", "glossary", "domain", "constraints"]);
 
 interface KbRow {
   kb_doc_id: string; project_id: string; document_id: string | null; title: string; sector: string; origin: string;

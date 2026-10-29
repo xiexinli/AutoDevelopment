@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS tbl_project (
   depth               TEXT NOT NULL DEFAULT 'standard',  -- 【已废弃·保留兼容】拆解深度，现由 review_level 映射
   review_level        TEXT NOT NULL DEFAULT 'standard',  -- PRD 审核分级（2026-10-28 定稿）：quick | standard | strict
   review_extended     INTEGER NOT NULL DEFAULT 0,        -- 严格档的「超严扩展」开关（仅 strict 有意义）
+  source_kind         TEXT NOT NULL DEFAULT 'new',       -- new | imported（F17 工程接入，2026-10-29）
+  engineering_root    TEXT,                              -- 接入的既有工程根目录（本机绝对路径；imported 时非空）
   version             INTEGER NOT NULL DEFAULT 1,
   element_id_seq      TEXT NOT NULL DEFAULT '{}',        -- 每模块已分配的最大序号
   current_revision_id TEXT,
@@ -87,7 +89,7 @@ CREATE TABLE IF NOT EXISTS tbl_kb_doc (
   -- 归属文档：同一文档重新解析 → **更新同一篇**；不同文档即使标题相同也各成一篇（**不互相覆盖**）
   document_id TEXT,
   title       TEXT NOT NULL,
-  sector      TEXT NOT NULL,               -- prd | spec | glossary | domain
+  sector      TEXT NOT NULL,               -- prd | spec | glossary | domain | constraints（F17 工程接入，2026-10-29）
   origin      TEXT NOT NULL,               -- agent_extracted | user_edited | user_uploaded
   content_md  TEXT NOT NULL DEFAULT '',
   version     INTEGER NOT NULL DEFAULT 1,

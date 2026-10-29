@@ -22,6 +22,7 @@ const STAGES = new Set([
 interface ProjectRow {
   project_id: string; owner_user_id: string; name: string; description: string; stage: string;
   depth: string; review_level: string; review_extended: number; version: number; element_id_seq: string;
+  source_kind: string; engineering_root: string | null;
   current_revision_id: string | null; current_version_id: string | null;
   created_at: string; updated_at: string; deleted_at: string | null;
 }
@@ -47,6 +48,8 @@ export function registerProjectRoutes(app: FastifyInstance) {
       .map((r) => ({
         project_id: r.project_id, name: r.name, stage: r.stage,
         updated_at: r.updated_at, created_at: r.created_at, version: r.version,
+        // `new` | `imported`（F17 工程接入，2026-10-29）：列表据此显示「已接入工程」
+        source_kind: r.source_kind ?? "new",
       }));
     const paged = withMeta(rows, p, "project_id");
     void reply.send({ code: "OK", message: "", data: paged, request_id: String(req.id) });
@@ -92,6 +95,9 @@ export function registerProjectRoutes(app: FastifyInstance) {
         project_id: row.project_id, owner_user_id: row.owner_user_id,
         name: row.name, description: row.description,
         stage: row.stage, depth: row.depth, version: row.version,
+        // F17 工程接入（2026-10-29）：来源与登记的工程根目录
+        source_kind: row.source_kind ?? "new",
+        engineering_root: row.engineering_root ?? null,
         // 审核分级（2026-10-28 定稿）：项目级默认等级 + 超严扩展开关
         review_level: row.review_level ?? "standard",
         review_extended: !!(row.review_extended ?? 0),

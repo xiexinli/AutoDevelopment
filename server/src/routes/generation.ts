@@ -10,6 +10,7 @@ import {insertVersion} from './versions.ts';
 import {assertEgressEnabled} from './ai-egress.ts';
 import {createCodegenAdapter,validateCodeFiles,type CodegenAdapter,type CodeFile} from '../adapters/codegen.ts';
 import {verifyL1} from '../adapters/verify.ts';
+import {writebackTask} from './patches.ts';
 const send=(req:any,reply:any,data:any,status=200)=>reply.status(status).send({code:'OK',message:'',data,request_id:String(req.id)});
 const hash=(tree:any[])=>createHash('sha256').update(JSON.stringify(tree)).digest('hex');
 interface Input {tree:any[];page:Page;user:User;root:string;retry:number}
@@ -52,7 +53,7 @@ export function registerGenerationRoutes(app:FastifyInstance,adapter:CodegenAdap
          });throw new ApiError('INVALID_ARGUMENT','生成的代码没通过验证。');
        }
        ctx.progress(95);
-       return ctx.commit(()=>{
+       const committed=ctx.commit(()=>{
          assertEgressEnabled(input.user.user_id);assertProjectAccess(input.user,task.project_id);
          run(`INSERT INTO tbl_verify_task(verify_id,task_id,layer,status,rules_json,attempt,log_digest,created_at) VALUES(?,?,'L1','passed',?,?,?,?)`,uid('verify'),task.task_id,JSON.stringify(evidence.rules),input.retry,evidence.log_digest,nowIso());
          for(const f of files)run(`INSERT INTO tbl_artifact(artifact_id,task_id,path,kind,content) VALUES(?,?,?,?,?)`,uid('art'),task.task_id,f.path,f.kind,JSON.stringify({content:f.content,encoding:f.encoding}));
@@ -65,6 +66,9 @@ export function registerGenerationRoutes(app:FastifyInstance,adapter:CodegenAdap
          writeMeta(task.project_id,`task_info:${task.task_id}`,{phase:'ready',attempt:input.retry});
          return versionId;
        });
+       // 二期 brownfield：生成成功后**自动写回**既有工程（`D3`）。**best-effort**：写回失败只记录，不影响本任务结论。
+       if(committed){try{const wb=writebackTask(task.project_id,task.task_id);if(wb)writeMeta(task.project_id,`patch_latest:${task.task_id}`,{patch_id:wb.plan.patch_id,files:wb.files.length,notes:wb.merge.notes,skipped:wb.merge.skipped});}catch(e){writeMeta(task.project_id,`patch_error:${task.task_id}`,{message:(e as Error).message});}}
+       return committed;
       },{onFailure:status=>{
         const info=readMeta<any>(task.project_id,`task_info:${task.task_id}`)??{};
         writeMeta(task.project_id,`task_info:${task.task_id}`,{...info,phase:status==='canceled'?'stopped':info.phase==='verify_failed'?'verify_failed':'gen_failed',attempt:input.retry,error_message:info.error_message??(status==='canceled'?'已停止':'代码没生成出来。')});

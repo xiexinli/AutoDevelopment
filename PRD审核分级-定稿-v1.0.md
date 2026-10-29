@@ -148,6 +148,7 @@
 | R-23 | 复审结论的等级标记沿用首次放行档 |
 | R-24 | 超严扩展开关是独立可追溯字段，开关变化同样触发"新审核"，不与严格档本体混记 |
 | **R-25** | **简审档豁免"假设全部选定"校验**（`#21` 的 `unset` 拦截、`#23` 回写前的 `unset` 拦截，仅对 `review_level='quick'` 的报告放行） |
+| **R-26** | **审核自动重跑**（2026-10-28 实测追加）：大模型返回**结构不合法/不完整**（`UPSTREAM_UNAVAILABLE`）时，`#16` 任务**自动重跑一次**（第二次带上格式强化提示 `retryHint`）。至多 1 次额外调用；**超时与取消不在此处重跑**；两次都失败才置 `failed`，且**绝不写入半截结果**。服务器日志留 `[review]` 痕迹 |
 
 ---
 
@@ -267,8 +268,8 @@
 |---|---|---|
 | 数据模型 | `server/src/db/schema.sql` | `tbl_project` + `tbl_review_report` 各增 `review_level` / `review_extended`（`depth` 保留但标注废弃） |
 | 迁移 | `server/src/db/index.ts` | 旧库 `ALTER TABLE ADD COLUMN`（幂等），已在**真实旧库副本**上验证：16 个项目数据保留、列已补 |
-| 适配器 | `server/src/adapters/llm.ts` | 新增 `ReviewLevel` / `REVIEW_LEVEL_PROFILE` / `reviewLevelProfile()`；`review()` 入参 `depth`→`level`+`extended`；提示词注入档位全文；mock 改为**按 `standardItems` 逐条对齐**（含简审 Q1/Q2；未覆盖项判 `na`，不编造） |
-| 审核路由 | `server/src/routes/review.ts` | 新增 `REVIEW_LEVELS` / `QUICK_ITEMS` / `FULL_STANDARD_EXTRA`(29 项) / `itemsForLevel()` / `isBlocking()` / `depthOfLevel()`；`#16` 解析 `level`+`extended`（兼容旧 `depth`）、复用键加等级与扩展位、**R-25 简审豁免前置校验**、`counts` 增 `na` 且 `verdict` 按档位门槛；`#17` 回 `review_level`/`review_extended`；`#69` 导出带等级；`GROUP_TITLES` 增 `Q` |
+| 适配器 | `server/src/adapters/llm.ts` | 新增 `ReviewLevel` / `REVIEW_LEVEL_PROFILE` / `reviewLevelProfile()`；`review()` 入参 `depth`→`level`+`extended`（另加**可选 `retryHint`**）；提示词注入档位全文；mock 改为**按 `standardItems` 逐条对齐**（含简审 Q1/Q2；未覆盖项判 `na`，不编造） |
+| 审核路由 | `server/src/routes/review.ts` | 新增 `REVIEW_LEVELS` / `QUICK_ITEMS` / `FULL_STANDARD_EXTRA`(29 项) / `itemsForLevel()` / `isBlocking()` / `depthOfLevel()`；`#16` 解析 `level`+`extended`（兼容旧 `depth`）、复用键加等级与扩展位、**R-25 简审豁免前置校验**、`counts` 增 `na` 且 `verdict` 按档位门槛；`#17` 回 `review_level`/`review_extended`；`#69` 导出带等级；`GROUP_TITLES` 增 `Q`；**R-26 结构非法自动重跑一次**（`REVIEW_MAX_ATTEMPTS=2`，含 `console.warn` 留痕） |
 | 拆解路由 | `server/src/routes/split.ts` | 深度**默认由 `review_level` 映射**（R-18），显式 `depth` 仍兼容 |
 | 项目路由 | `server/src/routes/projects.ts` | `#3` 返回 `review_level`/`review_extended`；`#6` `gate` 增 `review_level`/`review_extended` |
 | 前端类型 | `web/src/domain/types.ts`、`web/src/domain/api.ts` | `Project`/`ReviewReport` 增两字段；`#16` 说明更新 |
@@ -284,7 +285,8 @@
 |---|---|
 | `cd server && npx tsc --noEmit` | ✅ 通过 |
 | `cd web && npx tsc --noEmit` / `npm run build` | ✅ 通过（构建成功） |
-| `server/test/review-level-regression.mjs` | ✅ 8/8（含**单调性**断言 简审 0 ≤ 标准 5 ≤ 严格 10） |
+| `server/test/review-level-regression.mjs` | ✅ 10/10（含**单调性**断言 简审 0 ≤ 标准 5 ≤ 严格 10；**T8/T9 覆盖自动重跑**：结构非法重跑一次即成功 / 连续非法则 failed 且条目 0） |
+| 真机复验：标准档 × 3（`prd_1-过审版.md`） | ✅ 3/3 一次成功（**未触发重跑**）；结论 blocked/blocked/passed —— 见 §10.4 |
 | `server/test/b2-regression.mjs` | ✅ 25/25 |
 | `server/test/b3-regression.mjs` | ✅ 21/21 |
 | `server/test/b4-regression.mjs` | ✅ 18/18 |
@@ -293,8 +295,28 @@
 | 真实启动（全新库 + 开发适配器） | ✅ 启动正常；`#3` 返回 `review_level=standard`、`review_extended=false`；上传→解析→任务轮询走通 |
 
 ### 10.3 未完成 / 待办
-- **真实大模型下的三档效果未验证**（本次全部用确定性 mock 适配器；真实模型对 43 项严格档的产出质量需实测）。
+- ~~真实大模型下的三档效果未验证~~ → **已于 2026-10-28 实测**，见 `PRD审核分级-真机实测-20261028.md`：
+  严格档 43 项跑通（≈65s，结构合法）、单调性成立（门槛内阻断 2 ≤ 6 ≤ 26）、`na` 未被滥用（三档 na=0）、判定带原文依据。
+  仍需补：第二份"基本可开发"PRD 样本（验证简审放行/严格阻断的分化）、严格档重复 3 次看稳定性、换模型复跑。
 - **严格档检查项为代码常量**（`FULL_STANDARD_EXTRA` 29 项）：本期不提供 UI 编辑；管理员改严格档需改 `baseline/可开发性门禁清单.md` + 该常量。
 - **`web/src/domain/{types,api}.ts` 是生成物**：仓库现状与生成器输出本就存在漂移（如 `SpecDoc.content_md` vs `content`、`#71/#72` 缺失、75 vs 71 个接口），本期**未做整份再生**，仅手改相关字段；`pnpm gen:types` 会引入大量无关 diff，需另行收口。
 - 未做：埋点后端接收验证、`EVT_review_level_change` 等三事件的端到端核对、平台文档（`页面规格`/`验收标准`）同步、一致性校对。
+
+### 10.4 自动重跑（R-26）与真机复验（2026-10-28 追加）
+
+**动因**：真机实测 6 次真实审核中 1 次因模型返回**结构不合法**而失败（见 `PRD审核分级-真机实测-20261028.md` §4.1），用户必须手动重试。
+
+**改动**
+- `llm.ts`：`review()` 入参加**可选 `retryHint`**；真实实现把它作为「【重试提示】」段拼进 user 消息（首次调用不带，**入参形状不变**）。
+- `review.ts`：把「调用 + 结构校验」抽成 `validateDraft()` + `callOnce()`，外面套 `REVIEW_MAX_ATTEMPTS = 2` 的循环；只在 `UPSTREAM_UNAVAILABLE` 时重跑，重跑带上格式强化提示，并 `console.warn('[review] …')` 留痕。
+- 边界：**超时（`UPSTREAM_TIMEOUT`）与取消不重跑**（超时在单次调用内已有退避重试，再叠加会让等待翻倍）；两次都失败才 `failed`，且**不写入半截结果**（沿用既有 fail-closed）。
+
+**验证**
+- 单测：`review-level-regression.mjs` 新增 **T8**（第 1 次结构非法、第 2 次合法 → 成功，且断言首次入参无 `retryHint`、重跑入参有）、**T9**（连续非法 → `failed` + `error_code=UPSTREAM_UNAVAILABLE` + 条目 0 + 恰好 2 次调用）。
+- 全量回归：b2 25 / b3 21 / b4 18 / writeback 50 / level 10，**全绿（124 例）**；前后端 `tsc` 通过。
+- **真机复验**：对原本失败的那份样本（`prd_1-过审版.md`）复跑**标准档 3 次**，**3/3 一次成功、未触发重跑**（服务器日志无 `[review]` 痕迹）。
+
+> ⚠️ **诚实说明**：这 3 次成功**不能证明**是重试修复了原失败——重跑路径在真机上**没有被触发过**（样本太小，原失败未复现）。R-26 的有效性目前由单测保证，真机样本量不足以定论。
+>
+> **附带发现（重要）**：同一档、同一 PRD、同一模型，3 次结论为 **blocked / blocked / passed** —— **模型输出不确定**，会导致用户"重跑碰运气"。这是产品层面的风险（见实测报告 §4.4）。
 

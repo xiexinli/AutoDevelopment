@@ -9,6 +9,7 @@ import { openTaskStream, type StreamStatus } from "@/sse/stream";
 import { track } from "@/track";
 import { takePendingWorkbenchEntry } from "@/track/pending";
 import EditPage from "@/pages/EditPage";
+import PatchWriteback from "@/components/PatchWriteback";
 
 /**
  * `UI-WORK-001` 工作台（主界面）。
@@ -200,6 +201,8 @@ export default function WorkbenchPage() {
             当前分段：{mode === "preview" ? "预览" : "编辑"} ｜ Spec {specCount} 份 ｜ 已开启能力 {capCount} 项
             <Badge status="processing" text="" style={{ marginLeft: 8 }} />
           </div>
+          {/* 二期：接入既有工程的项目才渲染（`source_kind='imported'`），自身判空 */}
+          <PatchWriteback projectId={projectId} />
         </div>
 
       </div>

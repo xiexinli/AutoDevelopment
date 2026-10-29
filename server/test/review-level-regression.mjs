@@ -27,7 +27,11 @@ const { createMockAdapter } = await import('../src/adapters/llm.ts');
 
 const owner = ensureUser('rl_owner_test', '分级回归');
 const token = issueToken(owner.user_id);
-const app = buildApp({ llm: createMockAdapter() });
+// 可插桩的适配器：默认走确定性 mock；`reviewHook` 用于构造「结构非法」场景
+const base = createMockAdapter();
+let reviewHook = null;
+const adapter = { ...base, review: async (input) => (reviewHook ? reviewHook(input) : base.review(input)) };
+const app = buildApp({ llm: adapter });
 await app.ready();
 
 // 收尾：只删本测试自己的临时上传目录
@@ -199,6 +203,42 @@ await test('PRD 审核分级（简审 / 标准 / 严格）', async (t) => {
     assert.equal(expect(await request(`/reviews/${strict.review_id}`), 200).review_level, 'strict');
     // 非法等级 → 400
     assert.equal((await request(`/revisions/${rev6}/reviews`, { method: 'POST', body: { level: 'super' } })).status, 400);
+  });
+
+  await t.test('T8 结构非法 → 自动重跑一次（第 2 次成功即通过）', async () => {
+    const p8 = await project();
+    const rev8 = (await parse(p8, PARTIAL)).revision_id;
+    let calls = 0; const inputs = [];
+    reviewHook = async (input) => {
+      calls += 1; inputs.push(input);
+      if (calls === 1) return { items: [], questions: [], assumptions: [] };   // 结构非法
+      return base.review(input);                                              // 第 2 次正常
+    };
+    const r = await review(rev8, { level: 'quick' });
+    reviewHook = null;
+    assert.equal(calls, 2, '结构非法时应恰好重跑一次');
+    assert.equal(inputs[0].retryHint, undefined, '首次调用不带重试提示');
+    assert.ok(inputs[1].retryHint && inputs[1].retryHint.length > 0, '重跑必须带上格式强化提示');
+    const card = expect(await request(`/reviews/${r.review_id}`), 200);
+    assert.equal(card.verdict, 'passed');                 // 重跑拿到合法结构后正常出结论
+    assert.equal(card.review_level, 'quick');
+  });
+
+  await t.test('T9 连续结构非法 → 任务 failed、条目 0、只重跑一次', async () => {
+    const p9 = await project();
+    const rev9 = (await parse(p9, PARTIAL)).revision_id;
+    let calls = 0;
+    reviewHook = async () => { calls += 1; return { items: [], questions: [], assumptions: [] }; };
+    const r = expect(await request(`/revisions/${rev9}/reviews`, { method: 'POST', key: crypto.randomUUID(), body: { level: 'quick', force: true } }), 202);
+    const state = await wait(r.task_id);
+    reviewHook = null;
+    assert.equal(state.status, 'failed');
+    assert.equal(state.error_code, 'UPSTREAM_UNAVAILABLE');
+    assert.equal(calls, 2, '只允许 1 次额外重跑');
+    const card = expect(await request(`/reviews/${r.review_id}`), 200);
+    assert.equal(card.verdict, 'failed');
+    const items = expect(await request(`/reviews/${r.review_id}/items`), 200).items;
+    assert.equal(items.length, 0, '失败不得写入半截结果');
   });
 
   await t.test('导出报告带审核等级；拆解深度由等级映射', async () => {

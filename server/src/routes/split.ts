@@ -19,6 +19,7 @@ import { depthOfLevel } from "./review.ts";
 import { assertEgressEnabled } from "./ai-egress.ts";
 import { modelFor } from "../core/llm-models.ts";
 import { traceLlm } from "../core/ai-trace.ts";
+import { constraintsNoteFor } from "./constraints.ts";
 
 export function registerSplitRoutes(app: FastifyInstance, adapter?: LlmAdapter) {
   const llm = adapter ?? createLlmAdapter();
@@ -51,7 +52,7 @@ export function registerSplitRoutes(app: FastifyInstance, adapter?: LlmAdapter) 
       startTask(task.task_id, async ({ progress, commit }) => {
         progress(25);
         const draft = await traceLlm(projectId, task.task_id, "调用大模型拆解需求", modelFor(user.user_id),
-          () => llm.split({ markdown: gate.markdown, depth, model: modelFor(user.user_id) }),
+          () => llm.split({ markdown: gate.markdown, depth, model: modelFor(user.user_id), constraints: constraintsNoteFor(projectId) ?? undefined }),
           (d) => `角色包 ${Array.isArray(d?.packs) ? d.packs.length : 0} 个`);
         const roles=["UI","接口","App","埋点","测试"];
         if(!draft || !Array.isArray(draft.packs) || draft.packs.length!==5 || new Set(draft.packs.map(p=>p.role)).size!==5 || draft.packs.some(p=>!roles.includes(p.role)||!Array.isArray(p.reqs)||p.reqs.some(r=>typeof r!=="string"||!/^REQ-[A-Z0-9]+-\d{3}$/.test(r)))) throw new ApiError("UPSTREAM_UNAVAILABLE", "拆解返回结构无效，未应用结果。");

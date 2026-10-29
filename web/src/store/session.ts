@@ -70,6 +70,8 @@ export interface ProjectListItem {
   updated_at: string;
   created_at: string;
   version: number;
+  /** `new` | `imported`（F17 工程接入，2026-10-29） */
+  source_kind?: string;
 }
 
 export interface Paged<T> {
@@ -115,10 +117,72 @@ export function deleteProject(projectId: string) {
   return request<{ deleted_at: string }>(`/projects/${projectId}`, { method: "DELETE", body: { confirm: true } });
 }
 
+/** #N1 接入已有工程（F17）：登记本机工程根目录 → 只读扫描 → 约束包落库 */
+export function engineeringIntake(projectId: string, root: string) {
+  return request<{
+    source_kind: string; engineering_root: string; kb_doc_id: string;
+    project_name: string | null;
+    android: { agp: string | null; kotlin: string | null; gradle: string | null;
+      compile_sdk: number | null; min_sdk: number | null; target_sdk: number | null; java: string | null };
+    counts: { modules: number; dependencies: number; agent_config_files: number; items: number; naming_samples: number };
+    warnings: string[];
+  }>(`/projects/${projectId}/engineering-intake`, {
+    method: "POST", body: { root, confirm: true }, idempotencyKey: newIdempotencyKey(),
+  });
+}
+
+export interface ConstraintPackView {
+  source_kind: string; engineering_root: string | null;
+  pack: Record<string, unknown> | null;
+  kb_doc_id: string | null; content_md: string; origin: string | null;
+  version: number; updated_at: string | null; summary: string;
+}
+/** #N2 读工程约束 */
+export function fetchConstraints(projectId: string) {
+  return request<ConstraintPackView>(`/projects/${projectId}/constraints`);
+}
+/** #N3 编辑工程约束（乐观锁 → 须带 If-Match） */
+export function saveConstraints(projectId: string, contentMd: string, version: number) {
+  return request<{ kb_doc_id: string; origin: string; version: number; updated_at: string }>(
+    `/projects/${projectId}/constraints`,
+    { method: "PUT", body: { content_md: contentMd }, ifMatch: version, idempotencyKey: newIdempotencyKey() },
+  );
+}
+
+/** #N7 把某次生成任务的产物按既有工程结构合并后写回（二期 brownfield） */
+export function writebackGeneration(projectId: string, taskId: string) {
+  return request<{
+    patch_id: string; status: string;
+    totals: { create: number; replace: number; unchanged: number; bytes: number };
+    entries: { path: string; action: string; removed_ids: string[] }[];
+    notes: string[]; skipped: { path: string; reason: string }[];
+  }>(`/projects/${projectId}/generation/${taskId}/writeback`, {
+    method: "POST", body: { confirm: true }, idempotencyKey: newIdempotencyKey(),
+  });
+}
+
+export interface PatchApplicationItem {
+  patch_id: string; status: string; message: string; created_at: string; rolled_back_at: string | null;
+  totals: { create: number; replace: number; unchanged: number; bytes: number };
+  files: string[];
+}
+/** #N5 补丁记录（倒序） */
+export function listPatchApplications(projectId: string) {
+  return request<{ items: PatchApplicationItem[]; total: number }>(`/projects/${projectId}/patch-applications`);
+}
+/** #N6 回滚某次补丁（`⬛` 破坏性 → 二次确认） */
+export function rollbackPatchApplication(projectId: string, patchId: string) {
+  return request<{ patch_id: string; status: string; rolled_back_at: string; restored: number; removed: number }>(
+    `/projects/${projectId}/patch-applications/${patchId}/rollback`,
+    { method: "POST", body: { confirm: true }, idempotencyKey: newIdempotencyKey() });
+}
+
 /** #3 项目详情（含 current_revision_id） */
 export function fetchProject(projectId: string) {
   return request<{ project_id: string; name: string; stage: string; version: number;
     current_revision_id?: string; depth: "minimal" | "standard" | "comprehensive";
+    /** `new` | `imported`（F17 工程接入，2026-10-29） */
+    source_kind?: string; engineering_root?: string | null;
     /** 项目级默认审核等级（2026-10-28 分级定稿） */
     review_level: "quick" | "standard" | "strict"; review_extended: boolean }>(
     `/projects/${projectId}`);
@@ -684,7 +748,7 @@ export function sendChatMessage(projectId: string, content: string, thread?: Cha
 // ==================== S5：知识库 / 工作台 ====================
 
 // ---------- #7~#9 知识库（**只含本项目内容**，跨项目检索不可能发生） ----------
-export type KbSector = "prd" | "spec" | "glossary" | "domain";
+export type KbSector = "prd" | "spec" | "glossary" | "domain" | "constraints";
 export type KbOrigin = "agent_extracted" | "user_edited" | "user_uploaded";
 export interface KbDoc {
   kb_doc_id: string; title: string; sector: KbSector; origin: KbOrigin;
@@ -698,6 +762,8 @@ export const KB_ORIGIN_LABEL: Record<KbOrigin, string> = {
 export const KB_SECTORS: { key: KbSector; label: string }[] = [
   { key: "prd", label: "PRD" }, { key: "spec", label: "Spec" },
   { key: "glossary", label: "术语表" }, { key: "domain", label: "领域模型" },
+  // F17 工程接入（2026-10-29）：第五分区，存「工程约束包」
+  { key: "constraints", label: "工程约束" },
 ];
 
 /** #7 列表（**强制按 project_id 过滤**；q ≤100 字符） */

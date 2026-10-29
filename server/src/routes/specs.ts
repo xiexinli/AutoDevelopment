@@ -19,6 +19,7 @@ import { assertEgressEnabled } from "./ai-egress.ts";
 import { createProjectVersion } from "./versions.ts";
 import { modelFor } from "../core/llm-models.ts";
 import { traceLlm } from "../core/ai-trace.ts";
+import { constraintsNoteFor } from "./constraints.ts";
 
 /** `spec_role` 是**固定 5 个**的拉丁枚举（`接口-Spec §4.5`）；中文名只用于展示 */
 export const SPEC_ROLES: { role: string; label: string; order: number; pack: string }[] = [
@@ -108,13 +109,15 @@ export function registerSpecRoutes(app: FastifyInstance, adapter?: LlmAdapter) {
     const task = createTask({ projectId, type: "spec_gen" });
     startTask(task.task_id, async ({ progress, check }) => {
       let done = 0;
+      // 工程约束（F18）：接入既有工程时注入，保证 5 份 Spec 与该工程一致
+      const constraints = constraintsNoteFor(projectId) ?? undefined;
       for (const r of SPEC_ROLES) {
         check();
         const reqs = reqsFor(projectId, r.pack);
         const context = requirementsOf(projectId).packs.map((p) => `- ${p.role}：${p.reqs.join("、")}`).join("\n");
         try {
           const draft = await traceLlm(projectId, task.task_id, `调用大模型生成 ${r.role} Spec`, modelFor(user.user_id),
-            () => llm.spec({ role: r.pack, requirements: reqs, projectName: name, context, depth, model: modelFor(user.user_id) }),
+            () => llm.spec({ role: r.pack, requirements: reqs, projectName: name, context, depth, model: modelFor(user.user_id), constraints }),
             (d) => `输出 ${typeof d?.content_md === "string" ? d.content_md.length : 0} 字`);
           if (!draft || typeof draft.content_md !== "string" || !draft.content_md.trim())
             throw new ApiError("UPSTREAM_UNAVAILABLE", "大模型没有返回可用的 Spec 内容。");

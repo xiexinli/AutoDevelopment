@@ -13,6 +13,33 @@ import { currentDhworkToken, dhworkSessionStatus, ensureDhworkSession } from "..
 
 export type Level = "blocking" | "major" | "suggestion";
 
+/**
+ * **目标平台前提**（2026-10-28 需求方确认）：被开发项目恒为**原生 Android**，本期不考虑其他平台。
+ * 注入审核 / 拆解 / Spec 三处提示词 —— 避免模型引入 iOS / 跨平台，也避免就此追问。
+ * （代码生成器 `codegen.ts` 本就只产出 Android，这条是让**大模型侧**与之一致。）
+ */
+export const TARGET_PLATFORM_NOTE =
+  "【目标平台】被开发项目恒为**原生 Android**（Kotlin + XML 布局），本期**不考虑其他平台**"
+  + "（iOS / 跨平台 / Flutter / H5 / 小程序 / WebView 内嵌页 等一律不在范围）。"
+  + "PRD 未声明平台时**按 Android 处理、不要就此提问**；也不要提出只对其他平台成立的要求。";
+
+/**
+ * **工程约束注入**（`F18` / `D4=A`）——项目接入了既有工程时，把「项目约束包」摘要注入提示词。
+ * **冲突时以工程约束为准**（`D4=A`）；没有约束包时返回空串（既有行为完全不变）。
+ */
+export function constraintsNote(summary?: string): string {
+  const s = (summary ?? "").trim();
+  if (!s) return "";
+  return [
+    "【工程约束（来自被开发项目的既有工程，**优先级高于平台默认假设**）】",
+    s,
+    "硬规则：",
+    "1) 以上是既有工程的**真实约束**（技术栈 / 依赖版本 / 命名 / SDK / 模块结构等），产出必须与之**一致**；",
+    "2) 与既有工程约束**冲突**的要求，**不得自行改写工程**，应显式指出冲突并列为待澄清；",
+    "3) 不要引入与既有依赖/版本不一致的库或写法。",
+  ].join("\n");
+}
+
 /** PRD 审核分级（2026-10-28 定稿）：简审 / 标准 / 严格 */
 export type ReviewLevel = "quick" | "standard" | "strict";
 
@@ -39,8 +66,7 @@ export const REVIEW_LEVEL_PROFILE: Record<ReviewLevel, string> = {
   ].join("\n"),
 };
 
-/** 档位说明 + 可选「超严扩展」尾注 */
-export function reviewLevelProfile(level: ReviewLevel, extended = false): string {
+/** 档位说明 + 可选「超严扩展」尾注 */export function reviewLevelProfile(level: ReviewLevel, extended = false): string {
   const base = REVIEW_LEVEL_PROFILE[level] ?? REVIEW_LEVEL_PROFILE.standard;
   if (level === "strict" && extended) {
     return base + "\n**超严扩展**：额外检查 安全 / 合规 / 性能 / 无障碍 / 国际化 / 隐私 / 成本；「建议」项失败也计入阻断；并做二次交叉复核。";
@@ -73,10 +99,10 @@ export interface SpecDraft { role: string; content_md: string }
 export interface LlmAdapter {
   readonly kind: "real" | "mock";
   /** `model` 为**本次调用实际使用的模型**（用户在界面上选的）；不传则用适配器默认模型 */
-  review(input: { markdown: string; level: ReviewLevel; extended?: boolean; standardItems: { code: string; level: Level; title: string }[]; model?: string }): Promise<ReviewDraft>;
-  split(input: { markdown: string; depth: string; model?: string }): Promise<SplitDraft>;
+  review(input: { markdown: string; level: ReviewLevel; extended?: boolean; retryHint?: string; standardItems: { code: string; level: Level; title: string }[]; model?: string; constraints?: string }): Promise<ReviewDraft>;
+  split(input: { markdown: string; depth: string; model?: string; constraints?: string }): Promise<SplitDraft>;
   /** `#30` 按角色生成 Spec（**单份失败不阻断其余**，由调用方逐角色捕获） */
-  spec(input: { role: string; requirements: string[]; projectName: string; context: string; depth: string; model?: string }): Promise<SpecDraft>;
+  spec(input: { role: string; requirements: string[]; projectName: string; context: string; depth: string; model?: string; constraints?: string }): Promise<SpecDraft>;
   /**
    * `#26` 对话回复。`onDelta` 为**逐段增量回调**（用于 SSE `chat.delta`）；
    * `signal` 为调用方取消信号，**必须贯穿到上游请求**。
@@ -447,13 +473,15 @@ export function createRealAdapter(
   return {
     kind: "real",
 
-    async review({ markdown, level, extended, standardItems, model: useModel }) {
+    async review({ markdown, level, extended, retryHint, standardItems, model: useModel, constraints }) {
       const items = standardItems.map((i) => `${i.code}\t${i.level}\t${i.title}`).join("\n");
       const draft = await callJson<ReviewDraft>([
         {
           role: "system",
           content: [
             "你是「AutoDevelopment 平台」的门禁审核角色，按检查项对 PRD 逐项判定。",
+            TARGET_PLATFORM_NOTE,
+            constraintsNote(constraints),
             "只输出 JSON，不要任何解释文字，结构：",
             '{"items":[{"item_code":"A1","group":"A","level":"blocking","verdict":"pass|fail|na","evidence_ref":"原文小节名或原文片段","suggestion":"补齐建议"}],',
             '"questions":[{"question_code":"Q1","level":"blocking","title":"问题","options":["A. …","B. …","X. Other"],"fallback":"not_yet_defined","impact":"影响范围"}],',
@@ -466,11 +494,17 @@ export function createRealAdapter(
             "5) 对文档里说不清楚、需要人来定的点，写进 `questions`（含 3~5 个选项与兜底值）；",
             "6) 文档没写但平台按默认处理的地方，写进 `assumptions`；",
             "7) `na` **只用于「本等级明确不评」的检查项**，不得用 `na` 回避给定清单里的项。",
-          ].join("\n"),
+          ].filter(Boolean).join("\n"),
         },
         {
           role: "user",
-          content: `${reviewLevelProfile(level, extended)}\n\n【检查项清单】\n${items}\n\n【PRD 正文】\n${markdown}`,
+          content: [
+            reviewLevelProfile(level, extended),
+            // 「结构非法 → 自动重跑」时给一次更强的格式约束（2026-10-28 真机实测：真实模型偶发吐回不合法 JSON）
+            retryHint ? `【重试提示】${retryHint}` : "",
+            `【检查项清单】\n${items}`,
+            `【PRD 正文】\n${markdown}`,
+          ].filter(Boolean).join("\n\n"),
         },
       ], undefined, useModel);
       // 结构校验：**不合法一律视为上游失败**（绝不放行空结论）
@@ -489,19 +523,21 @@ export function createRealAdapter(
       };
     },
 
-    async split({ markdown, depth, model: useModel }) {
+    async split({ markdown, depth, model: useModel, constraints }) {
       const draft = await callJson<SplitDraft>([
         {
           role: "system",
           content: [
             "你是「AutoDevelopment 平台」的需求拆解角色，把 PRD 拆成五个角色的需求包。",
+            TARGET_PLATFORM_NOTE,
+            constraintsNote(constraints),
             '只输出 JSON：{"packs":[{"role":"UI","reqs":["REQ-UI-001"]},{"role":"接口","reqs":[]},{"role":"App","reqs":[]},{"role":"埋点","reqs":[]},{"role":"测试","reqs":[]}]}',
             "硬规则：",
             "1) `role` 必须**恰好是**这五个中文名：UI、接口、App、埋点、测试，顺序不变、不得增删；",
             "2) REQ 编号形如 `REQ-<模块>-<三位数字>`，模块用大写字母与数字，例如 REQ-UI-001 / REQ-API-002 / REQ-GEN-003；",
             "3) 编号在**本项目内唯一**，从 001 连续编号；",
             "4) 每条 REQ 必须来自 PRD 里真实存在的需求点，**不要编造**；该角色没有就返回空数组。",
-          ].join("\n"),
+          ].filter(Boolean).join("\n"),
         },
         { role: "user", content: `拆解深度：${depth}\n\n【PRD 正文】\n${markdown}` },
       ], undefined, useModel);
@@ -524,19 +560,21 @@ export function createRealAdapter(
       return { packs: roles.map((r) => ({ role: r, reqs: byRole.get(r)!.reqs })), depth };
     },
 
-    async spec({ role, requirements, projectName, context, depth, model: useModel }) {
+    async spec({ role, requirements, projectName, context, depth, model: useModel, constraints }) {
       const content = await callText([
         {
           role: "system",
           content: [
             "你是「AutoDevelopment 平台」的角色 Spec 撰写者。输出**只有 Markdown 正文**，不要任何前后缀说明。",
+            TARGET_PLATFORM_NOTE,
+            constraintsNote(constraints),
             "要求：",
             "1) 一级标题为 `# <角色> Spec（<项目名>）`；",
             "2) 必须含「## 1 覆盖需求」并逐条列出给定的 REQ 编号；",
             "3) 按该角色的固定章节展开（见用户消息里的章节清单），每节都要有**可开发**的细节，不要写空话；",
             "4) 禁止编造 PRD 里没有的需求；信息不足时在正文里显式写「（待澄清）」并说明缺什么；",
             "5) 不要输出任何密钥、凭据。",
-          ].join("\n"),
+          ].filter(Boolean).join("\n"),
         },
         {
           role: "user",

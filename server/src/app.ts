@@ -13,6 +13,8 @@ import type { User } from "./core/auth.ts";
 import { registerAuthRoutes } from "./routes/auth.ts";
 import { registerProjectRoutes } from "./routes/projects.ts";
 import { registerKbRoutes } from "./routes/kb.ts";
+import { registerConstraintRoutes } from "./routes/constraints.ts";
+import { registerPatchRoutes } from "./routes/patches.ts";
 import { registerAiEgressRoutes } from "./routes/ai-egress.ts";
 import { registerLlmModelRoutes } from "./routes/llm-models.ts";
 import { registerUploadRoutes } from "./routes/upload.ts";
@@ -125,6 +127,8 @@ export function buildApp(opts: {llm?: LlmAdapter; codegen?: CodegenAdapter} = {}
   registerAuthRoutes(app);
   registerProjectRoutes(app);
   registerKbRoutes(app);
+  registerConstraintRoutes(app);
+  registerPatchRoutes(app);
   registerAiEgressRoutes(app);
   registerLlmModelRoutes(app);
   registerUploadRoutes(app);

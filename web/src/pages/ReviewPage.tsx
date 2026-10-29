@@ -231,8 +231,9 @@ export default function ReviewPage() {
         if (s.gate?.review_level) setLevel(s.gate.review_level);
         setExtended(!!s.gate?.review_extended);
         if (s.gate?.verdict === "unreviewed") {
-          // `EL-REVIEW-054`：默认**自动开审**；关掉后停在空态、等用户点「开始审核」
-          if (readAuto()) askStart(true); else setPhase("idle");
+          // 首次进页**不抢跑**：先把「审核等级」交给用户选，再点「开始审核」。
+          // （`自动审核` 开关只作用于「回写后自动重审」，见 `doWriteback` 末尾。）
+          setPhase("idle");
           return;
         }
         const cur = s.current_revision_id ?? null;
@@ -282,6 +283,9 @@ export default function ReviewPage() {
   const grouped = useMemo(() => {
     const m = new Map<string, ReviewItem[]>();
     for (const it of items) {
+      // **审核通过（pass）的项不展示**：评分卡只列「未通过 / 未评」，
+      // 完整清单仍可在「导出审核报告」里看到（导出取的是 `#18` 全量）。
+      if (it.verdict === "pass") continue;
       const k = `${it.group}${it.group_title ? " " + it.group_title : ""}`;
       m.set(k, [...(m.get(k) ?? []), it]);
     }
@@ -408,11 +412,11 @@ export default function ReviewPage() {
     nav(`/projects/${projectId}/split`);
   }
 
-  /** `EL-REVIEW-054` 自动审核开关（**空态 / 过期态 / 底部操作条**三处同一控件） */
+  /** 自动重审开关（回写成功后自动重跑一次审核）；**首次审核不再自动开审**（要先选等级） */
   const autoSwitch = (
     <Space size={6} align="center">
-      <Switch size="small" checked={auto} onChange={toggleAuto} aria-label="自动审核" />
-      <Typography.Text style={{ fontSize: 12 }}>自动审核</Typography.Text>
+      <Switch size="small" checked={auto} onChange={toggleAuto} aria-label="回写后自动重审" />
+      <Typography.Text style={{ fontSize: 12 }}>回写后自动重审</Typography.Text>
     </Space>
   );
 
@@ -458,7 +462,17 @@ export default function ReviewPage() {
   // 未审核项目走 `idle` 空态时 `start()` 从未执行，`loading` 仍是初始 `true`，
   // 若先判 `loading` 会永远停在「正在审查这份 PRD…」，永远看不到「开始审核」。
   if (phase === "probing") {
-    return <Card style={{ maxWidth: 1000, margin: "0 auto" }}><div style={{ display: "grid", placeItems: "center", height: 200 }}><Spin /><div style={{ marginTop: 12 }}>正在检查审核状态…</div></div></Card>;
+    return (
+      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+        {/* 档位控件必须在**任何状态下都可见**，用户才能「审核之前先选等级」 */}
+        {levelControl}
+        <Card>
+          <div style={{ display: "grid", placeItems: "center", height: 160 }}>
+            <Spin /><div style={{ marginTop: 12 }}>正在检查审核状态…</div>
+          </div>
+        </Card>
+      </div>
+    );
   }
   if (phase === "idle") {
     return (
@@ -499,32 +513,40 @@ export default function ReviewPage() {
 
   if (loading) {
     return (
-      <Card style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <div style={{ textAlign: "center", padding: 40 }}>
-          <Spin />
-          <div style={{ marginTop: 12 }}>正在审查这份 PRD…</div>
-          {elapsed >= 300 && (
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              已超过 5 分钟，可以继续等待或稍后回来查看。
-            </Typography.Text>
-          )}
-        </div>
-      </Card>
+      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+        {levelControl}
+        <Card>
+          <div style={{ textAlign: "center", padding: 40 }}>
+            <Spin />
+            <div style={{ marginTop: 12 }}>
+              正在审查这份 PRD…（审核等级：{levelOf(level).label}{level === "strict" && extended ? " · 超严扩展" : ""}）
+            </div>
+            {elapsed >= 300 && (
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                已超过 5 分钟，可以继续等待或稍后回来查看。
+              </Typography.Text>
+            )}
+          </div>
+        </Card>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <Empty description={
-          <div>
-            <div>审核没跑完。</div>
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>原因：{error.message}</Typography.Text>
-          </div>
-        }>
-          <Button onClick={() => void start(true)}>重试</Button>
-        </Empty>
-      </Card>
+      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+        {levelControl}
+        <Card>
+          <Empty description={
+            <div>
+              <div>审核没跑完。</div>
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>原因：{error.message}</Typography.Text>
+            </div>
+          }>
+            <Button onClick={() => void start(true)}>重试</Button>
+          </Empty>
+        </Card>
+      </div>
     );
   }
 
@@ -582,11 +604,16 @@ export default function ReviewPage() {
         title={
           <Space size={8}>
             <span>评分卡</span>
-            {/* 门禁结论随模型而变，必须让用户看到「这次是谁判的」 */}
+            <Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: "normal" }}>
+              仅显示未通过项（{items.length - items.filter((i) => i.verdict === "pass").length}/{items.length}）
+            </Typography.Text>
             {usedModel && <Tag color="geekblue">模型：{usedModel}</Tag>}
           </Space>
         }
       >
+        {grouped.length === 0 ? (
+          <Empty description={<span style={{ fontSize: 13 }}>所有检查项均已通过。完整清单见「导出审核报告」。</span>} />
+        ) : (
         <Collapse
           defaultActiveKey={grouped.map(([k]) => k)}
           items={grouped.map(([group, list]) => ({
@@ -653,6 +680,7 @@ export default function ReviewPage() {
             ),
           }))}
         />
+        )}
       </Card>
 
       {/* 待澄清清单 */}

@@ -16,7 +16,7 @@ import Markdown from "@/components/Markdown";
  *
  * 硬约束（逐条对着 `UI-Spec §4.3`）：
  *  - 页首**常驻**提示条「只含本项目内容」（`REQ-KB-001`）；
- *  - 四分区 Tab（PRD / Spec / 术语表 / 领域模型），**切换无动效**且**各自保留关键词**；
+ *  - 五分区 Tab（PRD / Spec / 术语表 / 领域模型 / **工程约束**），**切换无动效**且**各自保留关键词**；
  *  - 来源标签用**中文文字**（平台抽取 / 你编辑过 / 你上传的），**不用英文枚举值**；
  *  - 编辑态替换预览区；「取消」**需二次确认**（防误丢）；`If-Match` 不匹配 → 409 不静默覆盖；
  *  - 空态、搜索无结果、403 是**三个不同视图**。
@@ -198,6 +198,8 @@ export default function KbPage() {
               <Empty description={`没有匹配「${q}」的内容。`}>
                 <Button size="small" onClick={() => setKeywords((k) => ({ ...k, [sector]: "" }))}>清除搜索</Button>
               </Empty>
+            ) : sector === "constraints" ? (
+              <Empty description="这个项目还没有接入工程约束。回到项目列表点「接入已有工程」即可。" />
             ) : (
               <Empty description="知识库还是空的。上传 PRD 后，平台会自动把内容抽进来。">
                 <Button type="primary" size="small" icon={<UploadOutlined />}

@@ -78,6 +78,10 @@ if(!projCols2.some(c=>c.name==='review_extended')) db.exec("ALTER TABLE tbl_proj
 if(!reviewCols.some(c=>c.name==='review_level')) db.exec("ALTER TABLE tbl_review_report ADD COLUMN review_level TEXT NOT NULL DEFAULT 'standard'");
 if(!reviewCols.some(c=>c.name==='review_extended')) db.exec("ALTER TABLE tbl_review_report ADD COLUMN review_extended INTEGER NOT NULL DEFAULT 0");
 
+// 工程接入（F17，2026-10-29）：项目来源 + 登记的工程根目录（一期只读，不写工程文件）
+if(!projCols2.some(c=>c.name==='source_kind')) db.exec("ALTER TABLE tbl_project ADD COLUMN source_kind TEXT NOT NULL DEFAULT 'new'");
+if(!projCols2.some(c=>c.name==='engineering_root')) db.exec("ALTER TABLE tbl_project ADD COLUMN engineering_root TEXT");
+
 // 审核页「未通过项 · 补充信息」（2026-10-26）：用户对未通过检查项补充的说明，随 `#23` 写回 PRD
 const reviewItemCols=db.prepare('PRAGMA table_info(tbl_review_item)').all() as {name:string}[];
 if(!reviewItemCols.some(c=>c.name==='supplement')) db.exec("ALTER TABLE tbl_review_item ADD COLUMN supplement TEXT NOT NULL DEFAULT ''");
