@@ -1,0 +1,28 @@
+# 依赖
+node_modules/
+web/node_modules/
+server/node_modules/
+
+# 构建产物
+dist/
+web/dist/
+web/.vite/
+build/
+*.tsbuildinfo
+
+# 临时脚本与中间产物
+.tmp/
+
+# IDE / 编辑器
+.idea/
+.vscode/
+*.iml
+
+# 本地运行时数据（sqlite / 备份 / 快照）
+server/data/
+
+# 系统与日志
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
