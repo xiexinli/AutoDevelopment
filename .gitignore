@@ -24,6 +24,16 @@ build/
 # 本地运行时数据（sqlite / 备份 / 快照）
 server/data/
 
+# 环境变量与密钥（**保留 .env.example 模板**）
+.env
+.env.*
+.env.bak*
+!.env.example
+**/.env
+**/.env.*
+**/.env.bak*
+!**/.env.example
+
 # 系统与日志
 .DS_Store
 Thumbs.db
