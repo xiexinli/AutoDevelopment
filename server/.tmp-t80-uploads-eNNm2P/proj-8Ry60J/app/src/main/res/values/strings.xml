@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">工作台</string>
+  <string name="text_el_work_001">元素1</string>
+  <string name="text_el_work_002">元素2</string>
+</resources>
