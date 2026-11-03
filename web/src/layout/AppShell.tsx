@@ -30,7 +30,7 @@ const PROJECT_TABS = [
   { key: "upload", label: "上传" },
   { key: "review", label: "审核" },
   { key: "split", label: "拆解" },
-  { key: "editor", label: "编辑" },
+  { key: "editor", label: "编辑（辅助）" },
   { key: "specs", label: "Spec" },
   { key: "apis", label: "接口" },
   { key: "capabilities", label: "能力" },

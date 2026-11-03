@@ -14,7 +14,7 @@ import PatchWriteback from "@/components/PatchWriteback";
 /**
  * `UI-WORK-001` 工作台（主界面）。
  *
- * 结构（`UI-Spec §4.4`）：**顶部状态条（含 9 节点阶段导航）+ 左栏（分段控件 编辑｜预览，两态内容见 §4.8/§4.9）
+ * 结构（`UI-Spec §4.4`）：**顶部状态条（含 8 节点阶段导航）+ 左栏（分段控件 编辑｜预览，两态内容见 §4.8/§4.9）
  * + 右栏对话**。全站**只此一条 SSE 连接**（`REQ-GEN-007`）。
  *
  * 硬约束：
@@ -23,13 +23,13 @@ import PatchWriteback from "@/components/PatchWriteback";
  *  - 手动「上传 PRD」**首次前**须先过 `EL-GLOBAL-004`（由上传页负责拦截）。
  */
 
-/** 9 节点阶段导航（对齐漏斗 `REQ-TRACK-001`） */
-const STAGES = ["新建", "上传", "审核", "拆解", "Spec", "编辑", "生成", "预览", "交付"] as const;
+/** 8 节点阶段导航（对齐漏斗 `REQ-TRACK-001`；「编辑」节点自 2026-10-29 起移除 → 降为辅助页） */
+const STAGES = ["新建", "上传", "审核", "拆解", "Spec", "生成", "预览", "交付"] as const;
 type Stage = (typeof STAGES)[number];
 
 const STAGE_ROUTE: Record<Stage, string> = {
   新建: "workbench", 上传: "upload", 审核: "review", 拆解: "split", Spec: "specs",
-  编辑: "editor", 生成: "editor", 预览: "editor?mode=preview", 交付: "versions",
+  生成: "editor", 预览: "editor?mode=preview", 交付: "versions",
 };
 
 /** `数据模型 §3.1` 的 17 态 → 中文名（`EL-WORK-003`） */
@@ -40,11 +40,11 @@ const STAGE_CN: Record<string, string> = {
   verifying: "验证中", preview_ready: "预览就绪", testing: "测试中", delivered: "已交付", manual_needed: "需人工介入",
 };
 
-/** 项目阶段 → 阶段导航的到达节点（只用于置灰判断，**不是业务真值**） */
+/** 项目阶段 → 阶段导航的到达节点（只用于置灰判断，**不是业务真值**）；「编辑」已不占主流程节点 → 归入 Spec 之后 */
 const STAGE_ORDER: Record<string, number> = {
   created: 0, kb_ready: 1, reviewing: 2, chatting: 2, gate_passed: 3, gate_blocked: 2,
-  splitting: 3, spec_ready: 4, spec_generating: 4, ui_finalizing: 5, api_developing: 5,
-  app_developing: 5, editing: 5, generating: 6, verifying: 6, preview_ready: 7, testing: 7, delivered: 8,
+  splitting: 3, spec_ready: 4, spec_generating: 4, ui_finalizing: 4, api_developing: 4,
+  app_developing: 4, editing: 4, generating: 5, verifying: 5, preview_ready: 6, testing: 6, delivered: 7,
 };
 
 export default function WorkbenchPage() {
@@ -146,7 +146,7 @@ export default function WorkbenchPage() {
           <Button size="small" icon={<UploadOutlined />} onClick={() => { track("EVT_upload_entry_click", { project_id: projectId, gate: "pass" }, { dedupWindowMs: 300 }); nav(`/projects/${projectId}/upload`); }}>上传 PRD</Button>
         </Space>
 
-        {/* 阶段导航（9 节点） */}
+        {/* 阶段导航（8 节点） */}
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
           {STAGES.map((s, i) => {
             const done = i < reached;

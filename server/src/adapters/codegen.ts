@@ -43,6 +43,15 @@ const ADAPTER_CONTAINERS = new Set(["LIST", "GRID", "BANNER", "TAB_LAYOUT"]);
 const TEXT_WIDGETS = new Set(["TEXT", "MULTILINE_TEXT", "RICH_TEXT", "LABEL", "BUTTON", "INPUT", "MULTILINE_INPUT", "PASSWORD_INPUT", "RADIO_BUTTON", "CHECK_BOX", "SWITCH"]);
 const MAX_BYTES = 20 * 1024 * 1024;
 
+/** 新元素的默认样式（UI 别名形态；`checkedStyle` 与 `core/editor.defaultStyle` 同源）。 */
+export const defaultStyle = () => ({
+  width: { mode: "dp", value: 120 }, height: { mode: "dp", value: 40 },
+  background: "#FFFFFF", font_color: "#1F2329", font_size: 14,
+  padding: { top: 0, right: 0, bottom: 0, left: 0 }, margin: { top: 0, right: 0, bottom: 8, left: 0 },
+  radius: 0, border: { width_dp: 0, color: "#D9D9D9", style: "solid" }, alpha: 100,
+  align_h: "left", align_v: "top", visibility: "visible",
+});
+
 export function normalizeElementId(value: unknown): string {
   if (typeof value !== "string") throw new ApiError("INVALID_ARGUMENT", "元素必须使用服务端正式 element_id。");
   const m = /^EL-([A-Z][A-Z0-9_]*)-(\d{1,4})$/i.exec(value.trim());

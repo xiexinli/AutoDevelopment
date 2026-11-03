@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  Alert, App as AntApp, Button, Card, Drawer, Empty, Modal, Segmented, Space, Spin, Table, Tag, Tooltip, Typography,
+  Alert, App as AntApp, Button, Card, Drawer, Empty, Modal, Radio, Segmented, Space, Spin, Table, Tag, Tooltip, Typography,
 } from "antd";
 import { DeleteOutlined, RedoOutlined, UndoOutlined } from "@ant-design/icons";
 import Canvas from "@/editor/Canvas";
@@ -13,8 +13,8 @@ import { countNodes, findNode, insertInto, newNode, newTempId, removeNode, walk,
 import { DEFAULT_SIZE, WIDGET_BY_TYPE } from "@/domain/widgets";
 import {
   fetchPages, fetchMe, submitGeneration, fetchTask, submitDraft, fetchDraft, cancelTask, fetchAiEgress,
-  fetchVerifications, fetchArtifacts, fetchElementLedger, retryVerification, hashTree, listProjectTasks, buildResultDisplay,
-  type GenerationReceipt, type PageDraft, type TaskState, type VerificationEvidence, type Artifact, type SuccessfulPreview,
+  fetchVerifications, fetchArtifacts, fetchElementLedger, retryVerification, listProjectTasks, buildResultDisplay, fetchTargetCandidates,
+  type GenerationReceipt, type PageDraft, type TaskState, type VerificationEvidence, type Artifact, type SuccessfulPreview, type TargetCandidate,
 } from "@/store/session";
 import { ApiError, IS_MOCK } from "@/api/client";
 import { track } from "@/track";
@@ -57,6 +57,8 @@ interface DraftContext {
   tree: ElementNode[]; saved: ElementNode[]; past: ElementNode[][]; future: ElementNode[][];
   version: number; idBase: Record<string, number>; dirty: boolean; revision: number;
   blocked: boolean; saving: Promise<PageDraft> | null; latestTask: GenerationReceipt | null; latestSeq: number;
+  /** `#43` 输入 = S5 `UI-Spec`（自 2026-10-29）→ 由 `#42 draft` 带回的规范哈希与就绪标记 */
+  specInputHash: string | null; specReady: boolean;
   voidIds: Set<string>; assigned: Map<string, string>; freshTemps: Map<string, string>;
 }
 interface CachedDraft {
@@ -132,6 +134,11 @@ export default function EditPage({ basePath }: { basePath?: string } = {}) {
   const [dirty, setDirty] = useState(false);
   const [editRevision, setEditRevision] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  /** S5 `UI-Spec` 是否就绪（生成输入来源，自 2026-10-29） */
+  const [specReady, setSpecReady] = useState(false);
+  /** `#80` 目标接入点候选（自 2026-11-03）：`ambiguous=true` 时弹选择器，未指定不发起 `#43` */
+  const [targetItems, setTargetItems] = useState<TargetCandidate[] | null>(null);
+  const [targetPick, setTargetPick] = useState(0);
   const submittingRef = useRef(false);
   const [canceling, setCanceling] = useState(false);
   const [task, setTask] = useState<TaskState | null>(null);
@@ -189,6 +196,9 @@ export default function EditPage({ basePath }: { basePath?: string } = {}) {
     observeSeq(ctx, draft.latest_seq);
     observeSeq(ctx, draft.last_success?.seq);
     draft.running_tasks.forEach((t) => observeSeq(ctx, t.seq));
+    // 生成输入 = S5 `UI-Spec`（不再用画布草稿）：`#42` 带回规范哈希与就绪标记。
+    if (draft.spec_input_hash !== undefined) ctx.specInputHash = draft.spec_input_hash ?? null;
+    if (draft.spec_ready !== undefined) ctx.specReady = !!draft.spec_ready;
   }, [observeSeq]);
   const adoptTask = useCallback((ctx: DraftContext, receipt: GenerationReceipt & Partial<Omit<TaskState, "status">>, restart = false) => {
     if (!valid(ctx) || !validSeq(receipt.seq)
@@ -259,7 +269,7 @@ export default function EditPage({ basePath }: { basePath?: string } = {}) {
     setSelected(null); setErrors({}); setDirty(false); setPast([]); setFuture([]); setTree([]);
     setSaving(false); setLocalWarning(""); setLedgerLoading(false);
     setGenReason(""); setVerifyRules([]); setVerifyAttempt(0); setLedgerRows([]); setLedgerError("");
-    setDraftTip(false); setCanceling(false); setSubmitting(false); submittingRef.current = false;
+    setDraftTip(false); setCanceling(false); setSubmitting(false); submittingRef.current = false; setSpecReady(false);
     let context: DraftContext | null = null;
     void (async () => {
       try {
@@ -270,9 +280,11 @@ export default function EditPage({ basePath }: { basePath?: string } = {}) {
         if (!page) throw new Error("项目中没有可编辑页面。");
         const draft = await fetchDraft(page.page_id, abort.signal);
         if (abort.signal.aborted) return;
+        setSpecReady(!!draft.spec_ready);
         context = { pageId: page.page_id, projectId, key: `ad.editor.v3:${encodeURIComponent(user.user_id)}:${encodeURIComponent(projectId)}:${encodeURIComponent(page.page_id)}`,
           abort, tree: draft.tree, saved: draft.tree, past: [], future: [], version: draft.version,
           idBase: draft.id_base, dirty: false, revision: 0, blocked: false, saving: null, latestTask: null, latestSeq: 0,
+          specInputHash: draft.spec_input_hash ?? null, specReady: !!draft.spec_ready,
           voidIds: new Set(), assigned: new Map(), freshTemps: new Map() };
         const ctx = context;
         ctxRef.current = ctx;
@@ -623,10 +635,38 @@ export default function EditPage({ basePath }: { basePath?: string } = {}) {
     void poll();
     return () => { closed = true; requestAbort?.abort(); if (requestTimeout) clearTimeout(requestTimeout); stream.close(); if (timer) clearTimeout(timer); };
   }, [projectId, pageId, loading, task?.task_id, task?.seq, valid, restoreSuccess, cache, observeTasks, observeSeq, observeDraftSeq]);
-  async function doSubmit() {
+  /**
+   * 主流程生成入口（`EL-WORK-039`）：先做 `#80` 目标接入点识别（`K5`）——
+   * `ambiguous=true` 且给出候选 → 弹选择器，**未指定不发起 `#43`**；否则直接提交。
+   */
+  async function startSubmit() {
     const ctx = ctxRef.current;
     if (!ctx || submittingRef.current) return;
-    if (!countNodes(ctx.tree)) { message.warning("画布上还没有控件。"); return; }
+    // 前置不满足时交给 doSubmit 出提示（避免重复告警）；同时上报 `EVT_gen_spec_blocked`（点击但被拦截）
+    if (!egressOn || !ctx.specReady || !ctx.specInputHash) {
+      track("EVT_gen_spec_blocked", { block_reason: !egressOn ? "egress_disabled" : "no_spec", page_id: ctx.pageId ?? null },
+        { dedupKey: `genspecblocked:${ctx.pageId}`, immediate: true });
+      await doSubmit(); return;
+    }
+    try {
+      const c = await fetchTargetCandidates(ctx.projectId, ctx.pageId, ctx.abort.signal);
+      if (valid(ctx) && c.ambiguous && c.items.length) {
+        // `EVT_gen_target_ambiguous`：`#80` 返回 ambiguous=true 且提示条 + 候选渲染之后
+        track("EVT_gen_target_ambiguous", { page_id: ctx.pageId, candidate_count: c.items.length, source_kind: "imported" },
+          { dedupKey: `targetamb:${ctx.pageId}`, dedupWindowMs: 3000, immediate: true });
+        // `EVT_gen_spec_blocked`：未指定目标接入点 → 不发 `#43`
+        track("EVT_gen_spec_blocked", { block_reason: "target_ambiguous", page_id: ctx.pageId },
+          { dedupKey: `genspecblocked:target:${ctx.pageId}`, immediate: true });
+        setTargetItems(c.items); setTargetPick(0); return;
+      }
+    } catch { /* 识别失败不阻断生成（回退平台默认） */ }
+    await doSubmit();
+  }
+  async function doSubmit(target?: TargetCandidate) {
+    const ctx = ctxRef.current;
+    if (!ctx || submittingRef.current) return;
+    // 自 2026-10-29：生成输入 = S5 `UI-Spec`（`K1`/`K2`），不再要求画布有控件。
+    if (!ctx.specReady || !ctx.specInputHash) { message.warning("还没有可用的 UI-Spec；先完成 S5 的 Spec 生成，再由 Spec 生成代码。"); return; }
     if (!egressOn) { message.warning(EGRESS_DISABLED_TEXT);
       // ★合规：外发开关关闭导致生成不可用（证明没有静默降级）
       track("EVT_gen_blocked_by_egress", { code: "UPSTREAM_UNAVAILABLE", entry: "edit_submit" },
@@ -637,17 +677,23 @@ export default function EditPage({ basePath }: { basePath?: string } = {}) {
       return; }
     submittingRef.current = true; setSubmitting(true);
     try {
-      // 先保存，使用返回的正式 tree 计算 SHA256。提交期间的新编辑单独保留/稍后保存。
-      const saved = await saveDraft(ctx);
-      const input_hash = await hashTree(saved.tree);
-      if (!valid(ctx)) return;
-      const receipt = await submitGeneration(ctx.pageId, { input_hash, base_seq: ctx.latestSeq }, ctx.abort.signal);
+      // 画布改动仍落盘（辅助微调），但**不作为生成输入**：`#43` 输入取 S5 `UI-Spec` 的规范哈希。
+      await saveDraft(ctx);
+      if (!valid(ctx) || !ctx.specInputHash) return;
+      const input_hash = ctx.specInputHash;
+      const receipt = await submitGeneration(ctx.pageId, { input_hash, base_seq: ctx.latestSeq, ...(target ? { target } : {}) }, ctx.abort.signal);
       if (!valid(ctx)) return;
       adoptTask(ctx, receipt); message.success(`生成任务 #${receipt.seq} 已入队。`);
+      // `EVT_gen_spec_accepted`：主流程「由 Spec 生成代码」触发、`#43` 返回 202 且 task_id+seq 写入之后
+      track("EVT_gen_spec_accepted", {
+        task_id: receipt.task_id, seq: receipt.seq, page_id: ctx.pageId, source: "spec_generate",
+        input_hash, target: target ? JSON.stringify({ module: target.module, activity: target.activity, layout: target.layout }) : null,
+        element_count: countNodes(ctx.tree),
+      }, { dedupKey: receipt.task_id, immediate: true });
       // 漏斗节点 6：生成任务创建成功、返回 task_id + seq 之后
       track("EVT_edit_submit_success", {
         task_id: receipt.task_id, seq: receipt.seq, page_id: ctx.pageId,
-        element_count: countNodes(saved.tree),
+        element_count: countNodes(ctx.tree),
       }, { dedupKey: receipt.task_id, immediate: true });
     } catch (e) {
       if (valid(ctx)) {
@@ -878,8 +924,8 @@ export default function EditPage({ basePath }: { basePath?: string } = {}) {
         marginTop: 12, minHeight: 48, background: "var(--ad-bg-container)", borderTop: "1px solid var(--ad-border)",
         borderRadius: 8, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, padding: "8px 16px",
       }}>
-        <Tooltip title={egressOn ? "" : EGRESS_DISABLED_TEXT}>
-          <Button type="primary" loading={submitting} disabled={!egressOn || conflict} onClick={() => setNotice(true)}>提交变更</Button>
+        <Tooltip title={!egressOn ? EGRESS_DISABLED_TEXT : !specReady ? "还没有可用的 UI-Spec；先完成 S5 的 Spec 生成。" : ""}>
+          <Button type="primary" loading={submitting} disabled={!egressOn || conflict || !specReady} onClick={() => setNotice(true)}>由 Spec 生成代码</Button>
         </Tooltip>
         {task && !terminal(task.status) && <Button loading={canceling} onClick={() => void stopGen()}>停止生成</Button>}
         <Button icon={<UndoOutlined />} disabled={!past.length} onClick={undo}>撤销</Button>
@@ -952,11 +998,42 @@ export default function EditPage({ basePath }: { basePath?: string } = {}) {
         </Card>)}
       </Drawer>
 
+      {/* `#80` 目标接入点选择器（`EL-WORK-040/041`）：`ambiguous=true` 时才出现，未指定不发起 `#43` */}
+      <Modal title="选择目标接入点" open={!!targetItems} okText="由你指定" cancelText="取消"
+        onCancel={() => setTargetItems(null)}
+        onOk={() => {
+          const t = targetItems?.[targetPick];
+          if (t) {
+            // `EVT_gen_target_specified`：用户选中候选并确认、写入待提交态之后
+            track("EVT_gen_target_specified", {
+              page_id: ctxRef.current?.pageId ?? "", module: t.module, activity: t.activity, layout: t.layout,
+              specified_by: "candidate", candidate_count: targetItems?.length ?? 0, confidence: t.confidence,
+            }, { dedupKey: `targetspec:${ctxRef.current?.pageId}`, immediate: true });
+          }
+          setTargetItems(null); void doSubmit(t);
+        }}>
+        <Typography.Paragraph type="secondary">
+          这个页面该生成到哪个界面还不确定。
+        </Typography.Paragraph>
+        <Radio.Group value={targetPick} onChange={(e) => setTargetPick(e.target.value as number)} style={{ width: "100%" }}>
+          <Space direction="vertical" style={{ width: "100%" }}>
+            {targetItems?.map((c, i) => (
+              <Radio key={i} value={i}>
+                {`模块 ${c.module || "—"} ｜ ${c.activity || "—"} ｜ ${c.layout || "—"} ｜ 置信 ${Math.round(c.confidence * 100)}%`}
+                {c.reasons.length > 0 && (
+                  <div style={{ color: "var(--ad-text-secondary, #999)", fontSize: 12 }}>{c.reasons.join("；")}</div>
+                )}
+              </Radio>
+            ))}
+          </Space>
+        </Radio.Group>
+      </Modal>
+
       <ComplianceNotice
         open={notice}
         scene="generate_first"
         onCancel={() => { setNotice(false); message.info("已取消，不会发起生成。"); }}
-        onConfirmed={() => { setNotice(false); void doSubmit(); }}
+        onConfirmed={() => { setNotice(false); void startSubmit(); }}
       />
     </div>
   );

@@ -2,11 +2,12 @@ import { ApiError } from './envelope.ts';
 import { assertProjectAccess, type User } from './auth.ts';
 import { all,get,json,run,uid,nowIso,tx } from '../db/index.ts';
 import { ANDROID_CLASSES, activeNodes, checkedStyle, normalizeElementId } from '../adapters/codegen.ts';
+import { parseUiSpec, uiSpecPages, uiSpecModules, uiSpecInputHash, type SpecNode } from '../adapters/uispec.ts';
+export { defaultStyle } from '../adapters/codegen.ts';
 import { readMeta } from './revisions.ts';
 export interface Page { page_id:string;project_id:string;module_code:string;name:string;order_index:number;status:string }
 export interface ElementRow {element_id:string;project_id:string;page_id:string;parent_element_id:string|null;widget_type:string;alias:string;order_index:number;status:string;temp_id:string;version:number;voided_at:string|null}
 export interface Node {element_id:string|null;temp_id:string;widget_type:string;alias:string;style:any;events:Record<string,boolean>;status:string;children:Node[]}
-export const defaultStyle=()=>({width:{mode:'dp',value:120},height:{mode:'dp',value:40},background:'#FFFFFF',font_color:'#1F2329',font_size:14,padding:{top:0,right:0,bottom:0,left:0},margin:{top:0,right:0,bottom:8,left:0},radius:0,border:{width_dp:0,color:'#D9D9D9',style:'solid'},alpha:100,align_h:'left',align_v:'top',visibility:'visible'});
 export function loadPage(user:User,id:string):Page {
  const p=get<Page>(`SELECT * FROM tbl_page WHERE page_id=?`,id);
  if(!p)throw new ApiError(user.role==='admin'?'NOT_FOUND':'FORBIDDEN');assertProjectAccess(user,p.project_id);return p;
@@ -15,6 +16,46 @@ export function ensurePage(projectId:string):void {
  if(!get(`SELECT page_id FROM tbl_page WHERE project_id=?`,projectId)) {
    run(`INSERT INTO tbl_page(page_id,project_id,module_code,name,order_index,status,created_at) VALUES(?,?,'HOME','首页',0,'draft',?)`,uid('pg'),projectId,nowIso());
  }
+}
+
+/** 已成功生成的 S5 `UI-Spec` 正文（非 `succeeded` 视为没有）。 */
+export function successfulUiSpec(projectId:string):string|null {
+ const row=get<{content_md:string}>(`SELECT content_md FROM tbl_spec_doc WHERE project_id=? AND role='ui' AND status='succeeded' ORDER BY version DESC LIMIT 1`,projectId);
+ return row?.content_md?.trim()?row.content_md:null;
+}
+
+/**
+ * 把 `tbl_page` 对齐到 S5 `UI-Spec`（`K2`：页面与元素 `EL-*` 由 `UI-Spec` 定义）。
+ * 页面模块取自 §2 页面清单，缺的补上 §4 里出现过的模块。**幂等**（按 `module_code` 认页）。
+ * 返回是否已有 `UI-Spec` 可用（无 → 调用方可回落 `ensurePage` 的占位页）。
+ */
+export function syncPagesFromSpec(projectId:string):boolean {
+ const md=successfulUiSpec(projectId);
+ if(!md)return false;
+ const fromList=uiSpecPages(md);
+ const mods=fromList.map(p=>p.module_code);
+ for(const m of uiSpecModules(md))if(!mods.includes(m)&&m!=='GLOBAL')mods.push(m);
+ const nameOf=new Map(fromList.map(p=>[p.module_code,p.name]));
+ tx(()=>{
+  mods.forEach((mod,i)=>{
+   const exists=get<{page_id:string}>(`SELECT page_id FROM tbl_page WHERE project_id=? AND module_code=?`,projectId,mod);
+   if(exists)return;
+   run(`INSERT INTO tbl_page(page_id,project_id,module_code,name,order_index,status,created_at) VALUES(?,?,?,?,?,'draft',?)`,uid('pg'),projectId,mod,nameOf.get(mod)??mod,i,nowIso());
+  });
+ });
+ return true;
+}
+
+/**
+ * «Spec 直出代码» 的输入：由 S5 `UI-Spec` 解析该页面的元素树 + 规范哈希（`#43`）。
+ * 无 `UI-Spec` / 该模块无元素 → `null`（调用方决定报错文案）。
+ */
+export function specInputFor(page:Page):{tree:SpecNode[];input_hash:string}|null {
+ const md=successfulUiSpec(page.project_id);
+ if(!md)return null;
+ let tree:SpecNode[];
+ try{tree=parseUiSpec(md,page.module_code);}catch{return null;}
+ return {tree,input_hash:uiSpecInputHash(page.module_code,page.name,tree)};
 }
 export function loadElement(user:User,id:string,projectId?:string):ElementRow {
  const normalized=normalizeElementId(id);
@@ -29,7 +70,8 @@ export function draft(page:Page):any {
  const project=get<{element_id_seq:string}>(`SELECT element_id_seq FROM tbl_project WHERE project_id=?`,page.project_id);
  const success=readMeta<any>(page.project_id,`preview:${page.page_id}`)??null;
  const running=all(`SELECT task_id,seq,status FROM tbl_gen_task WHERE page_id=? AND type='code_gen' AND status IN ('queued','running') ORDER BY seq`,page.page_id);
- return {tree:json.parse<Node[]>(r?.tree_json,[]),id_base:json.parse(project?.element_id_seq,{}),version:r?.version??0,updated_at:r?.updated_at??'',last_success:success,running_tasks:running,latest_seq:get<{seq:number}>(`SELECT MAX(seq) seq FROM tbl_gen_task WHERE project_id=? AND type='code_gen'`,page.project_id)?.seq??0};
+ const spec=specInputFor(page);
+ return {tree:json.parse<Node[]>(r?.tree_json,[]),id_base:json.parse(project?.element_id_seq,{}),version:r?.version??0,updated_at:r?.updated_at??'',last_success:success,running_tasks:running,latest_seq:get<{seq:number}>(`SELECT MAX(seq) seq FROM tbl_gen_task WHERE project_id=? AND type='code_gen'`,page.project_id)?.seq??0,spec_input_hash:spec?.input_hash??null,spec_ready:!!spec};
 }
 function canonicalStyle(node:Node):any {
  const s=checkedStyle(node);const dim=(d:any)=>({mode:d.mode==='wrap_content'?'wrap':d.mode==='match_parent'?'match':d.mode,value:d.value});

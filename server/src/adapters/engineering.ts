@@ -32,6 +32,8 @@ export interface ConstraintPack {
   project_name: string | null; namespace: string | null; application_id: string | null;
   modules: string[]; android: AndroidFacts; dependencies: DependencyRef[];
   agent_config_files: string[]; style_tools: string[]; naming_samples: string[];
+  /** 既有 `Activity`（`android:name`，取自各模块 `src/main/AndroidManifest.xml`）与 layout 名（`res/layout/*.xml`，去扩展名） */
+  activities: string[]; layouts: string[];
   build_commands: string[]; items: ConstraintItem[]; warnings: string[]; markdown: string;
 }
 
@@ -183,8 +185,25 @@ function collectStyleTools(root: string): string[] {
   return STYLE_TOOL_CANDIDATES.filter((c) => existsSync(join(root, c)));
 }
 
-function collectNamingSamples(root: string, limit = 12): string[] {
-  const samples = new Set<string>();
+/**
+ * 既有 `Activity` 与 layout 清单（**只读扫描**，供 `#80` 目标接入点识别）。
+ * `Activity` 取自各模块 `src/main/AndroidManifest.xml` 的 `android:name`；layout 取 `res/layout/*.xml` 文件名。
+ */
+function collectAndroidInventory(root: string): { activities: string[]; layouts: string[] } {
+  const activities: string[] = []; const layouts: string[] = [];
+  walk(root, { onFile: (abs, rel) => {
+    if (/\/src\/main\/AndroidManifest\.xml$/.test(rel)) {
+      const t = readText(abs, 128 * 1024);
+      if (t) for (const m of t.matchAll(/<activity\b[^>]*?\bandroid:name\s*=\s*["']([^"']+)["']/g)) activities.push(m[1]!.trim());
+      return;
+    }
+    const lm = /\/res\/layout\/([^/]+)\.xml$/.exec(rel);
+    if (lm) layouts.push(lm[1]!);
+  } });
+  return { activities: [...new Set(activities)], layouts: [...new Set(layouts)] };
+}
+
+function collectNamingSamples(root: string, limit = 12): string[] {  const samples = new Set<string>();
   walk(root, { onFile: (abs, rel) => {
     if (samples.size >= 60) return;
     if (!/\/res\/layout\/[^/]+\.xml$/.test(rel) && !/^res\/layout\/[^/]+\.xml$/.test(rel)) return;
@@ -276,6 +295,7 @@ export function createLocalEngineeringAgent(): EngineeringAgent {
       const agentConfigFiles = collectAgentConfigs(root);
       const styleTools = collectStyleTools(root);
       const namingSamples = collectNamingSamples(root);
+      const inventory = collectAndroidInventory(root);
       const hasWrapper = existsSync(join(root, "gradlew"));
       const buildCommands = hasWrapper ? ["./gradlew assembleDebug", "./gradlew test", "./gradlew lint"] : [];
 
@@ -295,14 +315,16 @@ export function createLocalEngineeringAgent(): EngineeringAgent {
       push("agent_config_files", "agent / AI 配置", agentConfigFiles.join("、"), "（工程根）", "high");
       push("style_tools", "代码风格工具", styleTools.join("、"), "（工程根）", "high");
       push("naming_samples", "既有 @+id 命名抽样", namingSamples.join("、"), "（res/layout 抽样）", "medium");
+      push("activities", "既有 Activity", inventory.activities.join("、"), "（AndroidManifest 扫描）", "high");
+      push("layouts", "既有 layout", inventory.layouts.join("、"), "（res/layout 扫描）", "high");
 
       const pack: ConstraintPack = {
         root, scanned_at: new Date().toISOString(), android_detected: true,
         project_name: projectName, namespace, application_id: applicationId,
         modules, android: { agp, kotlin, gradle, compile_sdk: compileSdk, min_sdk: minSdk, target_sdk: targetSdk, java },
         dependencies, agent_config_files: agentConfigFiles, style_tools: styleTools,
-        naming_samples: namingSamples, build_commands: buildCommands, items, warnings,
-        markdown: renderMarkdown({ root, projectName, namespace, applicationId, modules, android: { agp, kotlin, gradle, compile_sdk: compileSdk, min_sdk: minSdk, target_sdk: targetSdk, java }, dependencies, agentConfigFiles, styleTools, namingSamples, buildCommands, items, warnings, scannedAt: new Date().toISOString() }),
+        naming_samples: namingSamples, activities: inventory.activities, layouts: inventory.layouts, build_commands: buildCommands, items, warnings,
+        markdown: renderMarkdown({ root, projectName, namespace, applicationId, modules, android: { agp, kotlin, gradle, compile_sdk: compileSdk, min_sdk: minSdk, target_sdk: targetSdk, java }, dependencies, agentConfigFiles, styleTools, namingSamples, activities: inventory.activities, layouts: inventory.layouts, buildCommands, items, warnings, scannedAt: new Date().toISOString() }),
       };
       return pack;
     },
@@ -324,6 +346,7 @@ interface RenderInput {
   root: string; projectName: string | null; namespace: string | null; applicationId: string | null;
   modules: string[]; android: AndroidFacts; dependencies: DependencyRef[];
   agentConfigFiles: string[]; styleTools: string[]; namingSamples: string[];
+  activities: string[]; layouts: string[];
   buildCommands: string[]; items: ConstraintItem[]; warnings: string[]; scannedAt: string;
 }
 function renderMarkdown(i: RenderInput): string {
@@ -344,6 +367,8 @@ function renderMarkdown(i: RenderInput): string {
   L.push(`- namespace：\`${i.namespace ?? "—"}\``);
   L.push(`- applicationId：\`${i.applicationId ?? "—"}\``);
   L.push(`- 既有 @+id 命名抽样：${i.namingSamples.length ? i.namingSamples.map((s) => `\`${s}\``).join("、") : "—"}`);
+  L.push(`- 既有 Activity：${i.activities.length ? i.activities.map((a) => `\`${a}\``).join("、") : "—"}`);
+  L.push(`- 既有 layout：${i.layouts.length ? i.layouts.map((l) => `\`${l}\``).join("、") : "—"}`);
   L.push("");
   L.push("## 3 agent / AI 工程化配置", "");
   L.push(i.agentConfigFiles.length ? i.agentConfigFiles.map((f) => `- \`${f}\``).join("\n") : "- （无）");
@@ -370,7 +395,7 @@ function renderMarkdown(i: RenderInput): string {
 }
 
 /** 供**提示词注入**用的紧凑摘要（不含大表格；控制长度） */
-export function summarizeConstraints(pack: Pick<ConstraintPack, "project_name" | "namespace" | "application_id" | "modules" | "android" | "dependencies" | "naming_samples" | "style_tools">): string {
+export function summarizeConstraints(pack: Pick<ConstraintPack, "project_name" | "namespace" | "application_id" | "modules" | "android" | "dependencies" | "naming_samples" | "style_tools" | "activities" | "layouts">): string {
   const L: string[] = [];
   if (pack.project_name) L.push(`- 工程：${pack.project_name}`);
   if (pack.namespace) L.push(`- namespace：${pack.namespace}`);
@@ -382,6 +407,8 @@ export function summarizeConstraints(pack: Pick<ConstraintPack, "project_name" |
   if (a.agp || a.kotlin || a.gradle || a.java) L.push(`- 版本：AGP ${a.agp ?? "?"} / Kotlin ${a.kotlin ?? "?"} / Gradle ${a.gradle ?? "?"} / Java ${a.java ?? "?"}`);
   if (pack.dependencies.length) L.push(`- 依赖（版本锁定）：${pack.dependencies.slice(0, 30).map((d) => `${d.name}${d.version ? `:${d.version}` : ""}`).join("、")}${pack.dependencies.length > 30 ? ` 等 ${pack.dependencies.length} 项` : ""}`);
   if (pack.naming_samples.length) L.push(`- 既有控件命名抽样：${pack.naming_samples.join("、")}`);
+  if (pack.activities?.length) L.push(`- 既有 Activity：${pack.activities.join("、")}`);
+  if (pack.layouts?.length) L.push(`- 既有 layout：${pack.layouts.join("、")}`);
   if (pack.style_tools.length) L.push(`- 代码风格工具：${pack.style_tools.join("、")}`);
   return L.join("\n");
 }

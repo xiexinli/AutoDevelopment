@@ -1,6 +1,6 @@
 # AutoDevelopment 平台 App Spec
 
-> 版本：**v0.2.18** ｜ 来源 PRD：`platform/平台需求概要.md`（平台自身的产品需求）v1.4 · 第 4 轮回写后 · 门禁阻断 0（document_id: `platform/平台需求概要.md`, revision: v1.4/S 2026-10-20）｜ 角色：App ｜ 更新：2026-10-26（**B9 审核补充与复审闭环**；正文回读与精确深链、原子写入、disabled；前轮审核流程优化：`EL-REVIEW-054` 自动审核开关、回写落章 + 澄清答复、复审继承勾选态；上一版 v0.2.14 = 审核流程优化；更早v0.2.13 = 未通过项补充信息）；**本轮同版增量补正**：#8服务端哈希、初载/手动文档门禁、严格正文继承与当前doc历史；不另开轮次。
+> 版本：**v0.2.19** ｜ 来源 PRD：`platform/平台需求概要.md`（平台自身的产品需求）v1.4 · **第 6 轮回写后（去拖拽编辑 / Spec 直出代码，2026-10-29）** · 门禁阻断 0（document_id: `platform/平台需求概要.md`, revision: v1.4/S 2026-10-20）｜ 角色：App ｜ 更新：2026-10-29（**去拖拽编辑 · Spec 直出代码（S5 App-Spec 重同步）**：① **`RT-EDIT-*` / `RT-PREVIEW-*` / `RT-WORK-*` 路由条目语义随动** —— `RT-WORK-001` 承载**主流程生成入口** `EL-WORK-039`、`RT-PREVIEW-001` = **构件预览（主）**、`RT-EDIT-001` = **辅助：生成后微调 · 不占主流程节点**（`K3`/`K6`）；**13 条 `RT-*` 数量不变、编号零重排**；② **§4.2.4 新增 3 行**（`EL-WORK-039` ← `#43`/`#68`；`EL-WORK-040`/`041` ← **`#80`**〔2026-11-03 转正〕），**§4.2.8 的 `EL-EDIT-037` 行改「辅助再生成」（输入 = `UI-Spec`）+ `target?`**、**§4.2.9 的 `EL-PREVIEW-002`/`008` 行改「生成构件（XML / Kotlin 片段）静态预览」**；③ §4.1 新增 `MODEL-TARGET-CANDIDATE`〔2026-11-03 转正〕/`PARAM-TARGET`，`PARAM-INPUT-HASH` 定义改「**`UI-Spec` 快照哈希**」、`PARAM-EDIT-TREE` 降为辅助编辑态用；④ §5.4 工作台 +4 个状态字段 / +2 行接口调用 / +「**目标接入点待指定**」第 6 态（正式基线 · 2026-11-03 转正）/ +阶段机注，§5.8、§5.9 标题与状态、接口调用、五态随动；⑤ **§11 追溯表 95 → 98 行**（`+REQ-GEN-011`/`012`/`013`；`OK` 93→**95**→**96**、`Deferred` 1→**2**→**1**）；⑥ §12 新增 `[草案-APP-01]`（P0）/`[缺口-APP-06]`（P1）/`[待澄清-A07]`（P2）+ `[缺口-UI-13]`/`[冲突-UI-06]` 的 App 侧表态；⑦ §4.2 展开行数 **302 → 305**、`UI-Spec §5` 覆盖 **94/94 行**、元素 **450 → 453**；`#80` 已于 2026-11-03 转正）；上一版 v0.2.18 = 2026-10-29（**工程接入（二期 · 增量写回）**：§4.2.4 +1 行 `EL-WORK-037`/`038`、§10.1 +2 行、§11 95 行）；更早 v0.2.16/v0.2.17 = 2026-10-29（工程接入一期 + intake 前置校验）；再早 v0.2.15 = 2026-10-26（**B9 审核补充与复审闭环**；正文回读与精确深链、原子写入、disabled；前轮审核流程优化：`EL-REVIEW-054` 自动审核开关、回写落章 + 澄清答复、复审继承勾选态；上一版 v0.2.14 = 审核流程优化；更早v0.2.13 = 未通过项补充信息）；**本轮同版增量补正**：#8服务端哈希、初载/手动文档门禁、严格正文继承与当前doc历史；**2026-10-29 销项补正**：§10 随 `埋点-Spec v0.1.13` 重同步（**8 节点 / 63 事件**，补 4 条事件、`EVT_gen_task_*` 补 `source`、`EVT_patch_writeback_*` 补 `trigger`）、§1 关联文档计数随动（**453 / 63·8 / 651·98**）、`[缺口-APP-06]` **✅ 已闭合**；不另开轮次。
 >
 > **本次作业性质**：以 `platform/design/页面规格.md`、`platform/design/数据模型.md` 为**底稿**做**格式转换 + 一致性对齐 + 缺口补齐**，
 > **不重新设计**。冲突时**以 `platform/平台需求概要.md` 为准**并登记，**不自行裁决**。
@@ -16,7 +16,7 @@
 
 | # | 名称 | 是什么 | 谁产出 | 本 Spec 中的角色 |
 |---|---|---|---|---|
-| **①** | **平台自身 App（前端）** | AutoDevelopment 平台**自己的前端应用** —— **桌面浏览器中的 Web 工作台**（B/S 形态），用户在这里建项目、上传 PRD、审核、拆解、拖拽画布、预览、交付 | 平台侧开发 | **★ §1~§10 的产出对象**（`RT-*` 路由、`STORE-*` 状态、页面五态、埋码点） |
+| **①** | **平台自身 App（前端）** | AutoDevelopment 平台**自己的前端应用** —— **桌面浏览器中的 Web 工作台**（B/S 形态），用户在这里建项目、上传 PRD、审核、拆解、**由 Spec 直出代码**（生成后微调走「可视化编辑」辅助页）、作构件预览、交付 | 平台侧开发 | **★ §1~§10 的产出对象**（`RT-*` 路由、`STORE-*` 状态、页面五态、埋码点） |
 | **②** | **生成到安卓工程侧的产物约束** | 平台**为用户生成的那个原生安卓工程**（布局 XML + Kotlin）应当遵守什么 | 平台内部的代码生成链路（S7 开发按本 Spec 实现） | **★ 附节 A 的产出对象**（App 需求包 §4 的 7 条，写给 S7） |
 | **③** | **被开发 App 的接口** | 用户在平台里为**他自己那个 App** 定义的业务接口（编号 `API-<模块>-<三位>`，如 `API-ORDER-001`） | **平台生成**（`REQ-API-001`，实体 `E9 ApiDef`） | **不是本 Spec 的接口**，只是被 `UI-API-001` 管理的**数据**（`接口-Spec §0`） |
 
@@ -24,7 +24,7 @@
 
 | | **A. 平台自身埋点** | **B. 被开发项目的埋点方案** |
 |---|---|---|
-| 埋的是什么 | **平台自己**的用户行为（漏斗 9 节点） | **用户那个 App** 的业务埋点 |
+| 埋的是什么 | **平台自己**的用户行为（漏斗 **8 节点**〔2026-10-29 去拖拽编辑：**9 → 8**，「编辑」节点移除，`K3`；节点 6/7/8 = 生成 / 预览 / 交付〕） | **用户那个 App** 的业务埋点 |
 | 需求来源 | `REQ-TRACK-001`~`003` | `REQ-SPLIT-004` |
 | 载体 | `API-PLAT-062`（`#62 POST /metrics/events`，批量 + 失败静默重试） | `TrackPlan`（`数据模型 E12`），经 `API-PLAT-059`（`#59`）展示 |
 | 本 Spec 落点 | **§10 埋点埋码点（A 线）** | **§4 对应表 + 附节 A 第 3 条（B 线，由 App 角色在 S7 写入用户安卓工程）** |
@@ -46,12 +46,12 @@
 | 项 | 内容 |
 |---|---|
 | 文档目的 | 定义 **UI 与接口的对应关系** 及**可实现级详细需求**（路由、状态管理、五态、缓存、权限、异常降级、跳转、埋码点） |
-| 不在范围 | 视觉规范（`UI-Spec §3`）｜接口服务端实现（`接口-Spec`）｜被开发 App 的界面设计与 `API-*` 枚举（那是画布产物）｜平台的服务端构建（**平台不做服务端构建**，项目约束 1） |
-| 关联文档 | `UI-Spec`（13 页 / **450** 个 `EL-*`〔沿革：412 → **419**〔2026-10-21 本机落地 +7〕→ **424**〔2026-10-22 对话面板 +5〕→ **425**〔2026-10-23 审核页写回入口 `EL-REVIEW-052` +1〕→ **426**〔2026-10-26 审核页未通过项补充信息 `EL-REVIEW-053` +1〕→ **427**〔2026-10-26 审核流程优化 `EL-REVIEW-054` +1〕→ **435**〔2026-10-26 B9 +8：`EL-REVIEW-055`~`062`〕→ **447**〔2026-10-29 工程接入 +12：`EL-PROJ-048`~`057`、`EL-KB-025`/`026`〕→ **450**〔2026-10-29 二期写回 +3〕〕）、`接口-Spec`（**82 接口** / 13 错误码 / SSE〔2026-10-21 本机落地后；原 71〕）、`埋点-Spec`（**59 事件** / 9 节点漏斗，已定稿并回填 §10）、`测试-Spec`（**632** 条用例，同批产出）、`baseline/需求追溯矩阵.md` |
-| 上游主输入 | `platform/requirements/App-需求包.md`（`RT-*` ↔ `UI-*` 映射 + 状态管理 + 兜底 + **生成到安卓工程侧的 7 条实现约束**）、`platform/requirements/需求条目表.md`（95 条 REQ） |
-| 路由条数 | **13 条 `RT-*`**（= `UI-Spec §2` 的 13 个 `UI-ID`，**一一映射、不允许多对一**） |
-| 元素覆盖 | §4.2覆盖UI-Spec §5当前**93/93行**；按本表既有展开行口径实测**302 = 301 页面元素行（含应用外壳行）+ 1 页面进入控制行**，本轮8个新EL各补1行。该计数不是全局唯一EL数（UI活跃EL为450）；同步前旧表实测287、旧声明286，历史版本行不追改 |
-| 接口引用 | 全部 `API-PLAT-*` 均真实存在于 `接口-Spec §5.4`（**82 个**：`#1`~`#62` + `#44a` + `#63`~`#70` + **`#71`/`#71a`/`#72`/`#72a`** + **`#73`/`#74`/`#75`** + **`#76`~`#79`**〔2026-10-29 工程接入 + 二期写回〕〔2026-10-21 本机落地，见 `接口-Spec §5.4.13`〕；其中 `#63`~`#68` 由草案转基线、`#69`/`#70` 为 2026-10-21 新增 —— 见 `P0-补口裁决单`） |
+| 不在范围 | 视觉规范（`UI-Spec §3`）｜接口服务端实现（`接口-Spec`）｜被开发 App 的界面设计与 `API-*` 枚举（S5 由 `UI-Spec` 定义、S7 由 Spec 直出；辅助编辑态下可微调）｜平台的服务端构建（**平台不做服务端构建**，项目约束 1） |
+| 关联文档 | `UI-Spec`（13 页 / **453** 个 `EL-*`〔沿革：412 → **419**〔2026-10-21 本机落地 +7〕→ **424**〔2026-10-22 对话面板 +5〕→ **425**〔2026-10-23 审核页写回入口 `EL-REVIEW-052` +1〕→ **426**〔2026-10-26 审核页未通过项补充信息 `EL-REVIEW-053` +1〕→ **427**〔2026-10-26 审核流程优化 `EL-REVIEW-054` +1〕→ **435**〔2026-10-26 B9 +8：`EL-REVIEW-055`~`062`〕→ **447**〔2026-10-29 工程接入 +12：`EL-PROJ-048`~`057`、`EL-KB-025`/`026`〕→ **450**〔2026-10-29 二期写回 +3〕→ **453**〔2026-10-29 去拖拽编辑 +3：`EL-WORK-039`/`040`/`041`〕〕）、`接口-Spec`（**83 接口**（含 `#80`；2026-10-29 新增、2026-11-03 转正） / 13 错误码 / SSE〔2026-10-21 本机落地后；原 71〕）、`埋点-Spec`（**63 事件** / **8 节点漏斗**〔2026-10-29 已重同步至 v0.1.13；「编辑」节点移除，节点 6/7/8 = 生成 / 预览 / 交付〕，已定稿并回填 §10）、`测试-Spec`（**651** 条用例 / REQ **98** / 漏斗 **8 节点**〔2026-10-29 已重同步至 v0.2.19〕，同批产出）、`baseline/需求追溯矩阵.md` |
+| 上游主输入 | `platform/requirements/App-需求包.md`（`RT-*` ↔ `UI-*` 映射 + 状态管理 + 兜底 + **生成到安卓工程侧的 7 条实现约束**）、`platform/requirements/需求条目表.md`（**98 条 REQ**〔95 → 98：`+REQ-GEN-011`/`012`/`013`〕，其中 `REQ-GEN-013` = **转正**） |
+| 路由条数 | **13 条 `RT-*`**（= `UI-Spec §2` 的 13 个 `UI-ID`，**一一映射、不允许多对一**；**数量本轮不变**）。其中 `RT-WORK-001` = **主流程页**（生成入口 `EL-WORK-039`）、`RT-PREVIEW-001` = **构件预览（主）**、`RT-EDIT-001` = **辅助：生成后微调 · 不占主流程节点**（`K3`/`K6`） |
+| 元素覆盖 | §4.2覆盖UI-Spec §5当前**94/94行**（2026-10-29 去拖拽编辑：93 → 94，`+EL-WORK-041`〔2026-11-03 转正〕）；按本表既有展开行口径实测**305 = 304 页面元素行（含应用外壳行）+ 1 页面进入控制行**，本轮新增 3 行（`EL-WORK-039`/`040`/`041` 各 1 行）。该计数不是全局唯一EL数（UI活跃EL为453）；同步前旧表实测287、旧声明286，历史版本行不追改 |
+| 接口引用 | 全部 `API-PLAT-*` 均真实存在于 `接口-Spec §5.4`（**83 个**：`#1`~`#62` + `#44a` + `#63`~`#70` + **`#71`/`#71a`/`#72`/`#72a`** + **`#73`/`#74`/`#75`** + **`#76`~`#79`**〔2026-10-29 工程接入 + 二期写回〕+ **`#80`**〔2026-11-03 转正〕〔2026-10-21 本机落地，见 `接口-Spec §5.4.13`〕；其中 `#63`~`#68` 由草案转基线、`#69`/`#70` 为 2026-10-21 新增；（`#80` 明细见 `接口-Spec §5.4.17`/`§5.5.32`；—— 见 `P0-补口裁决单`） |
 | 本机落地扩展（★ 状态标注） | **`#71`/`#71a`/`#72`/`#72a` 4 个接口 + `EL-AUTH-017`~/`EL-AUTH-021`、`EL-REVIEW-051`、`EL-GLOBAL-009` 共 **7 个元素** = 本机开发阶段扩展**：**未过门禁、未进入第 4 轮基线冻结范围**（第 4 轮基线仍记 **71 接口 / 412 元素**）。其中 `API-PLAT-072`（`#72`）为**阶段性本地登录**，**生产必须关闭**（`AD_PASSWORD_LOGIN=disabled`） |
 
 ### 1.1 本 Spec 相对模板骨架的结构说明
@@ -89,8 +89,8 @@
 |---|---|
 | 目标平台与最低版本 | **桌面浏览器 Web 前端（B/S）**：Chrome ≥ 120 / Edge ≥ 120；基准视口 **1440×900**（`UI-Spec §1`）；最小可用视口 **1280×720**（各页适配规则见 `UI-Spec §4.x ⑦`） |
 | 生成目标端（★ 非本 App 的端） | **Android 原生**（布局 XML + Kotlin），**本期固定、界面不得出现 iOS / 跨平台 / 已有项目导入入口**（`REQ-BASE-001`）；`minSdkVersion` / `targetSdkVersion` **PRD 未给** → `[待澄清-A01]` |
-| 技术栈/框架 | **PRD 未指定前端框架** → `[待澄清-A02]`。本 Spec 只冻结**形态约束**（不得因框架选择而违反）：① 单页应用 + 客户端路由（§3）；② **单条 SSE 连接**承载全部任务与对话流（`REQ-GEN-007`，`API-PLAT-045`）；③ **本地草稿栈**（`REQ-UIEDIT-007`）；④ 画布为 DOM/Canvas 自研渲染器（`REQ-PREVIEW-003`）。`[来源: 推断，待确认]` |
-| 工程结构约定 | ① **一个 `RT-*` = 一个路由 + 一个页面级状态容器 `STORE-*`**（§3 + §5）；② 全局状态仅 4 个：`STORE-GLOBAL/SESSION`（会话与用户）、`STORE-GLOBAL/PROJECT`（`ProjectContext`，`REQ-PROJ-005`）、`STORE-GLOBAL/TASK`（任务与 SSE 单一入口，`REQ-GEN-007`）、`STORE-GLOBAL/TRACK`（埋点队列，`REQ-TRACK-003`）；③ **画布与控件树共用同一棵元素树**（禁止第二份数据，`REQ-UIEDIT-005`）；④ 组件库按 `UI-Spec §7` 的 `CMP-001`~`CMP-015` 落地，**`EL-GLOBAL-*` 只用于 **5 个**真跨页共用组件（`CMP-001`~`004` + `CMP-017`〔2026-10-21 新增〕） |
+| 技术栈/框架 | **PRD 未指定前端框架** → `[待澄清-A02]`。本 Spec 只冻结**形态约束**（不得因框架选择而违反）：① 单页应用 + 客户端路由（§3）；② **单条 SSE 连接**承载全部任务与对话流（`REQ-GEN-007`，`API-PLAT-045`）；③ **本地草稿栈**（`REQ-UIEDIT-007`）；④ **构件预览为生成构件（XML / Kotlin 片段）的静态预览**（本地渲染器，**网页近似渲染**，`REQ-PREVIEW-003`；`K6`）。`[来源: 推断，待确认]` |
+| 工程结构约定 | ① **一个 `RT-*` = 一个路由 + 一个页面级状态容器 `STORE-*`**（§3 + §5）；② 全局状态仅 4 个：`STORE-GLOBAL/SESSION`（会话与用户）、`STORE-GLOBAL/PROJECT`（`ProjectContext`，`REQ-PROJ-005`）、`STORE-GLOBAL/TASK`（任务与 SSE 单一入口，`REQ-GEN-007`）、`STORE-GLOBAL/TRACK`（埋点队列，`REQ-TRACK-003`）；③ **画布与控件树共用同一棵元素树**（禁止第二份数据，`REQ-UIEDIT-005`；**自 2026-10-29 起仅对辅助编辑态成立** —— 主流程页面/元素的权威来源 = `UI-Spec`，`K1`/`K2`）；④ 组件库按 `UI-Spec §7` 的 `CMP-001`~`CMP-015` 落地，**`EL-GLOBAL-*` 只用于 **5 个**真跨页共用组件（`CMP-001`~`004` + `CMP-017`〔2026-10-21 新增〕） |
 | 多端复用策略 | **本期单端（Web 桌面）**，不涉及多端共用一套代码。 |
 | 深链接（`REQ-PROJ-001` 之外的入口） | 本期**不提供**对外深链接（无分享链接需求）；**仅支持端内跳转**（§5 各页「跳转与深链接」）。→ 是否需要「项目链接可直接粘贴给同事」**PRD 未定义** → `[待澄清-A03]` |
 | 离线能力 | 本期**不做离线可用**：仅做**离线检测 + 顶栏提示 + 恢复后重取**（§9）。→ `[来源: 推断，待确认]` |
@@ -106,12 +106,12 @@
 | `RT-AUTH-001` | `/login`（`?next=<path>` 携带登录后回跳目标） | `UI-AUTH-001` | `REQ-AUTH-001`、`REQ-AUTH-002`、`REQ-AUTH-004` | `STORE-AUTH` | **否** |
 | `RT-PROJ-001` | `/projects` | `UI-PROJ-001` | `REQ-PROJ-001`~`004`、`REQ-KB-002` | `STORE-PROJ` | 是 |
 | `RT-KB-001` | `/projects/{project_id}/kb`（`?sector=<prd\|spec\|terms\|domain>&doc={kb_doc_id}`） | `UI-KB-001` | `REQ-KB-001`、`REQ-KB-002` | `STORE-KB` | 是 |
-| `RT-WORK-001` | `/projects/{project_id}` | `UI-WORK-001` | `REQ-PROJ-005`、`REQ-CHAT-001`、`REQ-UIEDIT-006`、`REQ-UIEDIT-007`、`REQ-GEN-005`、`REQ-GEN-007`、`REQ-GEN-008` | `STORE-WORK` | 是 |
+| `RT-WORK-001` | `/projects/{project_id}` | `UI-WORK-001` | `REQ-PROJ-005`、`REQ-CHAT-001`、`REQ-UIEDIT-006`、`REQ-UIEDIT-007`、`REQ-GEN-005`、`REQ-GEN-007`、`REQ-GEN-008`、**`REQ-GEN-011`**、**`REQ-GEN-012`**、**`REQ-GEN-013`**〔2026-11-03 转正〕 | `STORE-WORK` | 是 |
 | `RT-UPLOAD-001` | `/projects/{project_id}/upload` | `UI-UPLOAD-001` | `REQ-UPLOAD-001`~`006` | `STORE-UPLOAD` | 是 |
 | `RT-REVIEW-001` | `/projects/{project_id}/review`（`?drawer=gate-standard` 打开门禁标准抽屉） | `UI-REVIEW-001` | `REQ-REVIEW-001`~`006`、`REQ-REVIEW-008` | `STORE-REVIEW` | 是 |
 | `RT-SPLIT-001` | `/projects/{project_id}/split`（`?drawer=trace` 打开追溯矩阵抽屉） | `UI-SPLIT-001` | `REQ-SPLIT-001`~`004`、`REQ-SPEC-004` | `STORE-SPLIT` | 是 |
-| `RT-EDIT-001` | `/projects/{project_id}/editor?mode=edit` | `UI-EDIT-001` | `REQ-UIEDIT-001`~`010`、`REQ-GEN-001`、`REQ-GEN-004` | `STORE-EDIT` | 是 |
-| `RT-PREVIEW-001` | `/projects/{project_id}/editor?mode=preview`（**与 `RT-EDIT-001` 同路径、由 `mode` 区分**，见下注） | `UI-PREVIEW-001` | `REQ-PREVIEW-001`~`004`、`REQ-GEN-004` | `STORE-PREVIEW` | 是 |
+| `RT-EDIT-001` | `/projects/{project_id}/editor?mode=edit` | `UI-EDIT-001`（**辅助：生成后微调 · 不占主流程节点**，`K3`） | `REQ-UIEDIT-001`~`010`、`REQ-GEN-001`、`REQ-GEN-004` | `STORE-EDIT` | 是 |
+| `RT-PREVIEW-001` | `/projects/{project_id}/editor?mode=preview`（**与 `RT-EDIT-001` 同路径、由 `mode` 区分**，见下注） | `UI-PREVIEW-001`（**构件预览（主）**：生成构件 XML / Kotlin 片段的**静态预览**，`K6`；**兼作主流程生成的进度/结果面**） | `REQ-PREVIEW-001`~`004`、`REQ-GEN-004`、**`REQ-GEN-011`**、**`REQ-GEN-013`**〔2026-11-03 转正〕 | `STORE-PREVIEW` | 是 |
 | `RT-API-001` | `/projects/{project_id}/apis` | `UI-API-001` | `REQ-API-001`~`003` | `STORE-API` | 是 |
 | `RT-CAP-001` | `/projects/{project_id}/capabilities` | `UI-CAP-001` | `REQ-CAP-001`~`005`、`REQ-AUTH-004` | `STORE-CAP` | 是 |
 | `RT-SPEC-001` | `/projects/{project_id}/specs`（`?tab=<ui\|api\|app\|track\|test>`、`?drawer=trace`） | `UI-SPEC-001` | `REQ-SPEC-001`~`004`、`REQ-PROOF-001` | `STORE-SPEC` | 是 |
@@ -120,8 +120,9 @@
 **注 1（`RT-EDIT-001` 与 `RT-PREVIEW-001` 的映射关系 —— ★ 必须显式说明，否则会被判"多对一"）**：
 `UI-Spec §2` 与 `REQ-UIEDIT-006` 明确二者是**同一区域的两个状态**（`editing` / `preview_ready`，`数据模型 §3.1`）。
 本 Spec 的处理：**仍是两条 `RT-*`、两个 `UI-*`，一一映射不变**；实现上**共享同一路由路径** `/projects/{project_id}/editor`，
-由查询参数 `mode` 区分（`mode=edit` / `mode=preview`），**由 `EL-WORK-010` 分段控件驱动**，
+由查询参数 `mode` 区分（`mode=edit` / `mode=preview`），**由 `EL-WORK-010` 分段控件驱动**——**主次自 2026-10-29 起对调**：**构件预览（主）｜ 可视化编辑（辅）**（`K3`/`K6`），即 `mode=preview` 为**默认主态**、`mode=edit` = **生成后微调**；
 切换**不得丢未提交改动**（草稿本地自动保存 + `API-PLAT-042` 双保险）。**`mode` 不进后端接口**（纯前端视图态，不落库）。
+**主流程生成不经画布**：入口 = `RT-WORK-001` 的 `EL-WORK-039`（由 `UI-Spec` 直出，`REQ-GEN-011`），生成进度与结果在**构件预览态**呈现 —— ★ **「同区两态」这条映射不变，不新增 `RT-*`**（主流程生成在同页发起、不产生路由跳转）。
 
 **注 2（区域锚点 —— 不占独立页面、不占独立路由，不计入 13 条）**：
 `App-需求包 §2` 中另有 3 条 `RT-*` 指向**同一 `UI-*` 页面的区域**。它们**不是页面路由**，本 Spec 落为**同路由的锚点参数**：
@@ -149,15 +150,15 @@
 | 目标路由「是否需登录 = 是」且 `SessionStore.token == null` | **重定向 `RT-AUTH-001`**，`?next=` 携带原目标；**不渲染任何业务数据**（`UI-Spec §4.1` 交互规则） |
 | 目标路由需登录但 `project_id` **无权** | 不停留在当前页发请求，由**首个业务接口的 403 兜底**（`FORBIDDEN` → 统一无权限态；**不区分"不存在"与"无权限"**） |
 | 会话过期（任意接口 401） | 跳 `RT-AUTH-001` + `EL-AUTH-012`「登录已过期，已为你保留未提交的内容。」→ 重新认证后**恢复草稿与目标页**（`REQ-AUTH-001`） |
-| 权限撤销 ≤5min 生效（`REQ-AUTH-003`） | 长停留页面（`RT-EDIT-001`/`RT-KB-001`/`RT-API-001`/`RT-CAP-001`）**每 60s 轻量重校验**（`API-PLAT-06`…见 §5；或任一写操作返回 403 兜底）。周期值 `[来源: 推断，待确认]` → `[待澄清-A04]` |
+| 权限撤销 ≤5min 生效（`REQ-AUTH-003`） | 长停留页面（`RT-WORK-001`/`RT-EDIT-001`/`RT-KB-001`/`RT-API-001`/`RT-CAP-001`）**每 60s 轻量重校验**（`API-PLAT-06`…见 §5；或任一写操作返回 403 兜底）。周期值 `[来源: 推断，待确认]` → `[待澄清-A04]` |
 
 ---
 
 ## 4 UI ↔ 接口对应关系表（★ 核心章节 · 第一优先级）
 
 > **本表是端到端联调的契约**。规则：
-> 1. 覆盖 `UI-Spec §5`《元素-数据需求表》**全部 93 行**所涉 `EL-*`（**展开为逐元素一行**），并补入**触发接口的元素**与**呈现接口驱动状态的元素**〔2026-10-21 本机落地后：78 → 80 行〕；
-> 2. 每个 `API-PLAT-*` 都真实存在于 `接口-Spec §5.4`；**★ = 章节强调标记**（`#63`~`#68` 补口与字段级补口已于 2026-10-21 经 `P0-补口裁决单` **批准转正式基线**，不再是待确认草案）；**2026-10-21 本机落地的 `#71`/`#71a`/`#72`/`#72a` 属「本机开发阶段扩展」——未过门禁、未进入第 4 轮基线冻结范围**；
+> 1. 覆盖 `UI-Spec §5`《元素-数据需求表》**全部 94 行**所涉 `EL-*`（**展开为逐元素一行**；2026-10-29 去拖拽编辑：93 → **94**，`+EL-WORK-041`〔2026-11-03 转正〕），并补入**触发接口的元素**与**呈现接口驱动状态的元素**〔2026-10-21 本机落地后：78 → 80 行〕；
+> 2. 每个 `API-PLAT-*` 都真实存在于 `接口-Spec §5.4`；**★ = 章节强调标记**（`#63`~`#68` 补口与字段级补口已于 2026-10-21 经 `P0-补口裁决单` **批准转正式基线**，不再是待确认草案）；**2026-10-21 本机落地的 `#71`/`#71a`/`#72`/`#72a` 属「本机开发阶段扩展」——未过门禁、未进入第 4 轮基线冻结范围**；**`#80`（2026-10-29 新增、2026-11-03 转正）在表内一律以「〔2026-11-03 转正〕」显式登记、**计入正式基线 83**（§12.3 `[草案-APP-01]` 已闭合）；
 > 3. 响应字段名**逐字**照抄 `接口-Spec §5.0.3` / `§5.5` / `数据模型`，**不改写、不意译**；
 > 4. **无空白格**：不走接口的元素也必须写明「本地/前端常量」及其失败语义（`接口-Spec §3.4` 已确立「静态文案 / 本地枚举 / 本地计时」三类不走接口）。
 
@@ -196,7 +197,8 @@
 | `MODEL-ELEMENT-LEDGER` | `API-PLAT-041` | `items[].element_id`、`items[].alias`、`items[].status`、`items[].voided_at` |
 | `MODEL-PAGE-DRAFT` | `API-PLAT-042` | `draft` |
 | `MODEL-VERIFICATION` | `API-PLAT-049` / `API-PLAT-048` | `items[].layer`、`items[].status`、`items[].attempt`、`items[].evidence.checks[]{rule,ok,evidence}`、剩余重试次数 |
-| `MODEL-ARTIFACTS` | `API-PLAT-047` | `artifacts[]`（源码 + `gradle wrapper` + 依赖版本锁定清单） |
+| `MODEL-ARTIFACTS` | `API-PLAT-047` | `artifacts[]`（源码 + `gradle wrapper` + 依赖版本锁定清单；**自 2026-10-29 起 = 构件预览的展示对象：生成构件（XML / Kotlin 片段）的静态预览**，`K6`；**出参字段集不变**） |
+| `MODEL-TARGET-CANDIDATE`〔**正式基线** · 2026-10-29〕 | **`#80`** | `items[].module`、`items[].activity`、`items[].layout`、`items[].confidence`、`items[].reasons[]`、`ambiguous`（**逐字取自 `接口-Spec §5.4.17` / `§5.5.32`**；`confidence` 0~1 → 界面按 `{n}%`（整数、四舍五入）） |
 | `MODEL-API-DEF` | `API-PLAT-050`/`051`/`052`/`053` | `api_id`、`code`、`name`、`method`、`path`、`status`、`updated_at`、`req_schema[]`、`resp_schema[]` |
 | `MODEL-API-SCHEMA-FIELD` | `API-PLAT-051`/`053` | `name`、`type`、`required`、`length`、`precision`、`unit`、`desc` |
 | `MODEL-VERSION` | `API-PLAT-054`/`055` | `version_id`、`project_id`、`seq`、`status`、`snapshot_ref`、`diff_ref`、`created_at`、`created_by_name`★、`summary`★、`artifacts[]`★ |
@@ -220,7 +222,7 @@
 | `PARAM-PROJ-ID` | 路由路径参数 `project_id` | `RT-*` 的 `/projects/{project_id}/…` |
 | `PARAM-PAGE-ID` | 路由/画布当前页 | `MODEL-PAGE.items[].page_id`（`API-PLAT-035`） |
 | `PARAM-ELEMENT-ID` | 画布当前选中元素（**归一化大写零填充**，`REQ-UIEDIT-009`） | `STORE-EDIT.selection`（画布 / 控件树**同一份数据**） |
-| `PARAM-EDIT-TREE` | 元素树 + 样式 + 事件 + 元素 id 的**规范化序列化** | `MODEL-ELEMENT-TREE` + `MODEL-STYLE-PROPS` + `MODEL-ELEMENT-EVENTS` |
+| `PARAM-EDIT-TREE` | 元素树 + 样式 + 事件 + 元素 id 的**规范化序列化**（**辅助编辑态**：`#39`/`#40`/`#42` 用；**`#43` 自 2026-10-29 起不再取它**，改取 `PARAM-INPUT-HASH` = `UI-Spec` 快照哈希） | `MODEL-ELEMENT-TREE` + `MODEL-STYLE-PROPS` + `MODEL-ELEMENT-EVENTS` |
 | `PARAM-LIST` | 统一列表状态机（`page`/`page_size`/`q`/`sort`） | 各页搜索框 / 排序下拉 / 分页器（`REQ-NF-004`） |
 | `PARAM-AUTH-STATE` | `#63` 返回的 `state` | `MODEL-AUTH-QRCODE.state` |
 | `PARAM-CONSENT` | 告知弹窗的确认动作 | `EL-GLOBAL-007` 点击 |
@@ -248,8 +250,9 @@
 | `PARAM-MESSAGE-ID` | `message_id` | `#25` 列表项（失败态那条） |
 | `PARAM-CHAT-DRAFT` | 待发送消息内容 | `EL-WORK-019` |
 | `PARAM-TASK-ID` | `task_id` | `#12`/`#16`/`#26`/`#28`/`#30`/`#43` 的 202 响应 |
-| `PARAM-INPUT-HASH` | 元素树 + 样式 + 事件 + 元素 id 的规范化哈希 | `PARAM-EDIT-TREE` 派生的 64 位摘要 |
+| `PARAM-INPUT-HASH` | **`UI-Spec`（该 `page_id` 的页面 + 其元素 `EL-*`：`widget_type` / 层级 / `order_index` / 样式 / 事件 / 元素 id）的规范化哈希**〔**原为「元素树 + 样式 + 事件 + 元素 id」**；2026-10-29 · `K1`/`K2`〕 | S5 的 `UI-Spec` 该页面定义派生的 64 位摘要（SHA-256） |
 | `PARAM-BASE-SEQ` | 客户端已应用的最新任务序号 | `STORE-GLOBAL/TASK.appliedSeq`（`REQ-GEN-006`） |
+| `PARAM-TARGET` | `#43` 的可选请求体 `target` = 目标接入点 `{module?,activity?,layout?}` | **`#80`** 的候选（`MODEL-TARGET-CANDIDATE`）经 `EL-WORK-041` 选择后写入 `STORE-WORK.selectedTarget`；**`ambiguous=true` 时必填**，`ambiguous=false` 时不传（平台自动识别）〔2026-11-03 转正〕 |
 | `PARAM-IDEM-KEY` | `Idempotency-Key` | 同一次用户意图 **3s 内复用同一 key**（`REQ-NF-006`） |
 | `PARAM-AUTH-CREDENTIAL` ★本机落地 | 账号密码登录入参 `{username,password}` | `EL-AUTH-018`/`EL-AUTH-019` 输入值；**仅内存持有，不落缓存、不入 URL / 日志 / 上报**（`REQ-AUTH-005`） |
 | `PARAM-LLM-MODEL` ★本机落地 | 所选大模型 id（`#71a` 请求体 `{model}`） | `EL-GLOBAL-009` 下拉选中项的 `items[].id` |
@@ -365,6 +368,9 @@
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-031`/`032`/`034` | 收起 / 关闭 / 回到当前步骤 | **无**（纯前端视图态） | 无 | `STORE-CHAT.open` / `STORE-CHAT.picked` | 不适用；**收起 ≠ 结束会话**（草稿与滚动位置保留）〔2026-10-22〕 |
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-033` | 打开「切换对话」 | `API-PLAT-025`（`#25`，**不给 `thread`** → 返回全部线程） | `PARAM-PROJ-ID` | `data.items[].thread_key` 分组 → 线程列表 + 条数 | 无任何线程 → 选择器**禁用**〔2026-10-22〕 |
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-037`/`EL-WORK-038` | 点「写回工程」/「回滚」 | `API-PLAT-079`（`#79`）／`API-PLAT-078`（`#78`）／`API-PLAT-077`（`#77`） | `PARAM-PROJ-ID` + `PARAM-TASK-ID` | `data.totals`/`notes[]`/`skipped[]` → **写回面板摘要**；`items[]` → 补丁记录 | 无成功生成任务 → 按钮**禁用**；写回失败 → 展示服务端 `message`，**工程未被改动**；已回滚记录不显示回滚按钮 |
+| `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-039` | 点击「由 Spec 生成代码」（**主流程生成入口 · 不经画布**；**首次生成前先过 `EL-GLOBAL-004` + 检查外发开关**） | `API-PLAT-043`（`#43`，⚡ 202）；`EL-GLOBAL-004` → `API-PLAT-068`（`#68`，**已转基线**） | `input_hash`（`PARAM-INPUT-HASH` = **`UI-Spec` 快照哈希**）+ `base_seq`（`PARAM-BASE-SEQ`）+ `target?`（`PARAM-TARGET`，**仅 `ambiguous=true` 时必填**〔2026-11-03 转正〕）+ `PARAM-IDEM-KEY`；`EL-GLOBAL-004` 用 `PARAM-CONSENT` | `data.task_id`、`data.seq` → `MODEL-TASK`；**按钮文案转「正在生成代码…」**；产物经 `#79` **写回所选工程根**，成功 Toast「已写回工程：{工程名}」（`REQ-GEN-012`） | `TASK_STALE` → **静默丢弃** + 「已为你使用最新一次生成的结果。」；`IDEMPOTENT_REPLAY` → 返回首次 `task_id`，无提示；`RATE_LIMITED` → 「请求太频繁，{n} 秒后重试。」+ 倒计时（**不重复提交**）；**★外发开关关闭** → 「你已关闭「PRD 与代码外发第三方大模型」，生成类任务不可用。」+「去开启」（**按钮置灰 + 原因，不得点了没反应**）；`#80` 返回 `ambiguous=true` → **先经 `EL-WORK-041` 指定目标接入点，未指定不发起 `#43`**〔2026-11-03 转正〕 |
+| `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-040` | `#80` 返回 `ambiguous=true`（仅 `source_kind=imported`，且由 `EL-WORK-039` 发起主流程生成时）〔2026-11-03 转正〕 | 无（**静态文案提示条**；显隐由**`#80`** 的 `data.ambiguous` 驱动，该值随 `EL-WORK-041` 行一并取） | 无（文案为**前端常量**） | `data.ambiguous`（经 `EL-WORK-041` 行取）→ `STORE-WORK.targetAmbiguous` | 文案**逐字**「这个页面该生成到哪个界面还不确定。」+「由你指定」；`ambiguous = false` 或 `source_kind = new` → **整块不渲染**（走自动识别 / 「从零生成」）；**PM 不批准`#80` → 本行随之删除**（回退见 §12.3 `[草案-APP-01]`） |
+| `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-041` | `EL-WORK-040` 显示后渲染候选（模块 / `Activity` / `layout` + 置信度 + 原因）〔2026-11-03 转正〕 | **`#80`**（`GET /projects/{project_id}/pages/{page_id}/target-candidates`，**2026-11-03 转正、计入 83**） | `PARAM-PROJ-ID` + `PARAM-PAGE-ID` | `data.items[].module`/`.activity`/`.layout`/`.confidence`/`.reasons[]`、`data.ambiguous` → `MODEL-TARGET-CANDIDATE`〔2026-11-03 转正〕；`confidence`（number 0~1）→ 界面按 `{n}%`（整数、四舍五入）；选中值经 `PARAM-TARGET` 随 `#43` 回传 | `items = []` 且 `ambiguous = false`（含 `source_kind = new`）→ **两者都不渲染**（走自动识别 / 「从零生成」）；`FORBIDDEN` → 统一无权限态；`NOT_FOUND` → 「这个内容已经不在了。」+「返回上一级」；**未指定 → 不发起 `#43`**；**候选为 `#80` 输出，不作「自动识别一定正确」的承诺** |
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-035` | 收到 SSE `ai.step` | `API-PLAT-045`（SSE **`ai.step`**） | `PARAM-PROJ-ID` | `data.{step_id,task_id,kind,title,detail,model,status,progress,duration_ms,phase,at}` → **对话时间线里的步骤条目** | 同 `step_id` **原地更新**（**`at` 为首次发生时刻**，不刷新）；步骤**与消息按时间混排在同一条列表**；无步骤 → **不出现条目**；**不含正文**〔2026-10-22 口径：共用一个列表〕 |
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-015`/`EL-WORK-016` | 历史加载 / 流式增量 | `API-PLAT-025` + `API-PLAT-045`（SSE `chat.delta`） | `PARAM-PROJ-ID` | `data.items[].role`/**`.content`**/`.status`；SSE `data.message_id`/`data.seq`/`data.delta`/**`data.thread_key`** → `MODEL-CHAT-MESSAGE` | **`content`** **按 Markdown 渲染并转义 HTML**；流式按 `delta` **增量合并**（不整段重绘导致跳动） |
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-017` | 消息 `status = failed`（60s 超时）→ 点击「重发」 | `API-PLAT-027`（`#27`） | `PARAM-MESSAGE-ID` ← 失败项 `message_id` | 同一 `message_id`（**不重复入库**）→ `MODEL-CHAT-MESSAGE.status` | `UPSTREAM_TIMEOUT` → 保持失败态「这条没发出去。」+「重发」；不得新增一条记录 |
@@ -375,7 +381,7 @@
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-023` | 点击「停止生成」 | `API-PLAT-044A`（`#44a`） | `PARAM-TASK-ID` ← `MODEL-TASK.taskId` | `data.status = canceled` → `MODEL-TASK.status` | 非 `running` → 400 `INVALID_ARGUMENT`（提示当前状态）；**界面回编辑态、预览保持上次成功结果、不呈现为错误态、不计重试**（`REQ-GEN-005`） |
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-024` | SSE 连接断开 | `API-PLAT-045`（`#45`） | SSE 端点 `PARAM-PROJ-ID` | 无（本地连接态）→ `STORE-GLOBAL/TASK.sseState` | 「连接已断开，正在重连…」；连续失败 → 指数退避 + **降级 2s 轮询 `API-PLAT-044`**；断线期间**允许继续操作** |
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-025` | SSE `task` 事件（`queued`/`running`）或降级轮询 | `API-PLAT-045` / `API-PLAT-044` | `PARAM-TASK-ID` | `data.task_id`/`.type`/`.status`/`.progress`/`.seq` → `MODEL-TASK` | 超 **5min** → `timeout` 可重试失败态（**不静默卡死**）；`TASK_STALE` → **静默丢弃** + 「已为你使用最新一次生成的结果。」；旧 `seq` 响应**不应用** |
-| `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-026` | 首次进入 / 状态条刷新 | `API-PLAT-006` | `PARAM-PROJ-ID` | `data.stage` → 前端**常量映射表**（9 节点，**不走接口**） | 未知阶段 → 全部节点置灰；未到达阶段点击 → 置灰 + 原因「先完成上一步：{上一步名}。」（**不做静默降级**） |
+| `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-026` | 首次进入 / 状态条刷新 | `API-PLAT-006` | `PARAM-PROJ-ID` | `data.stage` → 前端**常量映射表**（**8 节点**〔2026-10-29：9 → 8，「编辑」节点移除；`K3`〕，**不走接口**） | 未知阶段 → 全部节点置灰；未到达阶段点击 → 置灰 + 原因「先完成上一步：{上一步名}。」（**不做静默降级**） |
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-027` | 点击「上传 PRD」 | 无（路由跳转 `RT-UPLOAD-001`）；**首次上传前先过 `EL-GLOBAL-004`** | `MODEL-AI-EGRESS.consent_acknowledged_at`（本地会话态） | 无 | 未确认 → 弹告知弹窗，**不发起跳转**（`REQ-AUTH-004`） |
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-028` | 对话历史请求中 | `API-PLAT-025` | `PARAM-PROJ-ID` | pending → `STORE-WORK.chatState = loading` | 「正在加载对话…」 |
 | `UI-WORK-001` | `RT-WORK-001` | `EL-WORK-029` | 对话接口失败 | `API-PLAT-025` | `PARAM-PROJ-ID` | `code` → `STORE-WORK.chatState = error` | 「对话没加载出来。」+「重试」 |
@@ -485,7 +491,9 @@
 | `UI-SPLIT-001` | `RT-SPLIT-001` | `EL-SPLIT-019`/`EL-SPLIT-020`/`EL-SPLIT-021` | 点 `EL-SPLIT-004` 打开抽屉（**`?drawer=trace`**） | `API-PLAT-067`（`#67`，**已转基线**）** | `PARAM-PROJ-ID` + `PARAM-LIST` + `coverage_status`（筛选四态之一） | `data.items[].req_id`/`.summary`/`.targets.ui/.api/.app/.track/.test`/`.coverage_status`/`.orphan`、`data.orphan_count` → `MODEL-TRACE-ROW[]` | 入口可用；加载失败 → 「追溯矩阵没加载出来。」+「重试」；**四态覆盖状态由接口给出、前端只渲染**（`REQ-SPEC-004`，**不得前端自行估算**）；**不允许留空** |
 | `UI-SPLIT-001` | `RT-SPLIT-001` | `EL-GLOBAL-001`（Toast） | 拆解任务成功终态 | `API-PLAT-044` | 无（复用上述接口的入参，本元素无独立请求参数） | 本地文案 | 「拆解完成，共 {n} 条需求。」 |
 
-#### 4.2.8 `UI-EDIT-001` / `RT-EDIT-001`（可视化编辑页 · 画布）★ 本期核心
+#### 4.2.8 `UI-EDIT-001` / `RT-EDIT-001`（可视化编辑页 · 画布）★ **辅助：生成后微调 · 不占主流程节点**（`K3`）
+
+> **本轮语义**：本表逐行**逐字保留**（52 个 `EL-EDIT-*` 不删不降级）；仅 **`EL-EDIT-037` 的触发语义由「主流程生成」改为「辅助再生成」**（输入 = `UI-Spec`，`K1`/`K2`）。**主流程生成入口 = §4.2.4 的 `EL-WORK-039`。**
 
 | UI页面ID | 路由ID | UI元素ID | 触发时机 | API-ID | 请求参数来源 | 响应字段 → 本地模型 | 失败处理 |
 |---|---|---|---|---|---|---|---|
@@ -510,7 +518,7 @@
 | `UI-EDIT-001` | `RT-EDIT-001` | `EL-EDIT-030` | 切换四边联动锁 | 无（本地视图态） | 无 | 无 → `STORE-EDIT.linkSides` | 不适用 |
 | `UI-EDIT-001` | `RT-EDIT-001` | `EL-EDIT-031`/`EL-EDIT-032`/`EL-EDIT-033`/`EL-EDIT-034`/`EL-EDIT-035` | 勾选三类事件（**可并存**）→ 保存事件配置 | `API-PLAT-040`（`#40`，≤3 条） | `PARAM-ELEMENT-ID` + `events[].event_type` ∈ {`click`,`long_click`,`double_click`} + `action_type`（**本期仅 `none`**） + `action_payload`（`null`） | `data.events[].event_type`/`.action_type`/`.action_payload` → `MODEL-ELEMENT-EVENTS` | `>3 条` → 400 `INVALID_ARGUMENT`；**面板内不得出现跳转目标 / 接口参数 / 埋点参数控件**（约束 4）；`action_type` 显示「暂无动作（TODO）」；同时配点击+双击 → **300ms** 内第二次点击判双击并**取消单击回调** |
 | `UI-EDIT-001` | `RT-EDIT-001` | `EL-EDIT-035` | 已配事件时 | `API-PLAT-040` | `PARAM-ELEMENT-ID` | `data.events[].action_type = none` → 常量文案 | 「暂无动作（TODO）」；并提示「后续要配跳转或调接口，走右侧对话补充。」 |
-| `UI-EDIT-001` | `RT-EDIT-001` | `EL-EDIT-037` | 点击「提交变更」（**首次生成前先过 `EL-GLOBAL-004` + 检查外发开关**） | `API-PLAT-043`（`#43`，⚡ 202） | `input_hash`（`PARAM-INPUT-HASH`）+ `base_seq`（`PARAM-BASE-SEQ`）+ `PARAM-IDEM-KEY` | `data.task_id`、`data.seq` → `MODEL-TASK`；**立即回编辑态但状态条显示「生成中」** | `TASK_STALE` → **静默丢弃** + 「已为你使用最新一次生成的结果。」；`IDEMPOTENT_REPLAY` → 返回首次 `task_id`，无提示；`RATE_LIMITED` → 「请求太频繁，{n} 秒后重试。」+ 倒计时（**不重复提交**）；**★外发开关关闭** → 「你已关闭「PRD 与代码外发第三方大模型」，生成不可用。可在「能力配置」里重新打开。」（**按钮置灰 + 原因，不得点了没反应**） |
+| `UI-EDIT-001` | `RT-EDIT-001` | `EL-EDIT-037` | 点击「提交变更」（**辅助再生成 —— 主流程生成不由本按钮驱动**，走 §4.2.4 的 `EL-WORK-039`；**首次生成前先过 `EL-GLOBAL-004` + 检查外发开关**） | `API-PLAT-043`（`#43`，⚡ 202） | `input_hash`（`PARAM-INPUT-HASH` = **`UI-Spec` 快照哈希**）+ `base_seq`（`PARAM-BASE-SEQ`）+ `target?`（`PARAM-TARGET`，**仅 `ambiguous=true` 时必填**〔2026-11-03 转正〕）+ `PARAM-IDEM-KEY` | `data.task_id`、`data.seq` → `MODEL-TASK`；**立即回编辑态但状态条显示「生成中」** | `TASK_STALE` → **静默丢弃** + 「已为你使用最新一次生成的结果。」；`IDEMPOTENT_REPLAY` → 返回首次 `task_id`，无提示；`RATE_LIMITED` → 「请求太频繁，{n} 秒后重试。」+ 倒计时（**不重复提交**）；**★外发开关关闭** → 「你已关闭「PRD 与代码外发第三方大模型」，生成类任务不可用。」+「去开启」（**按钮置灰 + 原因，不得点了没反应**） |
 | `UI-EDIT-001` | `RT-EDIT-001` | `EL-EDIT-038`/`EL-EDIT-039` | 点击撤销 / 重做 | 无（本地草稿栈） | `STORE-EDIT.undoStack`/`redoStack` | 无 | 栈空 → 按钮禁用 |
 | `UI-EDIT-001` | `RT-EDIT-001` | `EL-EDIT-041` | 刷新/关闭/会话过期后重新进入且存在未提交草稿 | `API-PLAT-042`（`#42`，GET，**服务端草稿双保险**）+ 本地草稿 | `PARAM-PAGE-ID` | `data.draft` → `MODEL-PAGE-DRAFT` | 「已恢复上次未提交的改动。」；会话过期恢复需**重新认证后自动续接**；`VERSION_CONFLICT` → 统一冲突组件（**绝不静默丢弃**） |
 | `UI-EDIT-001` | `RT-EDIT-001` | `EL-EDIT-042` | L2 未回传 | `API-PLAT-044`（`#44`）/ `API-PLAT-046`（`#46`） | `PARAM-TASK-ID` | `data.l2_result.reported = false` → `MODEL-TASK.l2Result.reported` | 「未验证构建」灰字 + 悬浮说明「本地构建结果尚未回传；不影响你继续使用。」；**不阻断任何操作** |
@@ -520,16 +528,16 @@
 | `UI-EDIT-001` | `RT-EDIT-001` | `EL-GLOBAL-001`（Toast） | 复制 / 草稿恢复 | 本地 / `API-PLAT-042` | 无（复用上述接口的入参，本元素无独立请求参数） | 本地文案 | 「已复制 {id}」/「已恢复上次未提交的改动。」 |
 | `UI-EDIT-001` | `RT-EDIT-001` | `EL-GLOBAL-004`（首次生成前） | 点「提交变更」时拦截 | `API-PLAT-068`（`#68`，PUT，**已转基线**）** | `PARAM-CONSENT` | `data.consent_acknowledged_at` → `MODEL-AI-EGRESS.consentAcknowledgedAt` | 未确认 → 弹窗关闭、**不发起生成**；写入失败 → 「确认状态没保存成功。」 |
 
-#### 4.2.9 `UI-PREVIEW-001` / `RT-PREVIEW-001`（预览态 · 同区两态之一）
+#### 4.2.9 `UI-PREVIEW-001` / `RT-PREVIEW-001`（**构件预览态（主）** · 同区两态之一；**展示对象 = 生成构件（XML / Kotlin 片段）的静态预览**〔`K6`〕）
 
 | UI页面ID | 路由ID | UI元素ID | 触发时机 | API-ID | 请求参数来源 | 响应字段 → 本地模型 | 失败处理 |
 |---|---|---|---|---|---|---|---|
 | `UI-PREVIEW-001` | `RT-PREVIEW-001` | `EL-PREVIEW-001` | 切到预览态即渲染（**只读**） | 无（本地视图态） | `STORE-GLOBAL/URL.mode = preview` | 无 | 不适用 |
-| `UI-PREVIEW-001` | `RT-PREVIEW-001` | `EL-PREVIEW-002` | **仅在 L1 `passed` 后**（`REQ-PREVIEW-001`） | `API-PLAT-047`（`#47`）+ **本地渲染器** | `PARAM-TASK-ID`（`result_ref`） | `data.artifacts[]`（元素树快照）→ `MODEL-ARTIFACTS`，由本地渲染器绘制为 DOM/Canvas | L1 未过 → 接口**不得**返回「已就绪」（`CONFLICT` 分支）→ 页面保持上一成功结果 + 状态区显示失败态；渲染器自身失败 → `EL-PREVIEW-013`「预览没加载出来。」+「重试」（30s 超时） |
+| `UI-PREVIEW-001` | `RT-PREVIEW-001` | `EL-PREVIEW-002` | **仅在 L1 `passed` 后**（`REQ-PREVIEW-001`） | `API-PLAT-047`（`#47`）+ **本地渲染器** | `PARAM-TASK-ID`（`result_ref`） | `data.artifacts[]`（**生成构件：XML / Kotlin 片段**）→ `MODEL-ARTIFACTS`，由本地渲染器作**静态预览**（**网页近似渲染**，非真机） | L1 未过 → 接口**不得**返回「已就绪」（`CONFLICT` 分支）→ 页面保持上一成功结果 + 状态区显示失败态；渲染器自身失败 → `EL-PREVIEW-013`「预览没加载出来。」+「重试」（30s 超时） |
 | `UI-PREVIEW-001` | `RT-PREVIEW-001` | `EL-PREVIEW-003` | 预览刷新后 | `API-PLAT-045`（SSE `task`）/ `API-PLAT-044` | `PARAM-TASK-ID` | SSE `data.seq`；`data.finished_at` → `MODEL-TASK.seq/finishedAt` | **`finished_at = null`** → `EL-PREVIEW-017`「时间未知」（**不得显示 1970**）；**只应用序号最新的结果** |
 | `UI-PREVIEW-001` | `RT-PREVIEW-001` | `EL-PREVIEW-004` | 预览态常驻 | 无（前端常量，**静态说明数据**，`接口-Spec §3.2`） | 无 | 常量 → `STORE-PREVIEW.approxBadge = true` | 不适用；**任一状态下常驻可见**，空态/失败态同样显示 |
 | `UI-PREVIEW-001` | `RT-PREVIEW-001` | `EL-PREVIEW-005`/`EL-PREVIEW-006`/`EL-PREVIEW-007` | 点击展开差异清单 | 无（前端静态数据，`UI-Spec §6` 的 10 项） | 无 | 常量 → `STORE-PREVIEW.diffList` | 不适用；**默认可见差异项名称**；**不作「接近真机」的任何承诺** |
-| `UI-PREVIEW-001` | `RT-PREVIEW-001` | `EL-PREVIEW-008` | 从未生成过 | `API-PLAT-044`（无任务） | `PARAM-TASK-ID`（空） | 无 → `STORE-PREVIEW.state = empty` | 「还没生成过页面。」+「在左边拖几个控件，然后提交变更。」 |
+| `UI-PREVIEW-001` | `RT-PREVIEW-001` | `EL-PREVIEW-008` | 从未生成过 | `API-PLAT-044`（无任务） | `PARAM-TASK-ID`（空） | 无 → `STORE-PREVIEW.state = empty` | 「还没生成过页面。」+「Spec 生成后，平台会由 Spec 直接生成代码；也可以进「可视化编辑」做生成后微调。」（**CTA = `EL-WORK-039`「由 Spec 生成代码」**） |
 | `UI-PREVIEW-001` | `RT-PREVIEW-001` | `EL-PREVIEW-009` | `GenTask.status ∈ {queued, running}` | `API-PLAT-045`（SSE，进度随 `task` 事件推送）/ `API-PLAT-044`（降级 2s 轮询） | `PARAM-TASK-ID` | `data.progress`（0~100）、`data.status` → `MODEL-TASK` | 「正在生成代码…」+ `{n}%`；**与「验证中」必须可区分**；超 5min → 可重试失败态；降级轮询时**界面无差别** |
 | `UI-PREVIEW-001` | `RT-PREVIEW-001` | `EL-PREVIEW-010` | `VerifyTask(L1).status = running` | `API-PLAT-049`（`#49`） | `PARAM-TASK-ID` | `data.items[].evidence.checks[]{rule,ok,evidence}` → `MODEL-VERIFICATION` | 「正在验证生成的代码…」+ L1 五条规则逐条打勾；失败 → 转 `EL-PREVIEW-012` |
 | `UI-PREVIEW-001` | `RT-PREVIEW-001` | `EL-PREVIEW-011` | `GenTask.status = failed` | `API-PLAT-044`（`error_code`） | `PARAM-TASK-ID` | `data.error_code`/`data.status` → `MODEL-TASK` | 「代码没生成出来。」+「原因：{可读原因}。」+「重新生成」（**与验证失败是两套组件、两套文案**，`REQ-GEN-008`） |
@@ -653,8 +661,8 @@
 
 | # | 自检项 | 结论 |
 |---|---|---|
-| 1 | 是否覆盖UI-Spec §5全部数据展示组 | ✅ **93/93行**均有落点；§4.2当前**302行（301 页面元素行含外壳 + 1 页面进入控制行）**。B9新增8行；旧展开声明286但含外壳实测287，历史记录原样保留，不靠漏数外壳维持固定计数 |
-| 2 | 每个 `API-ID` 是否真实存在于 `接口-Spec` | ✅ 全部为 `API-PLAT-001`~`070`（↔ `#1`~`#70`，含 `API-PLAT-044A` ↔ `#44a`）**+ 本机落地的 `API-PLAT-071`/`API-PLAT-071A`/`API-PLAT-072`/`API-PLAT-072A`**（↔ `#71`/`#71a`/`#72`/`#72a`，见 `接口-Spec §5.4.13`）；**★ 为章节强调标记（补口已于 2026-10-21 转基线）**；本机落地 4 个**未过门禁、未进入第 4 轮基线冻结范围** |
+| 1 | 是否覆盖UI-Spec §5全部数据展示组 | ✅ **94/94行**均有落点（93 → 94：`+EL-WORK-041`〔2026-11-03 转正〕）；§4.2当前**305行（304 页面元素行含外壳 + 1 页面进入控制行）**，本轮新增 3 行（`EL-WORK-039`/`040`/`041`）。B9新增8行；旧展开声明286但含外壳实测287，历史记录原样保留，不靠漏数外壳维持固定计数 |
+| 2 | 每个 `API-ID` 是否真实存在于 `接口-Spec` | ✅ 全部为 `API-PLAT-001`~`070`（↔ `#1`~`#70`，含 `API-PLAT-044A` ↔ `#44a`）**+ 本机落地的 `API-PLAT-071`/`API-PLAT-071A`/`API-PLAT-072`/`API-PLAT-072A`**（↔ `#71`/`#71a`/`#72`/`#72a`，见 `接口-Spec §5.4.13`）**+ 工程接入 `API-PLAT-073`/`074`/`075`**（↔ `#73`~`#75`）**+ 二期写回 `API-PLAT-076`~`079`**（↔ `#76`~`#79`）**+ `API-PLAT-080`**（↔ `#80`，**正式基线**、**计入 83**）；**★ 为章节强调等级（补口已于 2026-10-21 转基线）**；本机落地 4 个**未过门禁、未进入第 4 轮基线冻结范围** |
 | 3 | 是否有空白格 | ✅ **无**。不走接口的元素一律写明「无（前端常量）/（本地视图态）/（本地草稿）/（全局错误码）」，并给出失败语义 |
 | 4 | 字段名是否与接口 Spec 零差异 | ✅ 右端字段名逐字照抄 `接口-Spec §5.0.3` / `§5.5` / `数据模型`（含 `E7` 的 13 个字段名，「宽/高」**分立**不合并） |
 | 5 | 每个 API 调用是否写清「失败时用户看到什么」 | ✅ 每行「失败处理」列均给出**逐字文案或明确兜底**（如「该行不显示」「按钮置灰 + 原因」） |
@@ -850,6 +858,10 @@
 | `STORE-GLOBAL/TASK` | `sseState` | enum{`connecting`,`online`,`reconnecting`,`degraded`} | `connecting` | SSE `ping`(15s) 到达 / 断开 / 降级 2s 轮询 |
 | `STORE-GLOBAL/TASK` | `runningTask` | `MODEL-TASK` \| null | `null` | SSE `task` 事件 / `#44` 轮询 |
 | `STORE-GLOBAL/URL` | `mode` | enum{`edit`,`preview`} | `edit` | 分段控件切换（**纯前端视图态，不落库、不进接口**） |
+| `STORE-WORK` | `targetCandidates` | `MODEL-TARGET-CANDIDATE.items[]`〔2026-11-03 转正〕 | `[]` | **`#80`** 返回（仅 `ambiguous = true` 时渲染 `EL-WORK-041`） |
+| `STORE-WORK` | `targetAmbiguous` | bool | `false` | **`#80`** 返回的 `data.ambiguous`；`false` → `EL-WORK-040`/`041` **都不渲染** |
+| `STORE-WORK` | `selectedTarget` | {`module`?:string,`activity`?:string,`layout`?:string} \| null（= `PARAM-TARGET` 来源） | `null` | 点 `EL-WORK-041` 选中候选；确认后随 `#43` 的 `target?` 回传；**纯前端态、不落库** |
+| `STORE-WORK` | `genSubmitState` | enum{`idle`,`submitting`,`queued`,`generating`} | `idle` | 点 `EL-WORK-039` → `#43` 202（**按钮文案转「正在生成代码…」**）；进度与结果由 `EL-WORK-025` 与**构件预览态**呈现 |
 
 **接口调用**
 
@@ -863,8 +875,12 @@
 | 停止生成 | `API-PLAT-044A`（`#44a`） | 点「停止生成」 | `PARAM-TASK-ID` | `status = canceled`、丢弃产物、不入版本、回编辑态、预览保持上次成功结果 | 非 `running` → 400 → 提示当前状态；**不呈现为错误态、不计重试** |
 | 项目详情 | `API-PLAT-003`（`#3`） | 首次进入 | `PARAM-PROJ-ID` | 写项目名 | 缺省 →「未命名项目」；403 → 统一无权限态 |
 | 外发告知（首次生成前） | `API-PLAT-068`（`#68`，已转基线） | 对话触发生成入口被点击 | `PARAM-CONSENT` | 写 `consentAcknowledgedAt` | 写入失败 →「确认状态没保存成功。」 |
+| 主流程生成（**由 Spec 直出**） | `API-PLAT-043`（`#43`，⚡ 202） | 点 `EL-WORK-039`（**先过 `EL-GLOBAL-004` + 检查外发开关**；`ambiguous = true` 时**先经 `EL-WORK-041` 指定**） | `PARAM-INPUT-HASH`（= **`UI-Spec` 快照哈希**）+ `PARAM-BASE-SEQ` + `PARAM-TARGET`（可选；`ambiguous = true` 时必填〔2026-11-03 转正〕）+ `PARAM-IDEM-KEY` | 写 `runningTask`；`EL-WORK-025` 显示「生成中…」；**产物经 `#79` 写回所选（已接入）工程根**（`REQ-GEN-012`）；Toast「已写回工程：{工程名}」 | `TASK_STALE` → 静默丢弃 +「已为你使用最新一次生成的结果。」；`RATE_LIMITED` → 倒计时；**外发关闭（`#68`）** → 按钮置灰 +「你已关闭「PRD 与代码外发第三方大模型」，生成类任务不可用。」+「去开启」 |
+| 目标接入点识别〔2026-11-03 转正〕 | **`#80`**（`GET /projects/{project_id}/pages/{page_id}/target-candidates`） | 点 `EL-WORK-039` 且 `source_kind = imported`（主流程生成前置） | `PARAM-PROJ-ID` + `PARAM-PAGE-ID` | 写 `targetCandidates` + `targetAmbiguous`；`ambiguous = true` → 渲染 `EL-WORK-040`/`041` | `items = []` 且 `ambiguous = false` → 不渲染（走自动识别 / 「从零生成」）；`FORBIDDEN` → 统一无权限态；**PM 不批准 → 本行删除、`target` 改纯用户指定** |
 
-**五种页面状态**
+**阶段与主流程（`数据模型 §3.1` · `E1 Project.stage`）**：主流程入边 = **`app_developing → code_generating`**（**由 Spec 直出**，入口 `EL-WORK-039`，`REQ-GEN-011`；`K1`/`K2`）；**新边 `code_generating → editing`** 保留，语义 = **进入辅助微调（生成后微调）**（`K3`）；`preview_ready` = **构件静态预览就绪**（`K6`）。`EL-WORK-003` 的 **17 态取值集不变**，仅其中文呈现按上述语义（`editing` → 「辅助微调」）。
+
+**五种页面状态**（+ **第 6 态：目标接入点待指定**〔随 `#80`（2026-11-03 转正）〕—— **编号对应**：即 `UI-Spec` 所述**预览区第 7 态**；App 按「本页 5 态 + 1」计为第 6 态，UI 按「预览态枚举 + 1」计为第 7 态，**同一态、两个计数基准**，见 §12.2 `[缺口-UI-13]`/`[冲突-UI-06]`）
 
 | 状态 | 触发条件 | 呈现（引用 UI 文案） | 重试/兜底 |
 |---|---|---|---|
@@ -874,13 +890,15 @@
 | 错误 | 对话接口失败 | 「对话没加载出来。」+「重试」 | 点「重试」重发 `#25`；**已收消息保留**；生成失败/验证失败**不得共用此组件** |
 | 无权限 | 401 / 403 | 401 → 跳 `RT-AUTH-001` +「登录已过期，已为你保留未提交的内容。」；403 → 「你没有权限访问这个项目。」 | 401 后**恢复草稿与目标页**；403 返回上级；**本页不渲染任何业务数据** |
 | 离线 | SSE 断开 / 网络中断 | 顶栏「连接已断开，正在重连…」（`EL-WORK-024`）；**断线期间允许继续操作**；写操作保留队列不丢弃 | 自动重连（`EventSource`）+ **按 `seq` 取最新**；连续失败 → 指数退避 + **降级 2s 轮询 `#44`，界面无差别** |
+| **目标接入点待指定**〔2026-11-03 转正〕（**`#80`**；上列五态之外的**第 6 态**（= `UI-Spec` 预览区**第 7 态**），同区两态） | **`#80`** 返回 `ambiguous = true`（仅 `source_kind = imported`，且由 `EL-WORK-039` 发起主流程生成时） | `EL-WORK-040`「这个页面该生成到哪个界面还不确定。」+「由你指定」；`EL-WORK-041` 候选行（`{模块} ｜ {Activity} ｜ {layout}` + 置信度 `{n}%` + 原因）；**未指定 → 不发起 `#43`** | 指定并确认（`#43` 携 `target` 发起）/ `ambiguous = false` 走自动识别；**PM 不批准`#80` → 本态删除** |
 
 **跳转与深链接**：入口 = 从 `RT-PROJ-001` 进入项目；参数 = 路径 `project_id`；出口 = `RT-UPLOAD-001` / `RT-REVIEW-001` /
 `RT-SPLIT-001` / `RT-EDIT-001`(=`RT-PREVIEW-001`) / `RT-SPEC-001` / `RT-API-001` / `RT-CAP-001` / `RT-VER-001` / `RT-KB-001`。
+**主流程生成入口 `EL-WORK-039` 在 `RT-WORK-001` 同页发起**（`#43` 入队），**不产生路由跳转**；生成进度与结果在**构件预览态**呈现 —— ★ **不新增 `RT-*`**（仍 13 条）。
 **返回栈**：工作台是本项目的**枢纽页**，从子页返回时**回到工作台并保留左栏 `mode`**；**对话面板是全局悬浮层，跨页保持开合 / 位置 / 滚动**（不随路由重建）；
 `EL-WORK-026` 阶段导航未到达的节点**置灰 + 原因「先完成上一步：{上一步名}。」**（不做静默降级）。
 
-**待澄清**：`[拆解缺口-Q11]`（**已闭合** 2026-10-21）、`[拆解缺口-Q4]`（**已闭合**：`E22 User` 已补）、`[缺口-UI-10]`（<1280px 左栏折叠）、`[缺口-UI-11]`（输入框抖动与「无动效」口径冲突，本 Spec 暂按 **240ms** 实现并显式声明）。
+**待澄清**：`[拆解缺口-Q11]`（**已闭合** 2026-10-21）、`[拆解缺口-Q4]`（**已闭合**：`E22 User` 已补）、`[缺口-UI-10]`（<1280px 左栏折叠）、`[缺口-UI-11]`（输入框抖动与「无动效」口径冲突，本 Spec 暂按 **240ms** 实现并显式声明）。**2026-10-29 新增**：`[草案-APP-01]`（`#80` 已转正 → `EL-WORK-040`/`041`、`MODEL-TARGET-CANDIDATE`、第 6 态与 `REQ-GEN-013` **均已落地**，**P0·已闭合**）、`[缺口-APP-06]`（**✅ 已闭合** 2026-10-29：`埋点-Spec v0.1.13` / `测试-Spec v0.2.19` 均已重同步，本 Spec §10 已随动至 8 节点 / 63 事件）、`[待澄清-A07]`（「变更清单」逐文件明细口径，**P2**）、`[冲突-UI-06]`（`EL-WORK-040`/`041` 的元素归属页 → 本 Spec 按 UI Spec 现状落 `UI-WORK-001` 左栏容器，同区两态）。
 
 ### 5.5 上传页（`RT-UPLOAD-001` / `UI-UPLOAD-001`）
 
@@ -1023,7 +1041,11 @@
 
 **待澄清**：`[冲突-UI-05]`（`REQ-SPLIT-004` 的 UI 落点与 `需求条目表` 角色列不一致）、`[拆解缺口-Q7]`（**已闭合** 2026-10-21：只走 `#62` 不留库）。**已闭合**：`[拆解缺口-Q6]`（2026-10-21：落点 = 项目级 `E1 Project.depth`，默认 `standard`）。
 
-### 5.8 可视化编辑页（`RT-EDIT-001` / `UI-EDIT-001`）★ 本期核心
+### 5.8 可视化编辑页（`RT-EDIT-001` / `UI-EDIT-001`）★ **辅助：生成后微调 · 不占主流程节点**（`K3`）
+
+> **定位（2026-10-29 起）**：本页 = **辅助页** —— 用于**生成后微调**，**不在主流程节点上**；**52 个 `EL-EDIT-*` 的元素构成 / 交互 / 三态条款全部保留**（**实现不删、不降级**，`K3`）。
+> **主流程生成不经画布**：由 S5 的 **`UI-Spec`（页面 + 元素 `EL-*`）** 直接触发 `#43`（入口 = 工作台 `EL-WORK-039`，见 §5.4）；本页「提交变更」= **辅助再生成**（§4.2.8 的 `EL-EDIT-037` 行）。
+> **优先级随动**：`REQ-UIEDIT-001`~`004`/`007` 由 **`P0` 下调 `P1`**（与 `验收标准 §9.B` 对齐）；`REQ-UIEDIT-005`/`006`/`008`~`010` 级别不变。
 
 **状态管理**
 
@@ -1039,7 +1061,7 @@
 | `STORE-EDIT` | `linkSides` | bool | `false` | `EL-EDIT-030` 四边联动锁 |
 | `STORE-EDIT` | `controlFilter` | string | `''` | `EL-EDIT-002`（**本地过滤，不走接口**） |
 | `STORE-EDIT` | `limitHint` | bool | `false` | 第 201 个控件 |
-| `STORE-EDIT` | `submitState` | enum{`idle`,`submitting`,`queued`,`generating`} | `idle` | 点「提交变更」→ `#43` 202（**立即回编辑态但状态条显示「生成中」**） |
+| `STORE-EDIT` | `submitState` | enum{`idle`,`submitting`,`queued`,`generating`} | `idle` | 点「提交变更」→ `#43` 202（**辅助再生成**；**立即回编辑态但状态条显示「生成中」**） |
 | `STORE-EDIT` | `draftRecovered` | bool | `false` | 从本地草稿 / `#42` 恢复成功 |
 | `STORE-GLOBAL/TASK` | `appliedSeq` | int | `0` | **只在 `seq > appliedSeq` 时应用结果**；旧响应静默丢弃 |
 
@@ -1054,7 +1076,7 @@
 | 保存样式 | `API-PLAT-039`（`#39`，**服务端二次校验**） | 提交前 / 样式失焦（按实现策略） | `PARAM-ELEMENT-ID` + `PARAM-EDIT-TREE` | 写回 `MODEL-STYLE-PROPS` | 400/422 → 字段级 `message` + `data.field` + `data.received`（**保留已输入**）；409 → 统一冲突组件 |
 | 保存事件 | `API-PLAT-040`（`#40`） | 勾选三类事件后 | `PARAM-ELEMENT-ID` + `events[]`（`event_type` + `action_type = none`） | 写 `eventsDraft`；显示「暂无动作（TODO）」 | >3 条 → 400 `INVALID_ARGUMENT` |
 | 草稿读写 | `API-PLAT-042`（`#42`） | 本地防抖保存 + 打开页面时恢复 | `PARAM-PAGE-ID` | 恢复草稿 +「已恢复上次未提交的改动。」 | 409 → 统一冲突组件；**绝不静默丢弃** |
-| 提交变更 | `API-PLAT-043`（`#43`，⚡ 202） | 点「提交变更」（**首次先过 `EL-GLOBAL-004` + 检查外发开关**） | `PARAM-INPUT-HASH` + `PARAM-BASE-SEQ` + `PARAM-IDEM-KEY` | 写 `runningTask`；**立即回编辑态 + 状态条「生成中」**；**不阻塞继续编辑** | `TASK_STALE` → 静默丢弃 +「已为你使用最新一次生成的结果。」；`RATE_LIMITED` → 倒计时；**外发关闭（`#68` 已就绪）** → 按钮置灰 +「你已关闭「PRD 与代码外发第三方大模型」，生成不可用。」+「去开启」 |
+| 提交变更（**辅助再生成**） | `API-PLAT-043`（`#43`，⚡ 202） | 点「提交变更」（**首次先过 `EL-GLOBAL-004` + 检查外发开关**；**主流程生成不由本按钮驱动**，见 §5.4 的 `EL-WORK-039`） | `PARAM-INPUT-HASH`（= **`UI-Spec` 快照哈希**）+ `PARAM-BASE-SEQ` + `target?`（`PARAM-TARGET`，**仅 `ambiguous=true` 时必填**〔2026-11-03 转正〕）+ `PARAM-IDEM-KEY` | 写 `runningTask`；**立即回编辑态 + 状态条「生成中」**；**不阻塞继续编辑** | `TASK_STALE` → 静默丢弃 +「已为你使用最新一次生成的结果。」；`RATE_LIMITED` → 倒计时；**外发关闭（`#68` 已就绪）** → 按钮置灰 +「你已关闭「PRD 与代码外发第三方大模型」，生成类任务不可用。」+「去开启」 |
 | 元素 id 台账 | `API-PLAT-041`（`#41`，分页） | 打开抽屉 | `PARAM-PROJ-ID` + `PARAM-LIST` | 写台账（含 `void` 项） | 空 →「还没有分配过元素 id。」；失败 →「台账没加载出来。」+「重试」 |
 | 取消生成 | `API-PLAT-044A`（`#44a`） | 点「停止生成」 | `PARAM-TASK-ID` | `canceled`；丢弃产物、不入版本；预览保持上次结果 | 非 `running` → 400；**非错误态** |
 | L2 回传标记 | `API-PLAT-044`（`#44`）/ `API-PLAT-046`（`#46`） | 任务终态 | `PARAM-TASK-ID` | `l2_result.reported = false` → 「未验证构建」灰字 + 悬浮说明 | 不阻断任何操作（`REQ-GEN-003`） |
@@ -1070,21 +1092,24 @@
 | 无权限 | 403（`#35`~`#42` 任一） | 「你没有权限访问这个项目。」（统一文案） | 返回工作台；**权限撤销 ≤5min** 内由重校验或 403 兜底（`REQ-AUTH-003`），**不静默继续写** |
 | 离线 | 网络中断 | 顶栏「连接已断开，正在重连…」+ 画布**仍可本地编辑**（样式即时生效仅本地）；「提交变更」「删除控件」**禁用 + 原因**；「未验证构建」灰字保持 | 恢复后：本地草稿**自动补写 `#42`**；**提交串行排队**，不并发写入；不重复提交（幂等键 3s 复用） |
 
-**跳转与深链接**：入口 = `RT-WORK-001` 左栏切「编辑」（`?mode=edit`）；参数 = 路径 `project_id` + `?mode=`；
+**跳转与深链接**：入口 = `RT-WORK-001` 左栏**分段控件切「可视化编辑（辅）」（`?mode=edit`）** —— **生成后微调路径**（主流程生成见 §5.4 `EL-WORK-039`，不经本页）；参数 = 路径 `project_id` + `?mode=`；
 出口 = `RT-PREVIEW-001`（同路径切 `mode=preview`）、`EL-EDIT-011`…`EL-EDIT-052` 各抽屉（**均不新增历史记录**）。
 **返回栈**：编辑↔预览切换**不产生历史记录**（`replace`），保证浏览器「后退」不会在两个模式间反复跳；
 **离开页面前若草稿未提交 → 静默本地保存，不弹确认**（`REQ-UIEDIT-007`）。
 
-**待澄清**：`[拆解缺口-Q2]`（**已闭合** 2026-10-21：11 = §F14 行数）、`[缺口-UI-09]`（键盘替代键位）、`[拆解缺口-Q13]`（**已闭合**：`#39`/`#40`/`#53`/`#58` 已补 `If-Match`）、`[缺口-UI-12]`（id 序号溢出形式）。**已闭合**：`[缺口-APP-02]`（2026-10-21：`#44` 出参已增 `l2_result{reported,passed,log_digest}`）。
+**待澄清**：`[拆解缺口-Q2]`（**已闭合** 2026-10-21：11 = §F14 行数）、`[缺口-UI-09]`（键盘替代键位）、`[拆解缺口-Q13]`（**已闭合**：`#39`/`#40`/`#53`/`#58` 已补 `If-Match`）、`[缺口-UI-12]`（id 序号溢出形式）。**已闭合**：`[缺口-APP-02]`（2026-10-21：`#44` 出参已增 `l2_result{reported,passed,log_digest}`）。**2026-10-29 新增**：`[草案-APP-01]`（`#80` 已转正 → 本页 `EL-EDIT-037` 的 `target?` 来源，**P0**）、`[缺口-APP-06]`（**✅ 已闭合** 2026-10-29：两份上游已重同步，本 Spec §10 已随动）。
 
-### 5.9 预览态（`RT-PREVIEW-001` / `UI-PREVIEW-001`）
+### 5.9 构件预览态（`RT-PREVIEW-001` / `UI-PREVIEW-001`）★ **左栏主态**（`K6`）
+
+> **定位（2026-10-29 起）**：本态 = **构件预览（主）**，展示对象 = **生成的构件（XML / Kotlin 片段）静态预览**（`K6`）；**形态仍是网页近似渲染**（非真机系统渲染），差异 10 项见 `UI-Spec §6`。
+> **与主流程的关系**：`EL-WORK-039`（由 Spec 生成代码）发起的 `#43` 任务，其**进度与结果在本态呈现**（`EL-PREVIEW-003`/`009`）；`EL-PREVIEW-002` 的展示对象**由「元素树快照」改为「生成构件」**，`#47` **出参字段集不变**。
 
 **状态管理**
 
 | 状态模块 | 字段 | 类型 | 初始值 | 更新时机 |
 |---|---|---|---|---|
 | `STORE-PREVIEW` | `state` | enum{`empty`,`generating`,`verifying`,`gen_failed`,`verify_failed`,`load_failed`,`stopped`,`ready`} | `empty` | 由**任务状态 + 验证状态 + 前端资源状态**合成；**互斥且可枚举**（`REQ-PREVIEW-002`） |
-| `STORE-PREVIEW` | `artifacts` | `MODEL-ARTIFACTS` \| null | `null` | `#47` 返回；**只在 L1 `passed` 后替换内容**（**无淡入动画，直接替换**） |
+| `STORE-PREVIEW` | `artifacts` | `MODEL-ARTIFACTS` \| null | `null` | `#47` 返回；**只在 L1 `passed` 后替换内容**（**无淡入动画，直接替换**）；**展示对象 = 生成构件（XML / Kotlin 片段）静态预览**（`K6`） |
 | `STORE-PREVIEW` | `seq` | int \| null | `null` | SSE `task` / `#44`；**只应用序号最新的结果** |
 | `STORE-PREVIEW` | `finishedAt` | datetime \| null | `null` | `#44`；`null` → 显示「时间未知」 |
 | `STORE-PREVIEW` | `progress` | int（0~100） | `0` | SSE `task` 的 `progress` / `#44` |
@@ -1097,7 +1122,7 @@
 
 | 触发动作 | API-ID | 时机 | 参数来源 | 成功处理 | 失败处理 |
 |---|---|---|---|---|---|
-| 代码产物 | `API-PLAT-047`（`#47`） | **L1 `passed` 后** | `PARAM-TASK-ID`（`result_ref`） | 写 `artifacts` + 本地渲染器绘制为 DOM/Canvas | L1 未过 → 接口**不得**返回「已就绪」（`CONFLICT`）→ 保持上一成功结果；渲染失败 →「预览没加载出来。」+「重试」（30s 超时） |
+| 代码产物 | `API-PLAT-047`（`#47`） | **L1 `passed` 后** | `PARAM-TASK-ID`（`result_ref`） | 写 `artifacts`（**生成构件：XML / Kotlin 片段**）+ 本地渲染器作**静态预览**（**网页近似渲染**，非真机） | L1 未过 → 接口**不得**返回「已就绪」（`CONFLICT`）→ 保持上一成功结果；渲染失败 →「预览没加载出来。」+「重试」（30s 超时） |
 | 任务序号与时间 | `API-PLAT-045`（`#45` SSE）/ `API-PLAT-044`（`#44`） | SSE `task` 事件 / 降级轮询 | `PARAM-TASK-ID` | 写 `seq`/`finishedAt`；刷新 `EL-PREVIEW-003` | `finished_at = null` →「时间未知」（**禁 1970**）；旧 `seq` → 不应用 |
 | 生成进度 | `API-PLAT-045` / `API-PLAT-044` | `GenTask ∈ {queued,running}` | `PARAM-TASK-ID` | 写 `progress`（逐次赋值，无过渡动画） | 5min → 可重试失败态（**给进度反馈而非静默失败**） |
 | L1 逐规则 | `API-PLAT-049`（`#49`） | `VerifyTask(L1)` 运行中/结束 | `PARAM-TASK-ID` | 写 `l1Checks`（5 条逐条打勾） | 失败 → 转 `verify_failed` + 原因 + 剩余次数 |
@@ -1111,12 +1136,12 @@
 | 状态 | 触发条件 | 呈现（引用 UI 文案） | 重试/兜底 |
 |---|---|---|---|
 | 加载中 | `GenTask ∈ {queued,running}` / `VerifyTask(L1).status = running` | 「正在生成代码…」+ `{n}%`（**与「验证中」必须可区分**）；「正在验证生成的代码…」+ L1 逐条打勾 | 5min → 可重试失败态；**给进度反馈而非失败**（`REQ-NF-001`） |
-| 空数据 | 从未生成过 | 「还没生成过页面。」+「在左边拖几个控件，然后提交变更。」 | 切回编辑态拖控件；**近似预览标记仍常驻**（空态同样显示，`UI-Spec §6` 呈现要求 5） |
+| 空数据 | 从未生成过 | 「还没生成过页面。」+「Spec 生成后，平台会由 Spec 直接生成代码；也可以进「可视化编辑」做生成后微调。」（**CTA = `EL-WORK-039`「由 Spec 生成代码」**） | 切回编辑态拖控件；**近似预览标记仍常驻**（空态同样显示，`UI-Spec §6` 呈现要求 5） |
 | 错误 | 生成失败 / 验证失败 / 渲染加载失败（**三态分开**） | 「代码没生成出来。」+ 原因 +「重新生成」；「生成的代码没通过验证。」+ 原因 +「重试（还剩 {n} 次）」/`n=0`「需要人工介入」+「查看验证日志」；「预览没加载出来。」+「重试」 | **生成失败与验证失败是两个独立组件/文案，不得共用**（`REQ-GEN-008`）；渲染失败 30s 超时；**不得把渲染器差异渲染成"错误"** |
 | 无权限 | 403（`#47`/`#49`） | 「你没有权限访问这个项目。」 | 返回工作台；预览区**不渲染任何业务数据** |
 | 离线 | 网络中断 / SSE 断开 | 顶栏「连接已断开，正在重连…」+ 预览区**保留上一次成功结果**并置灰；「重新生成」「重试」**禁用 + 原因** | 恢复后按 `seq` 取最新；**SSE 不可用时降级 2s 轮询 `#44`，界面无差别** |
 
-**跳转与深链接**：入口 = `EL-WORK-012` 分段控件切「预览」（`?mode=preview`，**与 `RT-EDIT-001` 同路径、`replace` 切换**）；
+**跳转与深链接**：入口 = `EL-WORK-010`~`012` 分段控件切「**构件预览（主）**」（`?mode=preview`，**与 `RT-EDIT-001` 同路径、`replace` 切换**；**默认主态**）；另可由 `RT-WORK-001` 的 `EL-WORK-039` 发起 `#43` 后切至本态；
 出口 = 切回编辑态。**返回栈**：与编辑态共用一条历史记录，切换**不产生新记录**；**预览态只读**（所有编辑入口关闭，**不做"只读"提示弹窗轰炸**）。
 
 **待澄清**：`[拆解缺口-Q11]`（**已闭合** 2026-10-21：来源标签已更正）。**已闭合**：`[拆解缺口-Q8]`（2026-10-21：第二组重编为 `AC-ED-21`/`AC-ED-22`，`AC-ED-18`/`AC-ED-19` 保留给「取消」语义，行序重排 18→22）。
@@ -1339,7 +1364,7 @@
 | `PAYLOAD_TOO_LARGE` | 413 | 上传超 20MB | 「文件超过 20MB（当前 {n}MB）。请压缩后重试。」 | 保留表单；**不写入记录** |
 | `FORMAT_UNSUPPORTED` | 422 | 格式不支持（`.pdf`/`.txt` 等） | 「暂不支持该格式。请上传 .docx / .md 或飞书云文档链接。」 | 同上 |
 | `UPSTREAM_TIMEOUT` | 504 | 大模型 / 飞书 60s 超时（退避 2 次仍失败） | 「上游服务响应超时（{n}s）。」+「重试」 | **可重试失败态**；**绝不渲染成成功** |
-| `UPSTREAM_UNAVAILABLE` | 503 | 上游不可用；**或外发开关关闭**（★ 见 `#10`/`#12`/`#43`/`#58` 的不可用分支） | 「服务暂时不可用（{code}）。」+「重试」；外发关闭 → 「你已关闭「PRD 与代码外发第三方大模型」，…不可用。可在「能力配置」里重新打开。」 | 可重试；**不得静默降级、不得返回 200 假装在跑**（`REQ-AUTH-004`③）；退避由服务端执行，**前端只展示进度与重试入口** |
+| `UPSTREAM_UNAVAILABLE` | 503 | 上游不可用；**或外发开关关闭**（★ 见 `#10`/`#12`/`#43`/`#58` 的不可用分支） | 「服务暂时不可用（{code}）。」+「重试」；外发关闭 → 「你已关闭「PRD 与代码外发第三方大模型」，生成类任务不可用。」+「去开启」 | 可重试；**不得静默降级、不得返回 200 假装在跑**（`REQ-AUTH-004`③）；退避由服务端执行，**前端只展示进度与重试入口** |
 | `RATE_LIMITED` | 429 | 同项目并发生成 > 1 / 限流 | 「请求太频繁，{n} 秒后重试。」+ 倒计时 | 倒计时期间**禁用提交按钮**；**不重复提交** |
 | `TASK_STALE` | 409 | 提交了旧序号结果 | **静默丢弃** + 「已为你使用最新一次生成的结果。」 | **不弹错误**；不覆盖更新的结果 |
 | `INTERNAL` | 500 | 未预期错误 | 「出了点问题。」+「请把 request_id {id} 提供给我们。」+「重试」 | 展示 `request_id`；**上报体不含业务内容** |
@@ -1401,7 +1426,7 @@
 | **本地文件拖拽**（`EL-UPLOAD-003`、`EL-EDIT-004`） | 无需申请（浏览器原生能力） | 拖入非法类型/超限 → 对应错误条，**不进入列表**；**键盘替代路径必存**（`UI-Spec §3.7`：`Tab` 聚焦 → `Enter` 放置 → 方向键微调） | `REQ-NF-002`、`REQ-UIEDIT-001` |
 | **剪贴板写入**（`EL-EDIT-010`/`EL-EDIT-020` 复制元素 id；`EL-API-015` 复制接口） | 点复制按钮时（`navigator.clipboard.writeText`） | 被拒（非安全上下文 / 用户拒绝）→ Toast「复制失败，请手动选中复制。」+ **同时把 id 呈现为可选中文本**（降级路径） | `REQ-UIEDIT-009` |
 | **浏览器通知**（Notification） | **N/A**：PRD 与 UI Spec **均未定义**任何平台侧通知场景 | — | — （若后续要做「生成完成提醒」→ 需 PM 补需求） |
-| **相机 / 麦克风** | **N/A**：平台自身界面**无拍照 / 录音场景**（画布内控件由用户拖拽产生，**平台不采集素材**） | — | `REQ-BASE-001`（本期只做安卓，界面不得出现无关入口） |
+| **相机 / 麦克风** | **N/A**：平台自身界面**无拍照 / 录音场景**（控件由 S5 `UI-Spec` 定义、S7 生成；辅助编辑态下可拖拽微调，**平台不采集素材**） | — | `REQ-BASE-001`（本期只做安卓，界面不得出现无关入口） |
 | **相册 / 媒体库** | **N/A**：同上；`EL-EDIT-004` 的「图片」控件**只声明控件类型**，不涉及平台侧读取用户相册 | — | 同上 |
 | **定位 / 传感器** | **N/A**：`§F13` 控件白名单与本项目范围**均未涉及**（`D-X4` 明确排除图表/地图/Canvas/WebView 等；定位亦未列入） | — | `平台需求概要 §2` 范围外清单 |
 | **后台任务 / 唤醒** | **N/A**：长任务由服务端承载，前端只做 SSE/轮询消费 | — | `REQ-GEN-007` |
@@ -1414,7 +1439,7 @@
 | `requester`（需求方） | 自己项目的全部读写 | 与管理员**同一套界面**，仅**入口范围**不同（`REQ-AUTH-002`：**不做两套界面**） |
 | `admin`（管理员） | 需求方全部权限 + 删除任意项目 + **维护门禁标准**（`#24` PUT） | 仅 `EL-REVIEW-049`（门禁标准抽屉入口）**多一个入口**；其余一致 |
 
-**撤销生效（`REQ-AUTH-003`）**：权限撤销 ≤5min 生效；长停留页面（`RT-EDIT-001`/`RT-KB-001`/`RT-API-001`/`RT-CAP-001`）
+**撤销生效（`REQ-AUTH-003`）**：权限撤销 ≤5min 生效；长停留页面（`RT-WORK-001`/`RT-EDIT-001`/`RT-KB-001`/`RT-API-001`/`RT-CAP-001`）
 **每 60s 轻量重校验**（或由任一写操作 403 兜底），**不得静默继续写**。周期值 `[来源: 推断，待确认]` → `[待澄清-A04]`。
 
 ---
@@ -1460,9 +1485,9 @@
 
 > ✅ **已按 `platform/specs/埋点-Spec.md`（v0.1 定稿 + 附节 A 对照表）完成正式事件名回填**（`REQ-TRACK-001`）。
 > 事件名一律采用 **`EVT_<模块>_<动作>` 全小写下划线**（早期大写草稿名已全部移除）。
-> 完整 59 条事件字典见 `埋点-Spec §3`。本节**已补齐到全部 59 条**（2026-10-29：工程接入 +3、二期写回 +2）：
-> **§10.1** = 核心 **9 节点漏斗 + 4 合规 + 12 旁路/任务/审核事件 + 2 本机落地事件**，共 **32 行**（2026-10-29 二期写回 +2、工程接入 +3）；
-> **§10.4** = 其余 **27 行**（按 `埋点-Spec §3` 分节排列）。**§10.1 + §10.4 = 59 行，与事件字典逐条对应**。
+> 完整 **63 条**事件字典见 `埋点-Spec §3`（v0.1.13）。本节**已补齐到全部 63 条**（2026-10-29：去拖拽编辑 +4、二期写回 +2、工程接入 +3）：
+> **§10.1** = 核心 **8 节点漏斗**〔2026-10-29 去拖拽编辑：**9 → 8**，「编辑」节点移除（`K3`）；节点 6/7/8 = **生成 / 预览 / 交付**；节点号已与 `埋点-Spec v0.1.13` 逐条对齐〕**+ 辅助路径 1 条**（`EVT_edit_submit_success`，原 ★节点 6，本轮降为辅助）**+ 生成事件 4 条**（`EVT_gen_spec_accepted` / `EVT_gen_spec_blocked` + `EVT_gen_target_ambiguous` / `EVT_gen_target_specified`〔2026-11-03 转正〕）**+ 4 合规 + 12 旁路/任务/审核事件 + 2 本机落地事件**，共 **36 行**（2026-10-29 去拖拽编辑 +4、二期写回 +2、工程接入 +3）；
+> **§10.4** = 其余 **27 行**（按 `埋点-Spec §3` 分节排列）。**§10.1 + §10.4 = 63 行，与事件字典逐条对应**（含随 `#80` 转正的 2 条）。
 >
 > **两条埋点线必须分清**（`埋点-需求包 §0`）：本节 = **A 线（平台自身埋点，`API-PLAT-062` 上报）**；
 > **B 线（被开发项目的埋点方案 `TrackPlan`）不在本节** —— 它由 `API-PLAT-059`（`#59`）承载展示（§4.2.7），
@@ -1472,7 +1497,7 @@
 > ② 埋点必须绑定 **`EL-<模块>-<三位>` 归一化 id**（禁止用别名/临时 id）；③ 上报体**不含 PRD 正文、生成代码、对话正文**；
 > ④ 上报走 `API-PLAT-062` **批量**、**失败静默重试**、**不阻塞业务与离开页面**。
 
-### 10.1 漏斗 9 节点 + 负向/合规事件的埋码点
+### 10.1 漏斗 8 节点〔2026-10-29 去拖拽编辑：9 → 8，「编辑」节点移除；节点 6/7/8 = 生成 / 预览 / 交付〕+ 生成/负向/合规事件的埋码点
 
 | 事件名 EVT | 所在页面 | 元素 ID (EL-) | 埋码位置（类/方法/回调） | 触发时机 | 依赖参数来源 |
 |---|---|---|---|---|---|
@@ -1486,25 +1511,29 @@
 | `EVT_review_writeback` | RT-REVIEW-001 | EL-REVIEW-031/061 | #23→GET8版本/hash/补充核验成功后 | 包括changed=false核验成功，不一致不发；当前immediate:true、dedupKey=reviewId | flat deleted_lines/modified_lines/added_lines、accepted_items_count、new_revision_id；不加正文/答案/hash参数 |
 | `EVT_split_done` | `RT-SPLIT-001` / `UI-SPLIT-001` | `EL-SPLIT-008`~`010` | `SplitStore` 的 `onSuccess()` 回调（`#29` 五个角色包**落库后**） | 拆解任务成功、5 个角色包落库后（★漏斗节点 4） | `#29` 的 `items[].role` 与各自 `req_ids[].length`（REQ 总数、分角色条目数、`empty_role_count`）、任务耗时 |
 | `EVT_spec_gen_done` | `RT-SPEC-001` / `UI-SPEC-001` | `EL-SPEC-013`、`EL-SPEC-003`~`007`、`EL-SPEC-014` | `SpecStore` 的 `onGenerateResponse(result)` 回调 | `#30` 返回（含 `overall`）之后（★漏斗节点 5） | `#30` 的 `data.succeeded[]`、`data.failed[].role`、`data.overall`、`duration_ms_by_role`（**`partial` 不得上报为成功**） |
-| `EVT_edit_submit_success` | `RT-EDIT-001` / `UI-EDIT-001` | `EL-EDIT-037` | `EditorStore.submitChanges()` 的 `onAccepted(task_id, seq)` 回调（`#43` 202） | **生成任务创建成功、返回 `task_id` + `seq` 之后**（★漏斗节点 6；按 `埋点-Spec` 附节 A 第 11 行定名） | `#43` 的 `data.task_id`/`data.seq`；本地元素数、控件类型分布、`page_id` |
+| `EVT_edit_submit_success` | `RT-EDIT-001` / `UI-EDIT-001` | `EL-EDIT-037` | `EditorStore.submitChanges()` 的 `onAccepted(task_id, seq)` 回调（`#43` 202） | **生成任务创建成功、返回 `task_id` + `seq` 之后**（**辅助路径**，**不计入主流程漏斗节点**；原 ★节点 6，2026-10-29 降为辅助 —— 节点 6 的**主流程对应物 = `EVT_gen_spec_accepted` / `EL-WORK-039`「由 Spec 生成代码」**（不经画布），`K3`） | `#43` 的 `data.task_id`/`data.seq`；本地元素数、控件类型分布、`page_id` |
 | `EVT_edit_drop_rejected` | `RT-EDIT-001` | `EL-EDIT-012`、`EL-EDIT-013`、`EL-EDIT-004` | 落点校验失败分支（前端拦截处）与 `#36` 的 400 回调 | 拖拽落点被拒收时（**独立事件：区分「拖了但没放成」**） | `reject_reason`（`outside_canvas` / `invalid_hierarchy` / `limit_exceeded` / `unsupported_widget`）；`widget_type` |
 | `EVT_edit_event_config` | `RT-EDIT-001` | `EL-EDIT-032`、`EL-EDIT-033`、`EL-EDIT-034`、`EL-EDIT-035` | `#42` 草稿保存的成功回调〔2026-10-22 由 `#40` 改挂，见 `埋点-Spec §11 v0.1.4`〕 | 草稿保存成功、且本次含事件配置变更时 | **只报「配了哪类事件」**（`click`/`long_click`/`double_click`）；`action_type` **固定 `none`** |
-| `EVT_gen_task_enqueued` | `RT-EDIT-001` / `RT-PREVIEW-001` | `EL-EDIT-037`、`EL-PREVIEW-009` | `TaskHub.onTaskEvent` 首次收到该 `task_id` 的 `queued` 事件时 | 生成任务入队时（**仅计一次，SSE 重连不重复计数**） | `data.task_id`、`data.seq` |
-| `EVT_gen_task_terminal` | `RT-EDIT-001` / `RT-PREVIEW-001` | `EL-PREVIEW-009`、`EL-PREVIEW-011` | `TaskHub.onTaskEvent(terminal)` 回调（`succeeded` / `failed` / `timeout`） | 生成任务终态时（★漏斗节点 7） | `#44`/SSE 的 `data.status`、`data.progress`、`data.error_code`、`started_at`→`finished_at` 耗时（**L1 耗时计入指标；L2 仅记录**，`REQ-NF-001`） |
+| `EVT_gen_spec_accepted` | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-039` | `#43` 的 202 回调内（`task_id` + `seq` 写入之后，**首次收到 `queued` 之前**） | **主流程生成任务创建** —— 点 `EL-WORK-039`「由 Spec 生成代码」且前置全部满足（告知已确认 / 外发开关开启 / `ambiguous = false` 或已指定目标接入点 / 页面与其 `UI-Spec` 存在）后、`#43` 返回 **202** 且 `task_id` + `seq` 写入之后 | `#43` 的 `data.task_id`、`data.seq`、`page_id`、**`source = spec_generate`**（固定值）、`input_hash`（= **`UI-Spec` 快照哈希**，非用户文本）、`target`（平台自动识别时为 `null`）、`element_count` |
+| `EVT_gen_spec_blocked` | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-039` | `EL-WORK-039` 的 `onClick` 拦截分支（**成功分支见上一条，二者互斥**） | 点「由 Spec 生成代码」但**被前置拦截**（**不发 `#43`**）—— 告知未确认 / 外发开关关闭 / `ambiguous = true` 且未指定目标接入点 / 离线 / 无页面或该页 `UI-Spec` 未就绪 | `block_reason:enum{notice_unconfirmed,egress_disabled,target_ambiguous,offline,no_page,no_spec}`、`page_id` |
+| `EVT_gen_target_ambiguous`〔2026-11-03 转正〕 | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-040`、`EL-WORK-041` | `#80` 的 `ambiguous = true` 分支（提示条与候选**渲染之后**） | **目标接入点待指定**提示条 + 候选清单**展示**时（提示条渲染之后） | `page_id`、`candidate_count`（`items[]` 条数）、`source_kind:enum{imported}`（**仅已接入工程会出现本事件**） |
+| `EVT_gen_target_specified`〔2026-11-03 转正〕 | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-041` | `EL-WORK-041` 的确认回调内（**写入待提交态之后**） | **用户显式指定目标接入点**（选中候选并确认 / 走「由你指定」）时；**未指定不上报** | `page_id`、`module`、`activity`、`layout`（**均为工程结构标识、非用户内容**）、`specified_by:enum{candidate,manual}`、`candidate_count`、`confidence`（`0~1`；自定义时 `null`） |
+| `EVT_gen_task_enqueued` | `RT-WORK-001` / `RT-EDIT-001` / `RT-PREVIEW-001` | `EL-WORK-039`、`EL-EDIT-037`、`EL-PREVIEW-009` | `TaskHub.onTaskEvent` 首次收到该 `task_id` 的 `queued` 事件时 | 生成任务入队时（**主流程 = 由 `EL-WORK-039` 发起**；**仅计一次，SSE 重连不重复计数**） | `data.task_id`、`data.seq`、**`source`**（`enum{spec_generate,edit_submit,preview_regenerate,chat_generate}`；2026-10-29 新增） |
+| `EVT_gen_task_terminal` | `RT-WORK-001` / `RT-EDIT-001` / `RT-PREVIEW-001` | `EL-WORK-039`、`EL-PREVIEW-009`、`EL-PREVIEW-011` | `TaskHub.onTaskEvent(terminal)` 回调（`succeeded` / `failed` / `timeout`） | 生成任务终态时（★漏斗节点 **6** —— **节点 6 只计 `source = spec_generate`**；由辅助页 `EL-EDIT-037` 发起的辅助再生成不计入本节点） | `data.status`、`data.progress`、`data.error_code`、**`source`**（同 `EVT_gen_task_enqueued`；**节点 6 只计 `spec_generate`**）、`started_at`→`finished_at` 耗时（**L1 耗时计入指标；L2 仅记录**，`REQ-NF-001`） |
 | `EVT_gen_task_canceled` | `RT-PREVIEW-001` / `UI-PREVIEW-001` | `EL-PREVIEW-015`、`EL-PREVIEW-016`、`EL-WORK-023` | `#44a` 的成功回调 | 用户点「停止生成」且任务置 `canceled` 时（**独立事件，不得与失败合并**） | `data.status = canceled` + 取消时的 `progress` |
-| `EVT_preview_refreshed` | `RT-PREVIEW-001` / `UI-PREVIEW-001` | `EL-PREVIEW-002`、`EL-PREVIEW-003` | `PreviewStore.applyPreview(seq)` **替换内容之后** | **L1 `passed` 且预览内容已替换之后**（★漏斗节点 8） | `data.seq`（`#45`/`#44`）、L1 耗时（`#49`/`l1_result.duration_ms`） |
+| `EVT_preview_refreshed` | `RT-PREVIEW-001` / `UI-PREVIEW-001` | `EL-PREVIEW-002`、`EL-PREVIEW-003` | `PreviewStore.applyPreview(seq)` **替换内容之后** | **L1 `passed` 且预览内容已替换之后**（★漏斗节点 **7**） | `data.seq`（`#45`/`#44`）、L1 耗时（`#49`/`l1_result.duration_ms`） |
 | `EVT_verify_failed` | `RT-PREVIEW-001` | `EL-PREVIEW-012`、`EL-PREVIEW-010` | `VerifyStore` 的失败回调（`#49` 终态） | 验证失败时（**与生成失败分开**） | `data.items[].attempt`、`data.error_code`、L1 逐规则结果（**只报失败规则名，不报代码内容**） |
 | `EVT_l2_reported` | `RT-VER-001` / `RT-PREVIEW-001` | `EL-VER-028`、`EL-PREVIEW-014` | `TaskHub` 收到 `#46` 回传后的回调 | 本地构建结果回传时（**仅记录，不计平台指标**） | `data.l2_result.passed`、耗时（**L2 耗时不得混入 L1 指标**） |
-| `EVT_deliver_done` | `RT-VER-001` / `UI-VER-001` | `EL-VER-025`、`EL-VER-027`、`EL-VER-026` | `DeliverStore.onDownloaded()` 回调 | 交付归档完成 / 导出成功后（★漏斗节点 9） | 版本号（`#54` 的 `data.items[].seq`）、导出类型（工程源码 / Spec 包） |
+| `EVT_deliver_done` | `RT-VER-001` / `UI-VER-001` | `EL-VER-025`、`EL-VER-027`、`EL-VER-026` | `DeliverStore.onDownloaded()` 回调 | 交付归档完成 / 导出成功后（★漏斗节点 **8**） | 版本号（`#54` 的 `data.items[].seq`）、导出类型（工程源码 / Spec 包） |
 | `EVT_auth_forbidden` | `RT-VER-001`（及全局 403） | `EL-VER-025`、`EL-VER-027`、`EL-AUTH-014` | 全局响应拦截器 403 分支（含 `#60`/`#61` 导出被拒） | 导出或访问被拒（403）时（按 `埋点-Spec` 附节 A 第 21 行统一归入全局 403 事件，`resource=deliverable`） | `source_rt`、`source_api`、`resource=deliverable`（**不含对象名**） |
 | `EVT_aiegress_notice_shown` ★合规 | `RT-UPLOAD-001` / `RT-EDIT-001` / `RT-WORK-001` | `EL-GLOBAL-004`、`EL-GLOBAL-005`、`EL-GLOBAL-006` | 弹窗容器挂载时（`onShow`） | 首次上传前 / 首次生成前弹窗展示时 | `trigger_scene`（`upload_first` / `generate_first` / `workbench_generate`） |
 | `EVT_aiegress_notice_confirmed` ★合规 | 同上 | `EL-GLOBAL-007` | `#68`★ PUT 的成功回调 | 用户点「我已知悉，继续」且写入成功后 | `data.consent_acknowledged_at`、`trigger_scene`（**不上报 PRD 正文**） |
 | `EVT_aiegress_disabled` ★合规 | `RT-CAP-001` / `UI-CAP-001` | `EL-CAP-019`、`EL-CAP-020`、`EL-CAP-021` | `#68`★ PUT 的成功回调（`egress_enabled = false`） | 用户关闭开关时 | `egress_enabled=false`、`disabled_reason_len`（**只报长度，不报全文**） |
-| `EVT_gen_blocked_by_egress` ★合规 | `RT-EDIT-001` / `RT-WORK-001` / `RT-UPLOAD-001` / `RT-CAP-001` | `EL-EDIT-037`、`EL-WORK-027`、`EL-UPLOAD-014`、`EL-CAP-021` | 生成入口置灰分支 / `#10`/`#12`/`#43`/`#58` 的 ★`UPSTREAM_UNAVAILABLE` 分支 | 外发开关关闭导致生成不可用时（**用于证明没有静默降级**） | `code = UPSTREAM_UNAVAILABLE`、`entry` |
+| `EVT_gen_blocked_by_egress` ★合规 | `RT-EDIT-001` / `RT-WORK-001` / `RT-UPLOAD-001` / `RT-CAP-001` | `EL-WORK-039`（**主流程生成入口**）、`EL-EDIT-037`（辅助）、`EL-WORK-027`、`EL-UPLOAD-014`、`EL-CAP-021` | 生成入口置灰分支 / `#10`/`#12`/`#43`/`#58` 的 ★`UPSTREAM_UNAVAILABLE` 分支 | 外发开关关闭导致生成不可用时（**用于证明没有静默降级**） | `code = UPSTREAM_UNAVAILABLE`、`entry` |
 | `EVT_auth_password_login` | `RT-AUTH-001` | `EL-AUTH-018`、`EL-AUTH-019`、`EL-AUTH-020`、`EL-AUTH-021`、`EL-AUTH-010` | 三分支各自的回调内：`blocked` = `EL-AUTH-018`/`019` 字段级提示渲染之后（**`#72` 请求未发出**）；`failed` = `#72` 失败且 `EL-AUTH-010` 渲染之后；`success` = `#72a`/`#72` 成功、`token` 写入 `STORE-GLOBAL/SESSION` 之后、跳转之前 | 本地账号密码登录（2026-10-21 本机落地；`result` 三分支互斥、逐支可判定） | `result`、`reason`、`block_reason`、`duration_ms`、`retry_index`、`reentry`；⚠️ **绝不携带用户名/密码**（含长度、掩码、哈希），**也不得**用任何参数区分「账号不存在」与「密码错误」 |
 | `EVT_llm_model_switch` | 全部 13 页（应用外壳顶栏） | `EL-GLOBAL-009` | `ModelSelectorStore.selectModel(id)` 的 `#71a` 回调内（成功 = 写入之后、`EL-GLOBAL-009` 显示新模型之后；失败 = 回到原模型之后） | 切换大模型（2026-10-21 本机落地；回答 `G-014`） | `result`、`from_model`、`to_model`、`available_model_count`、`last_verdict`；**权威模型来源仍是 `#17.model`**，本事件只提供切换时间线 |
-| `EVT_patch_writeback_done` | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-037` | `#79` 成功回调内（Toast 之后、面板刷新之前） | 写回成功 | `data.totals`（**不落路径文本**） |
-| `EVT_patch_writeback_failed` | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-037` | `#79` 失败分支回调内 | 写回失败（含冲突/禁碰拦截） | `error_code` |
+| `EVT_patch_writeback_done` | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-039`、`EL-WORK-037` | `#79` 成功回调内（Toast 之后、面板刷新之前） | 写回成功（**主流程：由 `EL-WORK-039` 生成后自动写回所选工程根**〔`REQ-GEN-012`〕/ **辅助：点 `EL-WORK-037`「写回工程」**） | `data.totals`（**不落路径文本**）、**`trigger`**（`enum{auto_after_generate,manual_panel}`；2026-10-29 新增） |
+| `EVT_patch_writeback_failed` | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-037` | `#79` 失败分支回调内 | 写回失败（含冲突/禁碰拦截；**主流程自动写回与手动写回同口径**） | `error_code`、**`trigger`**（`enum{auto_after_generate,manual_panel}`；2026-10-29 新增） |
 | `EVT_intake_click` | `RT-PROJ-001` / `UI-PROJ-001` | `EL-PROJ-048` | `EL-PROJ-048` 的 `onClick`（弹窗打开前） | 点击「接入已有工程」 | — |
 | `EVT_intake_done` | `RT-PROJ-001` / `UI-PROJ-001` | `EL-PROJ-055`、`EL-PROJ-049` | `#73` 成功回调内（Toast 之后、列表刷新之前） | 接入成功 | `data.counts`、`data.warnings`（**不上报路径/工程名文本**） |
 | `EVT_intake_failed` | `RT-PROJ-001` | `EL-PROJ-055`、`EL-PROJ-051`、`EL-PROJ-053` | `#73` 失败分支回调内 | 接入失败（含前置拦截） | `error_code`、`block_reason` |
@@ -1530,7 +1559,7 @@
 | 禁止项 | **不含 PRD 正文、生成代码、对话正文、任何密钥/令牌**；**不上报用户输入原文** |
 | 保留期 | `埋点-需求包 §5` 第 5 条：个人数据注销 / 项目删除 30 天后物理清除 → **埋点数据须有对应清理口径**，当前**无实体承载** → `[拆解缺口-Q7]`（§12 汇总） |
 
-### 10.4 其余 27 条事件的埋码点（**与 §10.1 合计 59 条**，与 `埋点-Spec §3` 一一对应）
+### 10.4 其余 27 条事件的埋码点（**与 §10.1 合计 63 条**，与 `埋点-Spec §3` 一一对应）
 
 > 由 `埋点-Spec §3` 事件字典逐条提取（页面 / 元素 / 埋码位置 / 触发时机 / 参数 均照录），按字典分节排列。
 
@@ -1584,14 +1613,14 @@
 | `EVT_chat_reply_terminal` | 当前路由 | `EL-WORK-016`、`EL-WORK-018`、`EL-WORK-017` | SSE `chat.delta` 完成回调 / 60s 超时分支内 | 回复结束 → 该条回复的 SSE `chat.delta` 收到**完成标记**，**或** 60s 超时置 `failed` **之后** | `status:enum{completed,failed,timeout}`、`duration_ms:int`、`message_id:string(36)`〔上报时机 批量；去重：以 `message_id` 去重〕 |
 | `EVT_chat_resend` | 当前路由 | `EL-WORK-017` | `#27` 成功回调内 | 失败重发 → 点 `EL-WORK-017`「重发」且 `#27` 返回成功、该消息就地转 `streaming` **之后** | `message_id:string(36)`、`retry_index:int(≥1)`〔上报时机 批量；去重：同一 `message_id` 的同一 `retry_index` 只报 1 次〕 |
 
-#### 3.7 编辑与生成（回答 `G-002`、`G-007`、`G-013`；漏斗节点 6、7）
+#### 3.7 编辑与生成（回答 `G-002`、`G-007`、`G-013`；漏斗节点 6〔生成〕）
 
 | 事件名 EVT | 所在页面 | 元素 ID (EL-) | 埋码位置（类/方法/回调） | 触发时机 | 依赖参数来源 |
 |---|---|---|---|---|---|
 | `EVT_edit_element_voided` | `RT-EDIT-001` | `EL-EDIT-040`、`EL-EDIT-017`、`EL-EDIT-046`、`EL-EDIT-052` | `#38` 成功回调内（节点移出渲染树之后） | 删除控件（id 作废） → 点 `EL-EDIT-040` / `EL-EDIT-017` 并经 `EL-EDIT-043` 二次确认、`#38` 返回成功、节点已移出渲染树 **之后** | `element_id:string(24)`、`widget_type:string`、`child_count:int`〔上报时机 即时 flush；去重：同一 `element_id` 只报 1 次（**`void` 是单向终态**）〕 |
 | `EVT_edit_submit_blocked` | `RT-EDIT-001` | `EL-EDIT-037` | `EL-EDIT-037` 的 `onClick` 拦截分支（**成功分支见下一条，二者互斥**） | 点「提交变更」但**被拦截** → 点 `EL-EDIT-037` 且以下任一成立并给出提示**之后**（**不发 `#43`**）：告知未确认 / 外发开关关闭 / 存在 `unset` 假设 / 离线 / 无页面 | `block_reason:enum{notice_unconfirmed,egress_disabled,assumption_unset,offline,no_page}`、`page_id:string(36)`〔上报时机 批量；去重：同一 `block_reason` 在 1s 内只报 1 次〕 |
 
-#### 3.9 交付与版本（回答 `G-008`、漏斗节点 9）
+#### 3.9 交付与版本（回答 `G-008`、漏斗节点 8）
 
 | 事件名 EVT | 所在页面 | 元素 ID (EL-) | 埋码位置（类/方法/回调） | 触发时机 | 依赖参数来源 |
 |---|---|---|---|---|---|
@@ -1620,13 +1649,14 @@
 
 > **本节与 §1~§10 是两回事**（见 §0 阅读约定）：§1~§10 定义**平台自身 App（Web 工作台）**；
 > **本节定义「平台为用户的安卓工程生成什么」** —— 即平台内部**代码生成链路**必须遵守的 7 条实现约束。
-> 落点：`REQ-GEN-001`~`010`、`REQ-UIEDIT-001`~`010`、`REQ-CAP-001`~`004`、`REQ-DELIVER-001`。
+> **生成输入与落点（2026-10-29 起 · 第 6 轮回写）**：输入 = S5 的 **`UI-Spec`（页面 + 元素 `EL-*`）**（`K1`/`K2`，**不经画布**）；落点 = **所选（已接入）工程根**（brownfield 默认，`K4`，复用 `#79`）；粒度**按页面**，目标接入点**默认由平台自动识别、不确定退回用户指定**（`K5`）。
+> 落点：`REQ-GEN-001`~`010` + **`REQ-GEN-011`/`012`**（**由 Spec 直出 · 写回所选工程根**）/ `REQ-GEN-013`〔2026-11-03 转正〕、`REQ-UIEDIT-001`~`010`（**辅助**）、`REQ-CAP-001`~`004`、`REQ-DELIVER-001`。
 > **校验方式**：每条给「怎么验」，供 S7 自检与 S8 测试引用。
 
 | # | 约束（**逐条可验**） | 实现落点 | 怎么验 | 依据 |
 |---|---|---|---|---|
-| **A-1** | 生成物 = **布局 XML + Kotlin**，由 **AI 直接生成**；**不得**走模板渲染 / 占位符替换 / 预置工程改写 | `#43` 生成的产物 → `#47` 出参 `artifacts[]` | 抽查两次不同元素树的产物：**不存在**固定骨架里被替换的占位符痕迹；同输入两次生成的文本**不逐字相同**（生成式特征），但 `input_hash` 相同 | `§F13 补充块②`（`answer:Q1`）、`REQ-BASE-001` |
-| **A-2** | **元素 id → 安卓侧标识的确定性映射**：`EL-HOME-001` → `R.id.el_home_001`，**由 agent 在生成时回填**；id 一律用**归一化（大写零填充）**形式比较与存储 | 生成器在产出 XML `android:id` 时回填；`UI-Spec §5` 留对照表 | 任取页面元素树，逐个 `element_id` 校验：`EL-X-NNN` ↔ `R.id.el_x_nnn` **一一对应、无遗漏、无多余**（即 L1 规则③的等价校验） | `D-A3`、`REQ-UIEDIT-009`、`L1 规则③` |
+| **A-1** | 生成物 = **布局 XML + Kotlin**，由 **AI 直接生成**；**不得**走模板渲染 / 占位符替换 / 预置工程改写 | `#43` 生成的产物 → `#47` 出参 `artifacts[]` | 抽查两次**不同 `UI-Spec` 页面输入**的产物：**不存在**固定骨架里被替换的占位符痕迹；同输入两次生成的文本**不逐字相同**（生成式特征），但 `input_hash` 相同 | `§F13 补充块②`（`answer:Q1`）、`REQ-BASE-001` |
+| **A-2** | **元素 id → 安卓侧标识的确定性映射**：`EL-HOME-001` → `R.id.el_home_001`，**由 agent 在生成时回填**；id 一律用**归一化（大写零填充）**形式比较与存储 | 生成器在产出 XML `android:id` 时回填；`UI-Spec §5` 留对照表（**`EL-*` 的定义来源 = `UI-Spec`**，`K2`） | 任取页面元素树，逐个 `element_id` 校验：`EL-X-NNN` ↔ `R.id.el_x_nnn` **一一对应、无遗漏、无多余**（即 L1 规则③的等价校验） | `D-A3`、`REQ-UIEDIT-009`、`L1 规则③` |
 | **A-3** | 事件**只生成空回调存根**（如 `setOnClickListener { /* TODO：由对话补充 */ }`），`action_type` 本期**仅 `none`**；**三类事件（`click`/`long_click`/`double_click`）可并存** | `#40` 的事件配置 → 生成 `MODEL-ELEMENT-EVENTS` 对应回调 | 代码里**不存在**跳转目标解析 / 接口调用 / 埋点上报参数；回调体内**只有 TODO 注释**；同一元素勾三类 → 生成三个回调 | `D-Q13`、`REQ-UIEDIT-004`、**项目约束 4** |
 | **A-4** | 同时配置 `click` 与 `double_click` 时：**300ms 判定窗**，双击**取消已触发的单击回调** | 生成的事件绑定代码（`GestureDetector` 或等价实现） | 真机连点两次：**只有双击回调生效**，单击回调**不被执行**（可观测日志/计数器） | `D-A11`、`数据模型 E8 判定窗` |
 | **A-5** | 工程产物含 **`gradle wrapper`** + **依赖版本锁定清单**；**本机构建** —— **平台不做服务端构建、不接第三方云 CI**；**界面不得出现任何构建/打包/编译进度** | `#60`/`#61` 的交付包；`#47` 出参 | 交付包解压后**含 `gradlew`/`gradle-wrapper.jar`/wrapper.properties** + 依赖锁定清单；平台侧**无**构建产物（apk/aab）；App Spec 与 UI Spec **无构建入口** | `answer:Q3`、`REQ-GEN-009`、**项目约束 1/2** |
@@ -1645,7 +1675,7 @@
 
 ## 11 需求追溯表
 
-> **REQ 集合与 `需求条目表.md` 的 95 条 `REQ-ID` 一致**（模块内行序按本 Spec 自定；摘要文本取自该表，经 `UI-Spec §9` 传递）。
+> **REQ 集合与 `需求条目表.md` 的 98 条 `REQ-ID` 一致**〔95 → 98：`+REQ-GEN-011`/`012`/`013`〕（模块内行序按本 Spec 自定；摘要文本取自该表，经 `UI-Spec §9` 传递）。
 > **覆盖状态四态**：`OK`（覆盖，写出承接路由）/ `GAP`（有缺口）/ `N/A`（不适用，写理由）/ `Deferred`（延后，注明由谁覆盖）。
 > **本表口径是「App 侧覆盖」**：凡与 App 无关者标 `N/A` 并写理由；凡有缺口者在备注列挂编号（缺口汇总见 §12）。
 
@@ -1685,17 +1715,17 @@
 | `REQ-SPEC-003` | Spec 导出（需鉴权/不含密钥） | `RT-SPEC-001`、`RT-VER-001` | OK | 前端**不得把本地缓存密钥类数据混入导出** |
 | `REQ-SPEC-004` | 需求追溯矩阵 | `RT-SPEC-001`、`RT-SPLIT-001`（`?drawer=trace`） | OK | `[缺口-API-04]`（RTM 无接口 → `#67`★）；**四态由接口给出，前端只渲染** |
 | `REQ-PROOF-001` | 角色校对与《补充要求清单》 | `RT-SPEC-001` | OK | 每条带「回流对话补充」→ 跳 `RT-WORK-001` 并**预填上下文** |
-| `REQ-UIEDIT-001` | 拖拽控件入画布 | `RT-EDIT-001` | OK | id **由服务端返回后才写入本地元素树**；超 200 前端拦截 + 服务端 400 |
+| `REQ-UIEDIT-001` | 拖拽控件入画布 | `RT-EDIT-001` | OK | id **由服务端返回后才写入本地元素树**；超 200 前端拦截 + 服务端 400；**辅助能力 · 不占主流程**（`K3`；`P0`→`P1`）；**主流程生成不由本交互触发** |
 | `REQ-UIEDIT-002` | 手机样式画布（360dp/三重选中） | `RT-EDIT-001` | OK | 选中态三重表达由**一个 selection 状态**驱动；键盘与鼠标**产生同一份状态变更** |
 | `REQ-UIEDIT-003` | 属性面板 11 项 | `RT-EDIT-001` | OK | `[拆解缺口-Q2]` **定稿前须闭合**；样式改动**仅本地渲染不触发任务**；提交前服务端二次校验 |
 | `REQ-UIEDIT-004` | 事件面板 3 项 | `RT-EDIT-001` | OK | **只生成空回调存根**；**不得实现**跳转目标/接口参数/埋点参数控件（项目约束 4） |
 | `REQ-UIEDIT-005` | 控件树 | `RT-EDIT-001` | OK | 与画布**同一棵元素树**（禁止第二份）；默认展开 3 层为**视图态不落库**；**永无孤儿节点** |
-| `REQ-UIEDIT-006` | 编辑态/预览态两态切换 | `RT-EDIT-001`、`RT-PREVIEW-001`、`RT-WORK-001` | OK | **同一路径两个状态**（`?mode=`）；切换**不得丢未提交改动**；预览态**只读** |
+| `REQ-UIEDIT-006` | 编辑态/预览态两态切换 | `RT-EDIT-001`、`RT-PREVIEW-001`、`RT-WORK-001` | OK | **同一路径两个状态**（`?mode=`）；**主次对调自 2026-10-29 起** = 构件预览（主）｜ 可视化编辑（辅）；切换**不得丢未提交改动**；预览态**只读** |
 | `REQ-UIEDIT-007` | 画布草稿自动保存与恢复 | `RT-EDIT-001`、`RT-WORK-001` | OK | 本地防抖 + `#42` 双保险；恢复提示「已恢复上次未提交的改动。」；会话过期**重认证后自动续接** |
 | `REQ-UIEDIT-008` | 删除控件（二次确认/id 作废/台账） | `RT-EDIT-001` | OK | 节点置 `void` 并移出渲染树；**id 不可复用**，台账可查 |
 | `REQ-UIEDIT-009` | 元素 id 规则与分配 | `RT-EDIT-001` + **全部含 `EL-*` 的页面** | OK | 临时 id → 服务端正式 id；**一律用归一化形式**；`EL-*` 是「画布↔安卓控件↔埋点↔测试」统一主键 |
 | `REQ-UIEDIT-010` | 控件面板（37 项 + 本地搜索） | `RT-EDIT-001` | OK | **本地静态数据 + 本地过滤**；不可拖入的项不出现在面板；与生成代码 `widget_type` 一一对应 |
-| `REQ-GEN-001` | 提交变更 → AI 生成安卓代码 | `RT-EDIT-001` | OK | 提交后**立即回编辑态但状态条显示「生成中」**；**不阻塞继续编辑**；提交串行排队；构造 `input_hash` + 幂等键 |
+| `REQ-GEN-001` | 生成触发（**主流程由 Spec 直出 / 辅助由提交变更**）→ 生成安卓代码 | `RT-WORK-001`、`RT-EDIT-001` | OK | 主流程入口 = `EL-WORK-039`（**不经画布**）；辅助入口 = `EL-EDIT-037`；**输入自 2026-10-29 起 = `UI-Spec`**（`K1`/`K2`）；提交后**立即回编辑态但状态条显示「生成中」**；提交串行排队 |
 | `REQ-GEN-002` | L1 静态验证五规则 | `RT-PREVIEW-001`、`RT-EDIT-001` | OK | 前端**只消费** L1 结果、不自行判定；`checks[]` 逐条打勾；**L1 通过才刷新预览** |
 | `REQ-GEN-003` | L2 本地构建代理回传 | `RT-PREVIEW-001`、`RT-EDIT-001`、`RT-VER-001` | OK | `reported = false` → 「未验证构建」灰字 + 悬浮说明；**不阻断任何操作**；回传路径**本机代理 → 平台** |
 | `REQ-GEN-004` | 验证失败重试（上限 3） | `RT-PREVIEW-001`、`RT-EDIT-001` | OK | 两按钮语义：「重试（还剩 {n} 次）」vs `n=0`「需要人工介入」+「查看验证日志」 |
@@ -1705,8 +1735,11 @@
 | `REQ-GEN-008` | 统一 5min 超时；生成失败 ≠ 验证失败 | `RT-WORK-001`、`RT-PREVIEW-001` | OK | 两个独立组件/文案，**不得共用一个错误组件** |
 | `REQ-GEN-009` | 只出源码 + wrapper + 依赖锁定清单 | `RT-VER-001`、`RT-EDIT-001` | OK | **负向约束已落位**：全页不得出现构建/打包按钮；下载含 wrapper + 依赖锁定清单，**不含构建产物** |
 | `REQ-GEN-010` | 外部依赖降级 | `RT-PREVIEW-001`、`RT-WORK-001`、`RT-UPLOAD-001` | OK | 504/503 走统一「上游不可用」可重试态；退避由服务端执行，前端只展示进度与重试入口；**绝不把失败渲染成成功** |
+| **`REQ-GEN-011`** | **主流程：由 Spec 直出代码**（不经画布） | `RT-WORK-001`、`RT-PREVIEW-001` | OK | `EL-WORK-039`（生成中按钮文案「正在生成代码…」，进度/结果在构件预览态）；**新增**（2026-10-29）；`K1`/`K2`；**不依赖`#80`** |
+| **`REQ-GEN-012`** | **写回所选（已接入）工程根** | `RT-WORK-001` | OK | `EL-WORK-036`~`038`（写回面板 / 补丁记录）+ `EL-WORK-039` 成功 Toast「已写回工程：{工程名}」；**「变更清单」= `EL-WORK-038` 摘要行**（逐文件明细无字段 → `[待澄清-A07]`）；**新增**（2026-10-29）；`K4` |
+| **`REQ-GEN-013`**〔2026-11-03 转正〕 | **目标接入点待指定**（`#80`） | `RT-WORK-001`（**同区呈现于** `RT-PREVIEW-001`） | **OK**〔2026-11-03 转正；无回退〕 | `EL-WORK-040`/`041`（2026-11-03 转正）；`MODEL-TARGET-CANDIDATE`；**新增**（2026-10-29）；`K5`；`[草案-APP-01]` |
 | `REQ-PREVIEW-001` | 预览显示与刷新时机 | `RT-PREVIEW-001` | OK | 只在 L1 `passed` 后替换内容（**无淡入**，直接替换）；`[拆解缺口-Q11]`（只读来源标签） |
-| `REQ-PREVIEW-002` | 预览 6 态与文案 | `RT-PREVIEW-001` | OK | 六态**互斥且可枚举**；「生成失败」与「验证失败」文案与图形不同；「L2 未回传」是**附加标记**不是独立态 |
+| `REQ-PREVIEW-002` | 预览 6 态与文案 | `RT-PREVIEW-001` | OK | 六态**互斥且可枚举**；**展示对象 = 生成构件（XML / Kotlin 片段）静态预览**（`K6`）；「生成失败」与「验证失败」文案与图形不同；「L2 未回传」是**附加标记**不是独立态 |
 | `REQ-PREVIEW-003` | 近似预览与差异披露 ★ | `RT-PREVIEW-001` | OK | 常驻「近似预览」标记（任一状态可见）；差异清单**默认可见差异项名称**；**不得把渲染器差异渲染成「错误」** |
 | `REQ-PREVIEW-004` | 预览溯源（序号 + 时间） | `RT-PREVIEW-001` | OK | 顶部信息条「生成 #{seq} · {时间}」；`finished_at = null` → 「时间未知」（**不得显示 1970**） |
 | `REQ-API-001` | 接口定义增删改查（8 项类型枚举） | `RT-API-001` | OK | 下拉**完整 8 项、禁写「等」**；非法字段名**保留输入** + 字段级错误；保存与「生成版本」是**两个动作** |
@@ -1737,7 +1770,7 @@
 | `REQ-DELIVER-002` | 版本归档页（时间线/diff） | `RT-VER-001` | OK | 时间线倒序；`current` 用**文字标记**；diff 左右对照 + **变更行文字标识** |
 | `REQ-DELIVER-003` | 整包回滚（全成或全不成） | `RT-VER-001` | OK | 二次确认 → **前端锁住整个项目写入口** → 成功/失败二选一呈现；失败**整体回退 UI** |
 | `REQ-DELIVER-004` | 回环产物归档不物理删除 | `RT-VER-001`、`RT-SPEC-001` | OK | 回环后拉取最新 Spec 列表，**已归档版本可见**（不得从界面消失） |
-| `REQ-TRACK-001` | 平台自身埋点：主流程漏斗 9 节点 | 全部漏斗节点页 | OK | **§10.1 逐节点给出埋码点**；事件名已按 `埋点-Spec` 定稿回填（全小写下划线）；`[拆解缺口-Q7]` |
+| `REQ-TRACK-001` | 平台自身埋点：主流程漏斗 8 节点 | 全部漏斗节点页 | OK | **§10.1 逐节点给出埋码点**；事件名已按 `埋点-Spec` 定稿回填（全小写下划线，**63 条**）；**漏斗节点数 9 → 8**（「编辑」节点移除；节点 6/7/8 = 生成 / 预览 / 交付）已随 `埋点-Spec v0.1.13` 落地；`[拆解缺口-Q7]` |
 | `REQ-TRACK-002` | 代码生成成功/失败与耗时事件 | `RT-EDIT-001`、`RT-PREVIEW-001` | OK | 终态回调处埋码，带结果与耗时；**L1 计入、L2 仅记录** |
 | `REQ-TRACK-003` | 埋点上报批量 + 失败静默重试 | 全部 `RT-*` | OK | 批量队列 + 失败静默重试；**不阻塞业务、不阻塞离开页面**；上报体**不含 PRD 正文与生成代码** |
 | `REQ-BASE-001` | 本期只做安卓、从新建项目开始 | 全部 13 条 `RT-*`（全局约束） | OK | 界面**不得出现** iOS / 跨平台 / 已有项目导入入口；生成器只产出安卓（XML + Kotlin） |
@@ -1747,7 +1780,8 @@
 | `REQ-INTAKE-002` | 工程约束（可查看 / 编辑） | `RT-KB-001` | OK | 第 5 分区；编辑复用草稿保存链路 |
 | `REQ-INTAKE-003` | 约束注入下游与工程一致性 | `RT-REVIEW-001`/`RT-SPLIT-001`/`RT-SPEC-001`（仅展示） | OK | 严格档审核页出现 `J` 组；**不新增客户端行为** |
 | `REQ-PATCH-001` | 增量写回（应用 / 记录 / 回滚 / 生成产物合并写回） | `RT-WORK-001` | OK | 面板挂工作台；合并器 `brownfield.ts`；**不新增路由** |
-**覆盖统计**：`OK` **93 条** ｜ `N/A` **1 条**（`REQ-AUTH-007`，负向约束）｜ `Deferred` **1 条**（`REQ-DESIGN-001`）｜ `GAP` **0 条** —— **合计 95 条**，与 `需求条目表.md` **集合一致**（2026-10-29 二期 `REQ-PATCH-001` 转正）。
+**覆盖统计**：`OK` **96 条** ｜ `N/A` **1 条**（`REQ-AUTH-007`，负向约束）｜ `Deferred` **1 条**（`REQ-DESIGN-001`）〔`REQ-GEN-013` 已于 2026-11-03 随 `#80` 转 `OK`〕｜ `GAP` **0 条** —— **合计 98 条**，与 `需求条目表.md` **集合一致**（95 → 98：`+REQ-GEN-011`/`012`/`013`；2026-10-29 二期 `REQ-PATCH-001` 转正）。
+> **2026-10-29（去拖拽编辑 · S5 App-Spec 重同步）**：本表 **95 → 98 行**（`+REQ-GEN-011`/`012`/`013`）；`OK` **93 → 95**、`Deferred` **1 → 2**；**编号零重排、既有行逐行保留**（仅 `REQ-GEN-001`/`REQ-UIEDIT-001`/`REQ-UIEDIT-006`/`REQ-PREVIEW-002`/`REQ-TRACK-001` 五行的备注随动）。
 
 > `GAP = 0` 的含义：App 侧**每个分配到的 REQ 都已落到具体路由/状态/元素/文案**。
 > **数据链路缺口已全部闭合**（2026-10-21 · `S6.5 补口落地`）：补口接口 `#63`~`#68` 由草案转基线、新增 `#69`/`#70`（接口 **63 → 71**）、7 项字段级补口落地、App 侧 `[缺口-APP-01]`~`05` **全部销项**（见 §12.3 各行「状态」列）；`§12.1` 的 `Q3`/`Q5`/`Q6`/`Q8`/`Q2-附` 同批闭合。
@@ -1804,6 +1838,7 @@
 | `[冲突-UI-05]` | `REQ-SPLIT-004`、`REQ-CAP-005` 的 UI 落点与 `需求条目表` 角色列不一致 | P1 | `RT-SPLIT-001`、`RT-CAP-001` | **保留 UI 展示点**并标 `OK`（§11） | 待 PM |
 | `[待澄清-错误码口径]` | `数据模型 §5.4` 有 14 行（多 `PARSE_PARTIAL`），`接口契约 §0.5` 的 13 个错误码不含它 | P2 | 全部路由 | 本 Spec 采「**13 个错误码 + 1 个非错误标记 `PARSE_PARTIAL`（HTTP 200）**」（§6.3） | 待 PM |
 | `[待澄清-SSE-AUTH]` | SSE 经 `EventSource` **不能自定义头** → 需 `Cookie` 会话或 `query` 令牌 | P1 | `RT-WORK-001`、`RT-PREVIEW-001`、`RT-EDIT-001` | 本 Spec **不自行拍板**；**本地不得写依赖该方案的凭据**（§7） | 待 PM |
+| **`[缺口-UI-13]`** / **`[冲突-UI-06]`** | `#80`（目标接入点识别）**已于 2026-11-03 转正**：`EL-WORK-040`/`041`、预览区第 7 态、`UI-Spec §5` 的 94 行、元素总数 453 均以「2026-11-03 转正」落位；且该态在 `页面规格§2.3` 属「预览区」，而 `UI-需求包` 把 `REQ-GEN-013` 归 `UI-WORK-001` | **P0** | `RT-WORK-001`、`RT-PREVIEW-001` | 本 Spec **按 UI Spec 现状**把 `EL-WORK-040`/`041` 落 `UI-WORK-001` 左栏容器（`EL-WORK-009`）、并以「同区两态」在构件预览态引用；`[草案-APP-01]` 给**批准 / 不批准两套回退数值**（§4.2 展开行数 305 ↔ 303、§11 行数 98 ↔ 97） | ⏳ **待 PM / UI 确认**（2026-10-29 新增） |
 
 ### 12.3 本 Spec 新发现（**App 角色发现，未自行裁决**）
 
@@ -1820,10 +1855,15 @@
 | `[待澄清-A04]` | 权限撤销 ≤5min 生效的**前端重校验周期**未定（本 Spec 暂用 60s） | P1 | `RT-EDIT-001`、`RT-KB-001`、`RT-API-001`、`RT-CAP-001` | 确认周期与实现方式（定时重校验 vs 纯 403 兜底） | 待 PM |
 | `[待澄清-A05]` | **缓存过期与加密策略**：项目列表缓存过期（本 Spec 暂定 5min）、对话缓存条数 `N`、**画布草稿是否加密**（含用户未提交内容，可能含业务信息） | P2 | 全部路由 | 由安全与 PM 共同确认；**当前实现：草稿明文存本地但绝不入上报/日志/URL** | 待 PM/安全 |
 | `[待澄清-A06]` | **前端错误上报通道**未定义（PRD 只定义了埋点上报 `#62`，未定义错误/崩溃上报） | P2 | 全部路由 | 明确通道与脱敏口径；**未定前只走 `#62` 可承载的最小事件 + 本地控制台** | 待 PM |
+| **`[草案-APP-01]`** | ★ **`#80`（目标接入点识别）已于 2026-11-03 转正**：本 Spec 以**正式基线**形式落了 §4.2.4 的 `EL-WORK-040`/`041` 两行、§4.1 的 `MODEL-TARGET-CANDIDATE`、§5.4 的「目标接入点待指定」第 6 态与 1 行接口调用、§11 的 `REQ-GEN-013`（`OK`）；连带 §4.2 展开行数（305）与 §11 行数（98）。**`EL-WORK-039` 不依赖`#80`**（主流程入口由 `REQ-GEN-011` 立起） | **P0** | `RT-WORK-001`、`RT-PREVIEW-001` | ✅ **已闭合**（四处计数面已随动）（2026-11-03 `#80` 转正：`REQ-GEN-013` 转 `OK`、`EL-WORK-040`/`041` 与 `MODEL-TARGET-CANDIDATE` 均为正式基线） |
+| **`[缺口-APP-06]`** | ★ **`埋点-Spec` / `测试-Spec` 未随本轮重同步**（**历史问题**）：`UI-Spec` 已把漏斗 **9 → 8 节点**（「编辑」节点移除）、`EL-WORK-026` 节点数 9 → 8、`EL-WORK-003` 中文映射（`编辑中` → `辅助微调`）与 `EL-WORK-033` 步骤名随动；当时 `埋点-Spec` 仍记 **9 节点**（`EVT_edit_submit_success` = 节点 6）、`测试-Spec` 仍记 **95 REQ / 632 用例**。**触发前提已消失**：`埋点-Spec` 已重同步至 **v0.1.13**（**8 节点 / 63 事件**）、`测试-Spec` 已重同步至 **v0.2.19**（**651 用例 / REQ 98**） | **P1** | `RT-WORK-001`、`RT-EDIT-001`、`RT-PREVIEW-001` + §10 全节 | 本 Spec **§10 已随动**：节点 9 → 8（节点 6/7/8 = 生成 / 预览 / 交付）、事件 59 → 63（补 4 条，含随 `#80` 转正的 2 条）、`EVT_gen_task_*` 补 `source`、`EVT_patch_writeback_*` 补 `trigger`、`EVT_edit_submit_success` 由 ★节点 6 降为**辅助路径**；§1 关联文档三处计数同步（**453 / 63·8 / 651·98**） | **✅ 已闭合**（2026-10-29 销项：两份上游均已重同步，缺口成立条件消失） |
+| **`[待澄清-A07]`** | **「变更清单」逐文件明细是否有接口字段** —— `EL-WORK-038` 为**摘要行**，逐文件明细无字段（= `[缺口-UI-14]` / `[待澄清-API-09]` 的 App 侧镜像）；`#77` 出参已含 `items[].files[]`，是否即「明细」待确认 | **P2** | `RT-WORK-001` | 本 Spec 按「**摘要行 + 可展开**」实现：`items[].files[]` 如可用则作二级展开，**未确认前不新增字段、不编造文案**（沿用 `#79` 返回的 `notes[]`/`skipped[]`） | ⏳ **待 PM / UI / 接口确认**（2026-10-29 新增） |
 
-**等级汇总（按行计）**：`P0` **8 行**（`[拆解缺口-Q2]`、`[拆解缺口-Q5]`、`[拆解缺口-Q11]`、`[缺口-UI-01]`/`[缺口-API-01]`、`[缺口-UI-04]`/`[缺口-API-04]`、`[缺口-UI-06]`/`[缺口-API-06]`〔P0 合规〕、`[冲突-UI-02]`、`[缺口-APP-01]`）｜
-`P1` **25 行** ｜ `P2` **12 行** —— **合计 45 行**（`§12.1` 既有 14 + `§12.2` 上游 20 + `§12.3` 本 Spec 新增 11）。
-> **按编号计 51 个**：`§12.2` 有 6 行是 `[缺口-UI-xx]` / `[缺口-API-xx]` **成对合并登记**（同一事实的 UI 侧与接口侧编号），故行数少于编号数。
+**等级汇总（按行计）**：`P0` **10 行**（`[拆解缺口-Q2]`、`[拆解缺口-Q5]`、`[拆解缺口-Q11]`、`[缺口-UI-01]`/`[缺口-API-01]`、`[缺口-UI-04]`/`[缺口-API-04]`、`[缺口-UI-06]`/`[缺口-API-06]`〔P0 合规〕、`[冲突-UI-02]`、`[缺口-APP-01]`、**`[缺口-UI-13]`**〔`#80` 已转正〕、**`[草案-APP-01]`**）｜
+`P1` **26 行** ｜ `P2` **13 行** —— **合计 49 行**（`§12.1` 既有 14 + `§12.2` 上游 21 + `§12.3` 本 Spec 新增 14）。
+> **按编号计 56 个**（51 +5）：`§12.2` 有若干行是 `[缺口-UI-xx]` / `[缺口-API-xx]` **成对合并登记**（同一事实的 UI 侧与接口侧编号；本轮 +1 行为 `[缺口-UI-13]` 与 `[冲突-UI-06]` 的合并登记），故行数少于编号数。
+> **2026-10-29（去拖拽编辑 · S5 App-Spec 重同步）**：新增 **4 行**（`§12.2` +1 = `[缺口-UI-13]`/`[冲突-UI-06]`；`§12.3` +3 = `[草案-APP-01]`/`[缺口-APP-06]`/`[待澄清-A07]`）；**本轮未裁决任何一条，只登记。**
+> **2026-10-29 销项补正**：`[缺口-APP-06]` **✅ 已闭合**（`埋点-Spec v0.1.13` / `测试-Spec v0.2.19` 均已重同步，本 Spec §10 已随动至 **8 节点 / 63 事件**）；**行数不变**（**49 行**，按编号 **56 个**）。
 > **2026-10-21 · S6.5 补口落地**：**数据链路缺口已全部闭合** —— 补口接口 `#63`~`#68` 转基线 + 新增 `#69`/`#70`（**63 → 71**）、7 项字段级补口落地、**App 侧 `[缺口-APP-01]`~`05` 全部销项**；`§12.1` 的 `Q3`/`Q5`/`Q6`/`Q8`/`Q2-附` 已闭合。仍为 `待 PM` 的行属**口径/规范类**（`§12.1` 其余 `Q#`、`§12.2` 的 `[缺口-UI-07]`~`12` 与 `[冲突-UI-0*]`、`[待澄清-*]`）。
 
 > **不自行裁决**：本 Spec 对以上每一条**只给 App 侧兜底做法**（禁用 + 原因 / 该行不显示 / 沿用上游建议值并标注），**未替 PM 或接口角色做任何决定**。
@@ -1865,6 +1905,8 @@
 | **v0.2.16** | **2026-10-29** | **「工程接入（一期）`F17`/`F18` + 第 27 轮一致性校对（`§㊸`）销项」**：① **§4.2.2 补 4 行**（`EL-PROJ-048`/`051`/`052`/`053`/`055`/`057` ↔ `#73`/`#1`/`#3`，含 `source_kind` 映射与失败处理）、**§4.2.3 补 1 行**（`EL-KB-025` ↔ `#7`/`#74`、空态 `EL-KB-026`）；② **§10.1 补 3 行埋码点**（`EVT_intake_click`/`done`/`failed`），§10 埋码点 **54 → 57 行**；③ **§11 追溯表 91 → 94 行**（+`REQ-INTAKE-001/002/003`；统计 `OK` 89→**92**）；④ §1 关联文档与 §1 上游主输入同步 94；⑤ 沿革串补 `435`/`447`（原止于 427）。**未重排任何编号** | App 角色（工程接入 + `§㊸` 销项） |
 | **v0.2.17** | **2026-10-29** | **「intake 前置校验两分支落文案（`§㊿` 销项留痕）」**：§4.2.2 的 `EL-PROJ-051`/`052`/`053` 行失败处理改为**两分支各指各自文案** —— 未填根目录 → Toast「请填写本机 Android 工程的根目录（绝对路径）。」；未勾选授权 → Toast「请先确认授权平台只读扫描这个目录。」（均见 `UI-Spec §4.2 ④`）。**未新增 `RT-*` / 未改路由表、编号零重排** | App 角色（`§㊿` 销项留痕） |
 | **v0.2.18** | **2026-10-29** | **「工程接入（二期 · 增量写回）」**：① §4.2.4 新增 1 行（`EL-WORK-037`/`038` ← `#79`/`#78`/`#77`，含失败处理与禁用态）；② §10.1 新增 2 行埋码点（`EVT_patch_writeback_done`/`_failed`），§10 埋码点 **57 → 59 行**；③ §11 追溯表 **94 → 95 行**（+`REQ-PATCH-001`，`OK` 92→**93**）；④ §4.2 展开行数 **301 → 302**（4 处 + 分解式）；⑤ §1 关联文档与上游主输入同步（450 / 82 / 59 / 632 / 95）。**未新增 `RT-*`、编号零重排** | App 角色（工程接入二期） |
+| **v0.2.19** | **2026-10-29** | **「去拖拽编辑 · Spec 直出代码」S5 App-Spec 重同步**（决策 `K1`~`K6` 全按推荐；依据 `主流程变更-去拖拽编辑-Spec直出代码-需求提案-v0.1.md` + `reviews/变更回写记录-去拖拽编辑-20261029.md` 第 1~5 步）：① **路由条目语义随动** —— `RT-WORK-001`（主流程页，生成入口 `EL-WORK-039`；REQ 列 `+REQ-GEN-011/012/013`）、`RT-PREVIEW-001`（**构件预览（主）**）、`RT-EDIT-001`（**辅助：生成后微调 · 不占主流程节点**）；§3 注 1 补「主次对调（构件预览主｜可视化编辑辅）」与「主流程生成不经画布、同页发起、不新增 `RT-*`」；**13 条 `RT-*` 不变、编号零重排**；② **《UI ↔ 接口对应关系表》** —— §4.2.4 **新增 3 行**（`EL-WORK-039` ← `#43`/`#68`；`EL-WORK-040`/`041` ← **草案 `#80`**〔**草案 · 待批**〕），§4.2.8 标题与 `EL-EDIT-037` 行改「**辅助再生成**（输入 = `UI-Spec`）+ `target?`」，§4.2.9 标题与 `EL-PREVIEW-002`/`008` 行改「**生成构件（XML / Kotlin 片段）静态预览**」，`EL-WORK-026` 节点数 9 → 8；③ §4.1 新增 `MODEL-TARGET-CANDIDATE`〔草案 · 待批〕/`PARAM-TARGET`，`MODEL-ARTIFACTS` 与 `PARAM-INPUT-HASH` 定义随动、`PARAM-EDIT-TREE` 降为辅助编辑态用；④ **可实现级需求** —— §5.4 新增 4 个状态字段 / 2 行接口调用 / **「目标接入点待指定」第 6 态**（草案）/「阶段与主流程」注（`app_developing → code_generating` 主流程入边 + 新边 `code_generating → editing`）；§5.8 与 §5.9 的标题、状态、接口调用、五态、跳转、待澄清逐块随动；§8 相机 N/A 表述随动；⑤ §10 加注「漏斗 9 → 8 待 `埋点-Spec` 重同步」并把 `EL-WORK-039` 补入 `EVT_gen_blocked_by_egress`；⑥ **§11 追溯表 95 → 98 行**（`+REQ-GEN-011`/`012`/`013`；`OK` 93→**95**、`Deferred` 1→**2**、`N/A` 1、`GAP` 0）；⑦ **§12** 新增 4 行（`[缺口-UI-13]`/`[冲突-UI-06]`、`[草案-APP-01]`、`[缺口-APP-06]`、`[待澄清-A07]`），汇总 **45 → 49 行**（按编号 51 → 56）；⑧ **计数** —— `UI-Spec §5` 覆盖 **94/94 行**、§4.2 展开 **305 行**、元素 **450 → 453**、`需求条目表` **REQ 98 条**；⑨ **含回退数值**：草案 `#80` 不批准 → §4.2 **305 → 303**、§11 **98 → 97** | App 角色（S5 重同步） |
+| **v0.2.19a** | **2026-10-29** | **「去拖拽编辑」销项补正（评审 F1/F2/F3 + 一致性校对 B1/B2/B3/M1 的 App 侧闭合）**：① **§10 全节随 `埋点-Spec v0.1.13` 重同步** —— §10.1 标题与前言 **9 节点 → 8 节点**（节点 6/7/8 = 生成 / 预览 / 交付）、事件 **59 → 63 条**（§10.1 **32 → 36 行**；补 `EVT_gen_spec_accepted`/`EVT_gen_spec_blocked` + `EVT_gen_target_ambiguous`/`EVT_gen_target_specified`〔**草案 · 待批**〕各 1 行埋码点）；`EVT_gen_task_enqueued`/`EVT_gen_task_terminal` 补 **`source`**（`spec_generate` 等 4 值；节点 6 只计 `spec_generate`）、`EVT_patch_writeback_done`/`_failed` 补 **`trigger`**（`auto_after_generate`/`manual_panel`）；`EVT_edit_submit_success` 去「★节点 6」改「**辅助路径**」；② **§1 关联文档计数随动** —— `UI-Spec` 元素首值 **450 → 453**、`埋点-Spec` **59 事件/9 节点 → 63 事件/8 节点**、`测试-Spec` **632 用例/REQ 95 → 651 用例/REQ 98**；③ **`[缺口-APP-06]` 销项** —— `埋点-Spec v0.1.13` / `测试-Spec v0.2.19` 均已重同步、触发前提消失，`§5.4`/`§5.8`/`§12.3` 三处改「**✅ 已闭合**」；④ §5.4 第 6 态加注「= `UI-Spec` 所述预览区第 7 态」（F3）；⑤ **无新增 `RT-*`、编号零重排、无回退数值变更**（§4.2 305 / §11 98 不变） | App 角色（销项补正） |
 
 ---
 
@@ -1872,13 +1914,13 @@
 
 | # | 自检项 | 结论 |
 |---|---|---|
-| 1 | 路由表条数 == `UI-Spec` 页面条数 | ✅ **13 == 13**；`RT-*` 与 `UI-*` **逐行一一映射**；`RT-EDIT-001` / `RT-PREVIEW-001` 的「同路由两状态」已**显式说明**（§3 注 1），不构成多对一；`App-需求包 §2` 的 3 条区域路由落为**区域锚点**（§3 注 2），不计入 13 条 |
-| 2 | 《UI ↔ 接口对应关系表》覆盖UI中有数据的元素 | ✅ UI-Spec §5 **93/93行**；App表实测**302（301 页面元素行含外壳 + 1 页面进入控制行）**，新增055~062各一行；映射存在不代表实机/真实模型验收通过，B9已单列实际待补 |
-| 3 | 所有 `API-ID` 在接口 Spec 中存在 | ✅ 引用 **82 个**（`API-PLAT-001`~`070` + `API-PLAT-044A` + **`API-PLAT-071`/`071A`/`072`/`072A`** + **`API-PLAT-073`/`074`/`075`** + **`API-PLAT-076`~`079`**〔2026-10-29 工程接入 + 二期写回〕），全部真实存在；补口 `#63`~`#70` 与字段级补口**已转基线**，**★ 仅作章节强调**的兜底，**未当基线使用**；**本机落地的 4 个（`#71`/`#71a`/`#72`/`#72a`）属开发阶段扩展，未过门禁、未进入第 4 轮基线冻结范围**，其中 `#72` 为阶段性本地登录（生产须 `AD_PASSWORD_LOGIN=disabled`） |
+| 1 | 路由表条数 == `UI-Spec` 页面条数 | ✅ **13 == 13**；`RT-*` 与 `UI-*` **逐行一一映射**；`RT-EDIT-001` / `RT-PREVIEW-001` 的「同路由两状态」已**显式说明**（§3 注 1），不构成多对一；`App-需求包 §2` 的 3 条区域路由落为**区域锚点**（§3 注 2），不计入 13 条；**2026-10-29 去拖拽编辑**：`RT-WORK-001` = **主流程页**（生成入口 `EL-WORK-039`）、`RT-PREVIEW-001` = **构件预览（主）**、`RT-EDIT-001` = **辅助：生成后微调 · 不占主流程**；**条数仍 13、编号零重排** |
+| 2 | 《UI ↔ 接口对应关系表》覆盖UI中有数据的元素 | ✅ UI-Spec §5 **94/94行**（93 → 94：`+EL-WORK-041`〔2026-11-03 转正〕）；App表实测**305（304 页面元素行含外壳 + 1 页面进入控制行）**，本轮新增 `EL-WORK-039`/`040`/`041` 各一行（旧 055~062 八行保留）；映射存在不代表实机/真实模型验收通过，B9已单列实际待补 |
+| 3 | 所有 `API-ID` 在接口 Spec 中存在 | ✅ 引用 **83 个**（`API-PLAT-001`~`070` + `API-PLAT-044A` + **`API-PLAT-071`/`071A`/`072`/`072A`** + **`API-PLAT-073`/`074`/`075`** + **`API-PLAT-076`~`079`**〔2026-10-29 工程接入 + 二期写回〕），全部真实存在；补口 `#63`~`#70` 与字段级补口**已转基线**，**★ 仅作章节强调**的兜底，**未当基线使用**；**本机落地的 4 个（`#71`/`#71a`/`#72`/`#72a`）属开发阶段扩展，未过门禁、未进入第 4 轮基线冻结范围**，其中 `#72` 为阶段性本地登录（生产须 `AD_PASSWORD_LOGIN=disabled`）；**另行引用 `API-PLAT-080`**（↔ `#80`，**正式基线**、**计入 83**，见 `接口-Spec §5.4.17`/`§5.5.32`） |
 | 4 | 字段名与接口 Spec 零差异 | ✅ 右端字段名逐字照抄 `接口-Spec §5.0.3` / `§5.5` / `数据模型`；`E7` 的 13 个字段名**分立不合并**（`width`/`height`、`align_h`/`align_v`）；★ 补口字段**原样带 ★** |
 | 5 | ★ 每个 UI 元素都有唯一 `EL-ID`，与 UI Spec 零差异、无重名 | ✅ 全部引用 `UI-Spec` 已发布的 `EL-*`（**不自造 id**）；`EL-GLOBAL-001`~`009` 按 `UI-Spec §7` 的授权范围使用（**5 个真跨页共用组件** = `CMP-001`~`004` + `CMP-017`／2026-10-21 本机落地新增 `EL-GLOBAL-009`） |
-| 6 | ★ 埋点 Spec 中的每个 EVT 都已指定埋码位置 | ✅ **已按 `埋点-Spec` 附节 A 完成正式事件名回填**（全小写下划线，**59 行** = §10.1 **32 行** + §10.4 **27 行**〔§10.1 的 **32 行** = 核心漏斗/负向/合规 25 行 **+ 本机落地 2 行**（`EVT_auth_password_login`、`EVT_llm_model_switch`）**+ 工程接入 3 行**（`EVT_intake_click`/`done`/`failed`）**+ 二期写回 2 行**（`EVT_patch_writeback_done`/`_failed`）；§10.4 的 27 行为其余事件〕；另 §10.2 的 `EVT_chat_send_blocked`，全部 ⊆ `埋点-Spec` 附节 C **59 条**枚举） |
-| 7 | 五个页面状态齐备 + 待澄清清单已汇总 | ✅ 13 页 **每页五态齐备**（加载中 / 空数据 / 错误 / 无权限 / 离线；「空数据」不适用的页面**写明理由**）；「离线」态为 App 侧统一推断并**已确认**（`[缺口-APP-05]` **已闭合** 2026-10-21）；§12 汇总 **45 行**（按编号计 **51 个**）待澄清，**含 `[冲突-UI-02]` 的原样登记** |
+| 6 | ★ 埋点 Spec 中的每个 EVT 都已指定埋码位置 | ✅ **已按 `埋点-Spec v0.1.13` 附节 A/C 完成事件名回填**（全小写下划线，**63 行** = §10.1 **36 行** + §10.4 **27 行**〔§10.1 的 **36 行** = 核心漏斗/负向/合规 **25 行** + **生成事件 4 行**（`EVT_gen_spec_accepted`/`_blocked` + `EVT_gen_target_ambiguous`/`_specified`〔2026-11-03 转正〕）+ 本机落地 2 行（`EVT_auth_password_login`、`EVT_llm_model_switch`）+ 工程接入 3 行（`EVT_intake_click`/`done`/`failed`）+ 二期写回 2 行（`EVT_patch_writeback_done`/`_failed`）；§10.4 的 27 行为其余事件〕；另 §10.2 的 `EVT_chat_send_blocked`，全部 ⊆ `埋点-Spec` 附节 C **63 条**枚举〔含随 `#80` 转正的 2 条〕）；**漏斗节点 9 → 8 已落地**（节点 6/7/8 = 生成 / 预览 / 交付；`EVT_edit_submit_success` 由 ★节点 6 **降为辅助路径**）；`EVT_gen_blocked_by_egress` 已含 `EL-WORK-039`；`[缺口-APP-06]` **✅ 已闭合** |
+| 7 | 五个页面状态齐备 + 待澄清清单已汇总 | ✅ 13 页 **每页五态齐备**（加载中 / 空数据 / 错误 / 无权限 / 离线；「空数据」不适用的页面**写明理由**）；「离线」态为 App 侧统一推断并**已确认**（`[缺口-APP-05]` **已闭合** 2026-10-21）；§12 汇总 **49 行**（按编号计 **56 个**）待澄清，**含 `[冲突-UI-02]` 的原样登记**；**本轮新增 4 行、未裁决任何一条** |
 
-> **本 Spec 不含**：视觉规范（`UI-Spec §3`）、接口服务端实现（`接口-Spec`）、被开发 App 的界面设计与 `API-*` 枚举（那是画布产物）。
-> **下游开工前请先读**：§4（联调契约）→ §0（三件事分清）→ **附节 A**（S7 生成链路）→ §10（埋点埋码点）→ §12（45 行待澄清）。
+> **本 Spec 不含**：视觉规范（`UI-Spec §3`）、接口服务端实现（`接口-Spec`）、被开发 App 的界面设计与 `API-*` 枚举（S5 由 `UI-Spec` 定义、S7 由 Spec 直出；辅助编辑态下可微调）。
+> **下游开工前请先读**：§4（联调契约）→ §0（三件事分清）→ **附节 A**（S7 生成链路）→ §10（埋点埋码点）→ §12（49 行待澄清）。

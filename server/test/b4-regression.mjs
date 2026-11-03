@@ -21,6 +21,7 @@ const {createCodegenAdapter}=await import('../src/adapters/codegen.ts');
 const {defaultStyle}=await import('../src/core/editor.ts');
 const {writeMeta}=await import('../src/core/revisions.ts');
 const {createLlmAdapter}=await import('../src/adapters/llm.ts');
+const {seedUiSpec,uiSpecFor}=await import('./_uispec-fixture.mjs');
 
 const base=createLlmAdapter();let specHook=null,chatHook=null;
 const llm={kind:'mock',
@@ -164,14 +165,16 @@ await test('B4 spec / api / version / capability / delivery regression',async t=
   */
  await t.test('#58 能力：不依赖厂商的三项真的产出代码并接线到入口 Activity',async()=>{
   const p=await project();
-  const page=ok(await req(`/projects/${p}/pages`)).items[0];
-  const draft=ok(await req(`/pages/${page.page_id}/draft`,{method:'PUT',version:0,body:{tree:[node()]}}));
+  // 生成输入 = S5 `UI-Spec`（2026-10-29 起）→ 播种可解析 UI-Spec。
+  seedUiSpec(p);
+  const page={...ok(await req(`/projects/${p}/pages`)).items[0],project_id:p};
+  const draft=await req(`/pages/${page.page_id}/draft`,{method:'PUT',version:0,body:{tree:[node()]}});void draft;
   const g=ok(await req(`/projects/${p}/capabilities`));
   const on=ok(await req(`/projects/${p}/capabilities`,{method:'PUT',version:g.version,body:{items:[
     {capability:'privacy_dialog',enabled:true},{capability:'crash_report',enabled:true},{capability:'log_report',enabled:true}]}}));
   for(const k of ['privacy_dialog','crash_report','log_report'])
     assert.equal(on.items.find(i=>i.capability===k).code_status,'generated');
-  const gen=ok(await req(`/pages/${page.page_id}/generations`,{method:'POST',body:{input_hash:hashOf(draft.tree),base_seq:0}}),202);
+  const gen=ok(await req(`/pages/${page.page_id}/generations`,{method:'POST',body:{input_hash:uiSpecFor(page).input_hash,base_seq:0}}),202);
   assert.equal((await waitTask(gen.task_id)).status,'succeeded');
   const files=ok(await req(`/tasks/${gen.task_id}/artifacts`)).items;
   const boot=files.find(f=>f.path==='app/src/main/java/com/autodevelopment/generated/CapabilityBootstrap.kt');
@@ -185,11 +188,12 @@ await test('B4 spec / api / version / capability / delivery regression',async t=
   assert.ok(main.content.indexOf('CapabilityBootstrap.logLine(this')>consentCall,'日志也必须在同意之后');
   // 只依赖厂商的能力：**不产出代码**，不假装
   const p2=await project();
-  const page2=ok(await req(`/projects/${p2}/pages`)).items[0];
-  const d2=ok(await req(`/pages/${page2.page_id}/draft`,{method:'PUT',version:0,body:{tree:[node()]}}));
+  seedUiSpec(p2);
+  const page2={...ok(await req(`/projects/${p2}/pages`)).items[0],project_id:p2};
+  const d2=await req(`/pages/${page2.page_id}/draft`,{method:'PUT',version:0,body:{tree:[node()]}});void d2;
   const g2=ok(await req(`/projects/${p2}/capabilities`));
   ok(await req(`/projects/${p2}/capabilities`,{method:'PUT',version:g2.version,body:{items:[{capability:'push',enabled:true}]}}));
-  const gen2=ok(await req(`/pages/${page2.page_id}/generations`,{method:'POST',body:{input_hash:hashOf(d2.tree),base_seq:0}}),202);
+  const gen2=ok(await req(`/pages/${page2.page_id}/generations`,{method:'POST',body:{input_hash:uiSpecFor(page2).input_hash,base_seq:0}}),202);
   assert.equal((await waitTask(gen2.task_id)).status,'succeeded');
   const files2=ok(await req(`/tasks/${gen2.task_id}/artifacts`)).items;
   assert.equal(files2.some(f=>f.path.endsWith('CapabilityBootstrap.kt')),false,'未支持的能力不得凭空产码');
@@ -248,10 +252,11 @@ await test('B4 spec / api / version / capability / delivery regression',async t=
   */
  await t.test('#60/#61 交付包必须含真实安卓工程（含 wrapper 与构建脚本）',async()=>{
   const p=await project(); seedRequirements(p);
-  // 先生成一份真实的安卓代码产物
-  const page=ok(await req(`/projects/${p}/pages`)).items[0];
-  const draft=ok(await req(`/pages/${page.page_id}/draft`,{method:'PUT',version:0,body:{tree:[node()]}}));
-  const gen=ok(await req(`/pages/${page.page_id}/generations`,{method:'POST',body:{input_hash:hashOf(draft.tree),base_seq:0}}),202);
+  // 先生成一份真实的安卓代码产物（输入 = S5 `UI-Spec`，2026-10-29 起）
+  seedUiSpec(p);
+  const page={...ok(await req(`/projects/${p}/pages`)).items[0],project_id:p};
+  const draft=await req(`/pages/${page.page_id}/draft`,{method:'PUT',version:0,body:{tree:[node()]}});void draft;
+  const gen=ok(await req(`/pages/${page.page_id}/generations`,{method:'POST',body:{input_hash:uiSpecFor(page).input_hash,base_seq:0}}),202);
   assert.equal((await waitTask(gen.task_id)).status,'succeeded');
   const sg=await req(`/projects/${p}/specs:generate`,{method:'POST'});
   if(sg.data?.task_id) await waitTask(sg.data.task_id);

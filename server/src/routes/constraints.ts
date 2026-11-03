@@ -74,7 +74,8 @@ export function registerConstraintRoutes(app: FastifyInstance, agent?: Engineeri
         android: pack.android, namespace: pack.namespace, application_id: pack.application_id,
         modules: pack.modules, dependencies: pack.dependencies,
         agent_config_files: pack.agent_config_files, style_tools: pack.style_tools,
-        naming_samples: pack.naming_samples, build_commands: pack.build_commands,
+        naming_samples: pack.naming_samples, activities: pack.activities, layouts: pack.layouts,
+        build_commands: pack.build_commands,
         items: pack.items, warnings: pack.warnings, kb_doc_id: kbDocId!,
       });
 

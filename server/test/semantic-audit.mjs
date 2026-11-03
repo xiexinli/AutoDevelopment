@@ -23,6 +23,7 @@ const { get } = await import("../src/db/index.ts");
 const { ensureUser, issueToken } = await import("../src/core/auth.ts");
 const { defaultStyle } = await import("../src/core/editor.ts");
 const { createHash } = await import("node:crypto");
+const { seedUiSpec, uiSpecFor } = await import("./_uispec-fixture.mjs");
 
 const app = buildApp();
 await app.ready();
@@ -128,7 +129,10 @@ await test("语义核对：跑完整生命周期并记录每个接口的真实�
   record("34", "POST", "/specs/{id}/proofread", await req(`/projects/${p}/specs/${specId}/proofread`, { method: "POST" }));
 
   // ---------- 编辑 / 生成 ----------
+  // 生成输入 = S5 `UI-Spec`（2026-10-29 起）→ 播种可解析 UI-Spec（替换上方 `#30` 产出的不可解析桩）。
+  seedUiSpec(p);
   const page = ok(await req(`/projects/${p}/pages`)).items[0];
+  const pg = { ...page, project_id: p };
   record("35", "GET", "/projects/{id}/pages", await req(`/projects/${p}/pages`));
   const node = { element_id: null, temp_id: "t1", widget_type: "BUTTON", alias: "按钮", style: defaultStyle(), events: { click: false, long_press: false, double_click: false }, status: "active", children: [] };
   const d1 = ok(await req(`/pages/${page.page_id}/draft`, { method: "PUT", version: 0, body: { tree: [node] } }));
@@ -142,7 +146,7 @@ await test("语义核对：跑完整生命周期并记录每个接口的真实�
   const elRow3 = get(`SELECT version FROM tbl_element WHERE project_id=? AND element_id=?`, p, el);
   record("40", "PUT", "/elements/{id}/events", await req(`/elements/${el}/events?project_id=${p}`, { method: "PUT", version: elRow3.version, body: { events: [{ event_type: "click", action_type: "none" }] } }));
   const dNow = ok(await req(`/pages/${page.page_id}/draft`));
-  const gen = ok(await req(`/pages/${page.page_id}/generations`, { method: "POST", body: { input_hash: hash(dNow.tree), base_seq: 0 } }), 202);
+  const gen = ok(await req(`/pages/${page.page_id}/generations`, { method: "POST", body: { input_hash: uiSpecFor(pg).input_hash, base_seq: 0 } }), 202);
   await wait(gen.task_id);
   record("44", "GET", "/tasks/{id}", await req(`/tasks/${gen.task_id}`));
   record("47", "GET", "/tasks/{id}/artifacts", await req(`/tasks/${gen.task_id}/artifacts`));

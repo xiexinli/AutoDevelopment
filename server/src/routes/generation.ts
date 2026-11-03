@@ -4,7 +4,7 @@ import {ApiError} from '../core/envelope.ts';
 import {currentUser,assertProjectAccess,type User} from '../core/auth.ts';
 import {all,get,run,tx,uid,nowIso,json} from '../db/index.ts';
 import {createTask,startTask,getTask,type TaskRow,publish,registerTaskCleanup} from '../core/tasks.ts';
-import {loadPage,draft,type Page} from '../core/editor.ts';
+import {loadPage,specInputFor,type Page} from '../core/editor.ts';
 import {readMeta,writeMeta} from '../core/revisions.ts';
 import {insertVersion} from './versions.ts';
 import {assertEgressEnabled} from './ai-egress.ts';
@@ -12,8 +12,20 @@ import {createCodegenAdapter,validateCodeFiles,type CodegenAdapter,type CodeFile
 import {verifyL1} from '../adapters/verify.ts';
 import {writebackTask} from './patches.ts';
 const send=(req:any,reply:any,data:any,status=200)=>reply.status(status).send({code:'OK',message:'',data,request_id:String(req.id)});
-const hash=(tree:any[])=>createHash('sha256').update(JSON.stringify(tree)).digest('hex');
-interface Input {tree:any[];page:Page;user:User;root:string;retry:number}
+/** 目标接入点（`#43` `target`，`K5`）：粒度按页面；平台可自动识别，不确定时由用户显式指定。 */
+interface GenTarget {module?:string;activity?:string;layout?:string}
+function checkTarget(value:unknown):GenTarget|undefined {
+  if(value===undefined||value===null)return undefined;
+  if(typeof value!=='object'||Array.isArray(value))throw new ApiError('INVALID_ARGUMENT','target 必须是对象。');
+  const out:GenTarget={};
+  for(const key of ['module','activity','layout'] as const){
+    const v=(value as any)[key];if(v===undefined)continue;
+    if(typeof v!=='string'||!v.trim()||v.length>120||/[\r\n]/.test(v))throw new ApiError('INVALID_ARGUMENT','target 字段不合法。');
+    out[key]=v.trim();
+  }
+  return Object.keys(out).length?out:undefined;
+}
+interface Input {tree:any[];page:Page;user:User;root:string;retry:number;target?:GenTarget}
 export function registerGenerationRoutes(app:FastifyInstance,adapter:CodegenAdapter=createCodegenAdapter()):void {
  const queues=new Map<string,Promise<void>>();
  const admitted=new Set<string>();
@@ -78,11 +90,13 @@ export function registerGenerationRoutes(app:FastifyInstance,adapter:CodegenAdap
   }).finally(()=>{admitted.delete(task.task_id);if(queues.get(task.project_id)===next)queues.delete(task.project_id);});
   queues.set(task.project_id,next);
  }
- app.post<{Params:{page_id:string};Body:{input_hash:string;base_seq:number}}>('/api/v1/pages/:page_id/generations',async(req,reply)=>{
+ app.post<{Params:{page_id:string};Body:{input_hash:string;base_seq:number;target?:GenTarget}}>('/api/v1/pages/:page_id/generations',async(req,reply)=>{
   const user=currentUser(req),page=loadPage(user,req.params.page_id);assertEgressEnabled(user.user_id);
   if(adapter.kind==='unconfigured')throw new ApiError('UPSTREAM_UNAVAILABLE','代码生成网关未配置，未创建生成任务。');
-  const d=draft(page);if(!d.tree.length)throw new ApiError('INVALID_ARGUMENT','画布上还没有控件。');
-  if(typeof req.body?.input_hash!=='string'||req.body.input_hash!==hash(d.tree))throw new ApiError('TASK_STALE','草稿已更新，请保存当前内容后重新提交。');
+  // 自 2026-10-29 起，生成输入 = S5 `UI-Spec`（页面 + 元素 `EL-*`），**不再用画布草稿 `tree`**（`K1`/`K2`）。
+  const spec=specInputFor(page);if(!spec)throw new ApiError('INVALID_ARGUMENT','还没有可用的 UI-Spec（S5）；先完成 Spec 生成，或补全该页面的元素。');
+  if(typeof req.body?.input_hash!=='string'||req.body.input_hash!==spec.input_hash)throw new ApiError('TASK_STALE','UI-Spec 已更新，请重新提交。');
+  const target=checkTarget(req.body?.target);
   const latest=get<{seq:number}>(`SELECT MAX(seq) seq FROM tbl_gen_task WHERE project_id=? AND type='code_gen'`,page.project_id)?.seq??0;
   const based=req.body.base_seq;
   if(!Number.isInteger(based)||based<0)throw new ApiError('INVALID_ARGUMENT','base_seq 必须为已同步的非负任务序号。');
@@ -90,7 +104,7 @@ export function registerGenerationRoutes(app:FastifyInstance,adapter:CodegenAdap
   const pending=all<TaskRow>(`SELECT * FROM tbl_gen_task WHERE project_id=? AND type='code_gen' AND status IN ('queued','running')`,page.project_id);
   if(pending.length>=20)throw new ApiError('RATE_LIMITED','请求太频繁，2 秒后重试。',{retry_after:2});
   const task=createTask({projectId:page.project_id,pageId:page.page_id,type:'code_gen',inputHash:req.body.input_hash});
-  writeMeta(page.project_id,`generation:${task.task_id}`,{tree:d.tree,page,user,root:task.task_id,retry:0});writeMeta(page.project_id,`task_info:${task.task_id}`,{phase:'generating',attempt:0});
+  writeMeta(page.project_id,`generation:${task.task_id}`,{tree:spec.tree,page,user,root:task.task_id,retry:0,target});writeMeta(page.project_id,`task_info:${task.task_id}`,{phase:'generating',attempt:0});
   enqueue(task);return send(req,reply,{task_id:task.task_id,seq:task.seq,status:'queued'},202);
  });
  app.get<{Params:{task_id:string}}>('/api/v1/tasks/:task_id/verifications',async(req,reply)=>{

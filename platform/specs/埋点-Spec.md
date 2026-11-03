@@ -1,10 +1,10 @@
 # AutoDevelopment 平台 埋点 Spec
 
-> 版本：**v0.1.12** ｜ 来源 PRD：平台需求概要（平台自身的产品需求）v1.4 · 第 4 轮回写后 · 门禁阻断 0（document_id: `platform/平台需求概要.md`, revision: v1.4/S 2026-10-20）｜ 角色：埋点 ｜ 更新：2026-10-29（**工程接入（二期 · 增量写回）**：新增 2 条 `EVT_patch_writeback_*` 事件，事件总数 **57 → 59**，附节 C 同步）；上一轮 2026-10-29（**工程接入（一期）`F17`/`F18`**：新增 3 条 `EVT_intake_*` 事件，事件总数 **54 → 57**，附节 C 同步）；上一轮 2026-10-26（**B9：禁用无点击事件、写回需正文回读核验、查看正文/深链显式不埋**；**审核流程优化**：`EL-REVIEW-054` 自动审核开关本身、以及**自动开审 / 回写后自动重审**均显式表态不埋；`EL-*` 435）；**本轮同版增量补正**：#8服务端哈希、初载/手动文档门禁、严格正文继承与当前doc历史；不另开轮次。
+> 版本：**v0.1.13** ｜ 来源 PRD：平台需求概要（平台自身的产品需求）v1.4 · 第 4 轮回写后 · 门禁阻断 0（document_id: `platform/平台需求概要.md`, revision: v1.4/S 2026-10-20）｜ 角色：埋点 ｜ 更新：2026-10-29（**去拖拽编辑 · Spec 直出代码（S5 埋点 Spec 重同步）**：① **主流程漏斗 9 → 8 节点** —— 移除「编辑」节点（`K3`），节点 6/7/8 = **生成 / 预览 / 交付**；② 5 条 `EVT_edit_*` **全部保留、逐条降为「辅助路径」观测**（`K3`=B：52 个 `EL-EDIT-*` 实现保留为「生成后微调」辅助页）——**「不再可能触发」的事件 = 0 条**（逐条复核见 **§3.7.1**）；其中 **`EVT_edit_submit_success` 由 ★节点 6 降为辅助路径**；③ **新增 4 条事件** —— `EVT_gen_spec_accepted` / `EVT_gen_spec_blocked`（主流程生成入口 `EL-WORK-039`，`REQ-GEN-011`）+ `EVT_gen_target_ambiguous`〔2026-11-03 转正〕/ `EVT_gen_target_specified`〔2026-11-03 转正〕（随`#80`，`REQ-GEN-013`），**事件总数 59 → 63**（含随 `#80` 转正的 2 条）；④ `EVT_gen_task_enqueued` / `EVT_gen_task_terminal` 增 **`source`** 参数（新增取值 `spec_generate`），`EVT_patch_writeback_done` / `EVT_patch_writeback_failed` 增 **`trigger`** 参数并承接 **`REQ-GEN-012`**（写回所选工程根）；⑤ 关联文档：`UI-Spec` 元素 **450 → 453**、`接口-Spec` **83（含 `#80`）**；⑥ §9 追溯表 **95 → 98 行**（`OK` 70→**73**、`Deferred` 0）〔`REQ-GEN-013` 于 2026-11-03 转正〕；⑦ §4 场景清单 **52 → 56 行**；附节 C **59 → 63 条**）；上一轮 2026-10-29（**工程接入（二期 · 增量写回）**：新增 2 条 `EVT_patch_writeback_*` 事件，事件总数 **57 → 59**，附节 C 同步）；上一轮 2026-10-29（**工程接入（一期）`F17`/`F18`**：新增 3 条 `EVT_intake_*` 事件，事件总数 **54 → 57**，附节 C 同步）；上一轮 2026-10-26（**B9：禁用无点击事件、写回需正文回读核验、查看正文/深链显式不埋**；**审核流程优化**：`EL-REVIEW-054` 自动审核开关本身、以及**自动开审 / 回写后自动重审**均显式表态不埋；`EL-*` 435）；**本轮同版增量补正**：#8服务端哈希、初载/手动文档门禁、严格正文继承与当前doc历史；**销项修正（评审 `评审-埋点-去拖拽编辑-20261029.md` F1~F8）**：`G-008` 指标列 节点 9 → **节点 8**；§3.7.1「前置拦截四类」→「**五类**」；§6 旁路清单注明 `EVT_gen_spec_blocked` **不计入旁路 8 条**（与附节 C 分类统一）；§9 / B9 历史行措辞澄清（「本轮」→ 历史轮次）；附节 C 表头注明 REQ-ID 列**非全量**；附节 A #8 元素列不一致**声明待 S6 校**（事件 **63** / 漏斗 **8 节点** / §9 **98 行** / §4 **56 行** 均不变）；不另开轮次。
 >
 > **本次作业性质**：以 `platform/design/数据模型.md`、`platform/design/验收标准.md`、`platform/design/接口契约.md` 为**底稿**做格式转换与对齐，
-> 以 `platform/specs/UI-Spec.md`（**450 元素**；沿革 412 → **419**〔2026-10-21 本机落地 +7〕→ **424**〔2026-10-22 对话面板 +5〕→ **425**〔2026-10-23 审核页写回入口 `EL-REVIEW-052` +1〕→ **426**〔2026-10-26 审核页未通过项补充信息 `EL-REVIEW-053` +1〕→ **427**〔2026-10-26 审核流程优化 `EL-REVIEW-054` +1〕→ **435**〔2026-10-26 B9 +8〕→ **447**〔2026-10-29 工程接入 +12〕→ **450**〔2026-10-29 二期写回 +3〕，见 §1 关联文档）与 `platform/specs/App-Spec.md`（13 路由 / §10.1 的 **32 行**埋码点〔2026-10-21 本机落地后；早期为 25 行占位〕）为**对齐对象**，
-> 以 `platform/requirements/埋点-需求包.md` 的 **9 节点漏斗 + 4 条负向事件 + 2 类合规事件**为**必收内容**，不重新设计产品。
+> 以 `platform/specs/UI-Spec.md`（**453 元素**；沿革 412 → **419**〔2026-10-21 本机落地 +7〕→ **424**〔2026-10-22 对话面板 +5〕→ **425**〔2026-10-23 审核页写回入口 `EL-REVIEW-052` +1〕→ **426**〔2026-10-26 审核页未通过项补充信息 `EL-REVIEW-053` +1〕→ **427**〔2026-10-26 审核流程优化 `EL-REVIEW-054` +1〕→ **435**〔2026-10-26 B9 +8〕→ **447**〔2026-10-29 工程接入 +12〕→ **450**〔2026-10-29 二期增量写回 +3〕→ **453**〔2026-10-29 去拖拽编辑 +3：`EL-WORK-039`/`040`/`041`〕，见 §1 关联文档）与 `platform/specs/App-Spec.md`（13 路由 / §10.1 的 **36 行**埋码点〔2026-10-21 本机落地后；早期为 25 行占位〕）为**对齐对象**，
+> 以 `platform/requirements/埋点-需求包.md` 的 **8 节点漏斗 + 4 条负向事件 + 2 类合规事件**为**必收内容**，不重新设计产品。
 > 冲突时**以 `platform/平台需求概要.md` 为准**并登记，不自行裁决。
 >
 > **来源标签**（沿用基线记法）：`§FX` / `§X` = `platform/平台需求概要.md`；`数据模型§X` = `platform/design/数据模型.md`；
@@ -47,10 +47,10 @@
 |---|---|
 | 文档目的 | 定义**需要什么埋点、什么场景埋点**，作为**开发埋码依据**与**测试验证依据** |
 | 不在范围 | ① 数据仓库建模与报表；② 埋点数据的可视化看板；③ **B 线（被开发项目）埋点具体条目的枚举**（由平台按用户 PRD 生成，见附节 B）；④ 数据治理与 BI 口径 |
-| 关联文档 | `UI-Spec.md`（**450 元素** / 13 页；412 → 419〔2026-10-21 本机落地 +7：`EL-AUTH-017`~`021`+`EL-REVIEW-051`+`EL-GLOBAL-009`〕→ **424**〔2026-10-22 对话面板 +5：`EL-WORK-031`~`035`〕→ **425**〔2026-10-23 审核页 `EL-REVIEW-052` +1〕→ **426**〔2026-10-26 审核页未通过项补充信息 `EL-REVIEW-053` +1〕→ **427**〔2026-10-26 审核流程优化 `EL-REVIEW-054` +1〕→ **435**〔2026-10-26 B9 +8〕→ **447**〔2026-10-29 工程接入 +12〕→ **450**〔2026-10-29 二期写回 +3〕）、`接口-Spec.md`（**82 接口** = 63 基线 + 8 补口 + 本机落地 `#71`/`#71a`/`#72`/`#72a` + **工程接入 `#73`~`#75`** + **二期写回 `#76`~`#79`**；原 **75** = 63 基线 + `#63`~`#68` 转基线 + `#69`/`#70` + **本机落地 `#71`/`#71a`/`#72`/`#72a`**）、`App-Spec.md`（13 路由 / §10.1 的 **32 行**埋码点〔2026-10-21 本机落地后；早期 25 行占位〕，已按附节 A 回填）、`测试-Spec.md`、`baseline/需求追溯矩阵.md`、`platform/decisions/P0-补口裁决单.md`（2026-10-21 补口裁决） |
-| 上游需求包 | `platform/requirements/埋点-需求包.md`（两条埋点线 / 9 节点漏斗 / 埋码点要求 / 隐私合规） |
-| 事件总数 | **59 条**（2026-10-29 二期写回 +2：`EVT_patch_writeback_done` / `EVT_patch_writeback_failed`；2026-10-29 工程接入 +3：`EVT_intake_click` / `EVT_intake_done` / `EVT_intake_failed`；此前 **54 条** = 其中 **早期 25 条**对应 `App-Spec §10` 的 25 行占位；27 条为本次新增，逐条给出业务问题与 EL-ID；**+2 条 = 2026-10-21 本机落地新增**：`EVT_auth_password_login`（§3.1）、`EVT_llm_model_switch`（§3.13，并新增业务问题 `G-014`）） |
-| 核心漏斗 | **9 节点**（`REQ-TRACK-001`）+ **负向旁路 9 条**（`AC-TR-01` 的判定依据） |
+| 关联文档 | `UI-Spec.md`（**453 元素** / 13 页；412 → 419〔2026-10-21 本机落地 +7：`EL-AUTH-017`~`021`+`EL-REVIEW-051`+`EL-GLOBAL-009`〕→ **424**〔2026-10-22 对话面板 +5：`EL-WORK-031`~`035`〕→ **425**〔2026-10-23 审核页 `EL-REVIEW-052` +1〕→ **426**〔2026-10-26 审核页未通过项补充信息 `EL-REVIEW-053` +1〕→ **427**〔2026-10-26 审核流程优化 `EL-REVIEW-054` +1〕→ **435**〔2026-10-26 B9 +8〕→ **447**〔2026-10-29 工程接入 +12〕→ **450**〔2026-10-29 二期增量写回 +3〕→ **453**〔2026-10-29 去拖拽编辑 +3〕）、`接口-Spec.md`（**83 接口** = 63 基线 + 8 补口 + 本机落地 `#71`/`#71a`/`#72`/`#72a` + **工程接入 `#73`~`#75`** + **二期写回 `#76`~`#79`** + **`#80` 1 个（2026-10-29 新增、2026-11-03 转正，计入 83）**；原 **75** = 63 基线 + `#63`~`#68` 转基线 + `#69`/`#70` + **本机落地 `#71`/`#71a`/`#72`/`#72a`**）、`App-Spec.md`（13 路由 / §10.1 的 **36 行**埋码点〔2026-10-21 本机落地后；早期 25 行占位〕，已按附节 A 回填）、`测试-Spec.md`、`baseline/需求追溯矩阵.md`、`platform/decisions/P0-补口裁决单.md`（2026-10-21 补口裁决） |
+| 上游需求包 | `platform/requirements/埋点-需求包.md`（两条埋点线 / **8 节点漏斗**（9 → 8，「编辑」节点移除）/ 埋码点要求 / 隐私合规） |
+| 事件总数 | **63 条**（2026-10-29 去拖拽编辑 +4：`EVT_gen_spec_accepted` / `EVT_gen_spec_blocked`（主流程生成入口，`REQ-GEN-011`）+ `EVT_gen_target_ambiguous` / `EVT_gen_target_specified`〔**正式基线**，随`#80`〕；**含随 `#80` 转正的 2 条，`#80` 已转正（无回退） 条**）；2026-10-29 二期写回 +2：`EVT_patch_writeback_done` / `EVT_patch_writeback_failed`；2026-10-29 工程接入 +3：`EVT_intake_click` / `EVT_intake_done` / `EVT_intake_failed`；此前 **54 条** = 其中 **早期 25 条**对应 `App-Spec §10` 的 25 行占位；27 条为本次新增，逐条给出业务问题与 EL-ID；**+2 条 = 2026-10-21 本机落地新增**：`EVT_auth_password_login`（§3.1）、`EVT_llm_model_switch`（§3.13，并新增业务问题 `G-014`）） |
+| 核心漏斗 | **8 节点**（`REQ-TRACK-001`；「编辑」节点移除，「生成」= 节点 6）+ **负向旁路 8 条** + ★合规 7 条（`AC-TR-01` 的判定依据） |
 | 术语口径 | 事件名 = `EVT_<模块>_<动作>`（**全小写下划线**）；元素 = `EL-<模块>-<三位>`（**大写零填充**，`D-A2`）；路由 = `RT-*`；页面 = `UI-*` |
 | 生效范围 | 本期**只做安卓**目标端、平台侧为 **Web 工作台**（桌面浏览器 1440×900 基准）；账号 = **飞书扫码登录**（`user_id` = 飞书 `open_id`）；**2026-10-21 本机落地起并存「本地账号密码登录」**（`#72`，开发阶段扩展、生产必须关闭 `AD_PASSWORD_LOGIN=disabled`），登录页由 `EL-AUTH-017` 分段控件切换；本地登录下的 `user_hash` 口径**未定** → `[埋点-Q14]` |
 
@@ -63,7 +63,7 @@
 | §1~§11 | §1~§11 | 一一对应，**不新增、不删减** |
 | （骨架无） | **附节 A ★ `App-Spec §10` 埋码点回填对照表（25 个编号行 + 1 行补充映射）** | `REQ-TRACK-001` 要求「事件名与参数由埋点角色定义」的回填落点 |
 | （骨架无） | **附节 B ★ B 线：被开发项目埋点方案（`TrackPlan`）规范** | `埋点-需求包 §0` 要求「两者都要在本 Spec 中成节」 |
-| （骨架无） | **附节 C 事件名总表（59 条，供一致性比对）** | `需求追溯矩阵 §三-4`「埋点事件名 ↔ App 埋点位置 ↔ 测试用例事件名 三处一致」的核对索引 |
+| （骨架无） | **附节 C 事件名总表（63 条，供一致性比对）** | `需求追溯矩阵 §三-4`「埋点事件名 ↔ App 埋点位置 ↔ 测试用例事件名 三处一致」的核对索引 |
 
 ---
 
@@ -74,19 +74,20 @@
 
 | 目标编号 | 要回答的业务问题 | 对应 REQ-ID | 关键指标 | 口径说明 |
 |---|---|---|---|---|
-| `G-001` | **主流程漏斗在哪一步流失最多？** | `REQ-TRACK-001` | 9 节点逐节点转化率 | 节点到达 = 该节点绑定事件被上报的**去重用户数**（已登录按 `user_hash` 去重，未登录按 `anon_id`）；分母 = 节点 1 用户数。**同一用户同一节点只计 1 次** |
-| `G-002` | **代码生成的成功率与耗时是否达标（L1 P95 ≤ 90s）？** | `REQ-TRACK-002`、`REQ-NF-001` | L1 成功率、P50 / P95 用时 | 取 `EVT_gen_task_terminal` 的 `status` 与 `duration_ms`；**`duration_ms` 服务端口径 = `started_at → finished_at`**；**L2 耗时只在 `EVT_l2_reported` 记录，不进本指标** |
+| `G-001` | **主流程漏斗在哪一步流失最多？** | `REQ-TRACK-001` | **8 节点**逐节点转化率 | 节点到达 = 该节点绑定事件被上报的**去重用户数**（已登录按 `user_hash` 去重，未登录按 `anon_id`）；分母 = 节点 1 用户数。**同一用户同一节点只计 1 次** |
+| `G-002` | **代码生成的成功率与耗时是否达标（L1 P95 ≤ 90s）？** | `REQ-TRACK-002`、`REQ-NF-001` | L1 成功率、P50 / P95 用时 | 取 `EVT_gen_task_terminal` 的 `status` 与 `duration_ms`；**`duration_ms` 服务端口径 = `started_at → finished_at`**；**L2 耗时只在 `EVT_l2_reported` 记录，不进本指标**；**并按 `source` 分组**（`spec_generate` = 主流程由 Spec 直出 / `edit_submit` = 辅助再生成），**主流程质量回归只看 `spec_generate`** |
 | `G-003` | **上传解析的失败与部分失败有多严重？空文档算不算成功？** | `REQ-UPLOAD-001`、`003`、`004` | `partial` 率、`failed` 率、`empty_document` 率 | 取 `EVT_upload_parse_terminal.parse_status`；**`partial` 不得混进成功**（`AC-UP-06`）；`empty_document=true` 时**是否计入节点 2 见 `[埋点-Q1]`**（默认取**不计入**） |
 | `G-004` | **门禁阻断是否卡住了用户？回流复审要几轮？** | `REQ-REVIEW-001`、`008` | 阻断率、平均回流轮次、复审及时率 | 阻断率 = `EVT_review_verdict` 中 `verdict=blocked` / 全部终态；祖先链按 `revision_id` 串联 |
 | `G-005` | **拆解质量：是不是总有角色拆不出需求？** | `REQ-SPLIT-001` | `empty_role_count` 分布、REQ 总数分布 | 取 `EVT_split_done.req_count_by_role`；**某角色 0 条 = 「部分空」，不是页面空态** |
 | `G-006` | **Spec 生成的单份失败率与各角色耗时？** | `REQ-SPEC-001`、`002` | `partial` 率、各角色 P50 / P95 | 取 `EVT_spec_gen_done.overall` 与 `duration_ms_by_role`；**`overall` 绝不置为成功** |
 | `G-007` | **用户在哪一步对生成失去耐心（取消发生时的进度）？** | `REQ-GEN-005` | 取消率、取消时 `progress` 分布 | 取 `EVT_gen_task_canceled.progress`；**取消不计入失败、不计重试**（`AC-ED-18/19`；2026-10-21 重编后 `18`/`19` 专指「取消」语义，原第二组已重编为 `AC-ED-21`/`AC-ED-22`，见 §7.4） |
-| `G-008` | **交付收口率：多少项目真正走到交付？** | `REQ-DELIVER-001` | 节点 9 / 节点 1 | 交付 = `EVT_deliver_done`（**导出成功之后**，不是点击下载时） |
+| `G-008` | **交付收口率：多少项目真正走到交付？** | `REQ-DELIVER-001` | 节点 8 / 节点 1 | 交付 = `EVT_deliver_done`（**导出成功之后**，不是点击下载时） |
 | `G-009` | ★ **合规证据链：告知是否真的展示了、用户是否确认、关闭开关后有没有静默降级？** | `REQ-AUTH-004`、`AC-AU-08`、`AC-AU-09` | 告知展示数、确认率、取消率、开关关闭数、**被拦截的生成次数** | 见 **§8.3 专节**；「被拦截次数 > 0」是「**没有静默降级**」的正面证据 |
 | `G-010` | **会话与鉴权中断对漏斗口径的干扰有多大？** | `REQ-AUTH-001`、`002`、`003` | 登录成功率、会话过期次数、403 次数 | 用于判断漏斗分母是否需要剔除中断会话（**401/403 期间的事件不得计入节点到达**） |
 | `G-011` | **能力接入被用起来的程度与失败率？** | `REQ-CAP-001`、`002`、`005` | 保存并生成次数、`partial` 率、冲突数 | 取 `EVT_cap_save_generated.overall` / `failed_capabilities` |
 | `G-012` | **对话通路是否稳定（回复失败 / 超时）？** | `REQ-CHAT-001`、`002` | 回复失败率、回复 P95 时长、空消息拦截次数 | 取 `EVT_chat_reply_terminal.status` 与 `EVT_chat_send_blocked`；**参数不含消息正文** |
 | `G-013` | **元素 id 作废对已定稿的 B 线埋点与测试用例影响多大？** | `REQ-UIEDIT-008` | 作废 id 数、被引用 id 的作废数 | 取 `EVT_edit_element_voided`；**作废 id 不得再产生新事件**（`REQ-UIEDIT-009`） |
+| `G-015` | **主流程生成入口（由 Spec 直出）是否被真正使用？被什么前置条件拦住？用户是否需要手工指定目标接入点？** | `REQ-GEN-011`、`REQ-GEN-013`〔2026-11-03 转正〕 | 入口点击被拦截率（按 `block_reason` 分布）、`spec_generate` 任务占比、候选数分布与人工指定率 | 取 `EVT_gen_spec_blocked.block_reason`（点击但被拦截）与 `EVT_gen_spec_accepted`（点击成功触发）二分；主流程占比取 `EVT_gen_task_terminal.source=spec_generate`。**`#80` 已于 2026-11-03 转正**，目标接入点两项指标成立（`EVT_gen_target_*` 已落地） |
 | `G-014` | **门禁结论的差异是不是「换了模型」造成的？这份判定是谁给的？** | `REQ-REVIEW-001`（派生：`#71` / `#71a`） | 模型切换次数与分布、按 `#17.model` 分组的 `blocking_count` 分布 | 以 `#17` 出参 `model`（审核页 `EL-REVIEW-051`）为**权威模型来源**，`EVT_llm_model_switch` 只提供**切换时间线与动机**，两者按 `client_ts` 互印证（§3.13 注）；**同模型内比质量、跨模型比能力**，不得混作质量回归 |
 
 **口径的三条统一约定（全事件适用）**：
@@ -193,40 +194,65 @@
 >
 > **载体变更（2026-10-22）**：对话已由「工作台右栏」改为**全局悬浮对话框**（**进入项目后**的各子步骤显示、默认打开；对象 = 项目，线程 = 子步骤，可切回）。
 > 因此本组事件的「**页面**」列**不再是固定 `RT-WORK-001`** —— `page_rt`/`prev_rt` 一律取**发起时所在的实际路由**（`App-Spec §3` 的 `RT-*`）；
-> 事件定义、参数、上报时机与去重规则**均不变**（`EVT_chat_*` 仍为 4 条；**事件总数 59**〔2026-10-29 二期写回 +2、工程接入 +3 后〕）。
+> 事件定义、参数、上报时机与去重规则**均不变**（`EVT_chat_*` 仍为 4 条；**事件总数 63**〔2026-10-29 去拖拽编辑 +4、二期写回 +2、工程接入 +3 后；含随 `#80` 转正的 2 条〕）。
 > 另：对话框内的「AI 处理过程」是**观察面**（SSE `ai.step`，非埋点事件），**不新增 `EVT_*`**、不计入本 Spec 的事件字典。**2026-10-22**：其展示形态改为**与用户/平台消息共用一个列表**（步骤作为列表条目按时间混排），**仍是观察面、仍不埋点**。
 
-### 3.7 编辑与生成（回答 `G-002`、`G-007`、`G-013`；漏斗节点 6、7）
+### 3.7 编辑与生成（回答 `G-002`、`G-007`、`G-013`、`G-015`；**主流程漏斗节点 6**；`EVT_edit_*` = **辅助路径**）
+
+> **★ 2026-10-29 定位（去拖拽编辑 · Spec 直出代码 · `K1`~`K6` 全按推荐）**：
+> ① **主流程生成入口 = `EL-WORK-039`「由 Spec 生成代码」**（`REQ-GEN-011`）—— 由 `UI-Spec`（页面 + 元素 `EL-*`）**直接触发 `#43`**，**不经画布、不走提交变更**；
+> ② **本组 5 条 `EVT_edit_*` 全部保留、逐条降为「辅助路径」观测**（`K3`=B：52 个 `EL-EDIT-*` 实现保留为「**生成后微调**」辅助页）—— **逐条复核结论见 §3.7.1，无一条「不再可能触发」**；
+> ③ 旧 **★节点 6 =「提交编辑变更」已从主流程漏斗移除**；节点 6 改绑 `EVT_gen_task_terminal`（`status=succeeded` **且** `source=spec_generate`），**由 `EL-EDIT-037` 发起的辅助再生成不计入节点 6**（见 §6）；
+> ④ **写回所选工程根**（`REQ-GEN-012`，与 `REQ-PATCH-001` 是同一件事的两个环节）**复用** `EVT_patch_writeback_done`/`failed`（增 `trigger` 参数），**不新增写回事件**。
 
 | 事件名 | 触发场景 | 精确触发时机 | 上报参数（名:类型=取值） | 上报时机 | 去重规则 | 对应 REQ-ID | 页面 | 元素 | 埋码点 |
 |---|---|---|---|---|---|---|---|---|---|
-| `EVT_edit_drop_rejected` | 拖拽落点被拒收（**旁路**） | 前端落点校验失败并渲染 `EL-EDIT-012` **之后**；**或** `#36` 返回 400 **之后**；第 201 个控件时渲染 `EL-EDIT-013` **之后** | `reject_reason:enum{outside_canvas,invalid_hierarchy,limit_exceeded,unsupported_widget}`、`widget_type:string`（37 项枚举之一）、`current_count:int(0~200)` | 批量 | 同一 `widget_type` + 同一 `reject_reason` 在 1s 内只报 1 次 | `REQ-UIEDIT-001` | `RT-EDIT-001` | `EL-EDIT-012`、`EL-EDIT-013`、`EL-EDIT-004` | 落点校验失败分支 / `#36` 的 400 分支回调 |
-| `EVT_edit_event_config` | 配置事件面板 | 勾选/取消 `EL-EDIT-032`~`034`，且 `#42` 草稿保存成功、服务端回写 `element_id` **之后**〔2026-10-22 口径变更：原挂 `#40`，见 §版本变更〕 | `element_id:string(24)`（**归一化大写零填充**）、`event_types:string[]⊆{click,long_click,double_click}`、`action_type:enum{none}`（**固定 `none`**）、`count:int(1~3)` | 批量 | 同一 `element_id` 在 1s 内只报 1 次（**只报最终态**） | `REQ-UIEDIT-004` | `RT-EDIT-001` | `EL-EDIT-032`、`EL-EDIT-033`、`EL-EDIT-034`、`EL-EDIT-035` | `#42` 草稿保存成功回调内（**只报「配了哪类事件」，不报动作语义**）。**全部取消 → 空集不可表达（`count` 下限 `1`），该 `element_id` 不上报** |
-| `EVT_edit_element_voided` | 删除控件（id 作废） | 点 `EL-EDIT-040` / `EL-EDIT-017` 并经 `EL-EDIT-043` 二次确认、`#38` 返回成功、节点已移出渲染树 **之后** | `element_id:string(24)`、`widget_type:string`、`child_count:int` | 即时 flush | 同一 `element_id` 只报 1 次（**`void` 是单向终态**） | `REQ-UIEDIT-008`、`REQ-UIEDIT-009` | `RT-EDIT-001` | `EL-EDIT-040`、`EL-EDIT-017`、`EL-EDIT-046`、`EL-EDIT-052` | `#38` 成功回调内（节点移出渲染树之后） |
-| `EVT_edit_submit_blocked` | 点「提交变更」但**被拦截** | 点 `EL-EDIT-037` 且以下任一成立并给出提示**之后**（**不发 `#43`**）：告知未确认 / 外发开关关闭 / 存在 `unset` 假设 / 离线 / 无页面 | `block_reason:enum{notice_unconfirmed,egress_disabled,assumption_unset,offline,no_page}`、`page_id:string(36)` | 批量 | 同一 `block_reason` 在 1s 内只报 1 次 | `REQ-UIEDIT-001`、`REQ-AUTH-004`、`REQ-REVIEW-004` | `RT-EDIT-001` | `EL-EDIT-037` | `EL-EDIT-037` 的 `onClick` 拦截分支（**成功分支见下一条，二者互斥**） |
-| **★`EVT_edit_submit_success`** | 提交编辑变更（**漏斗节点 6**） | 点 `EL-EDIT-037` 且前置通过、`#43` 返回 **202** 且 `task_id` + `seq` 写入 **之后**（**首次收到 `queued` 之前**） | `task_id:string(36)`、`seq:int`、`page_id:string(36)`、`element_count:int(0~200)`、`widget_type_dist:object{<widget_type>:int}` | 即时 flush | `dedup_key` = `Idempotency-Key`；同一 `task_id` 只报 1 次 | `REQ-UIEDIT-001`、`REQ-GEN-001`、`REQ-NF-006` | `RT-EDIT-001` | `EL-EDIT-037` | `EditorStore.submitChanges()` 的 `onAccepted(task_id, seq)` 回调内 |
-| `EVT_gen_task_enqueued` | 生成任务入队 | `TaskHub.onTaskEvent` **首次**收到该 `task_id` 的 `queued` 事件时 | `task_id:string(36)`、`seq:int`、`source:enum{edit_submit,preview_regenerate,chat_generate}` | 批量 | **以 `task_id` 去重**（SSE 重连不重复计数） | `REQ-GEN-001`、`REQ-GEN-007` | `RT-EDIT-001`、`RT-PREVIEW-001` | `EL-EDIT-037`、`EL-PREVIEW-009` | `TaskHub.onTaskEvent` 的 `queued` 分支（本地 `queuedTaskIds` 集合判定首次） |
-| **★`EVT_gen_task_terminal`** | 生成任务终态（**漏斗节点 7**） | `TaskHub.onTaskEvent` 收到该 `task_id` 终态（`succeeded` / `failed` / `timeout`）且产物引用写入 **之后** | `status:enum{succeeded,failed,timeout}`、`task_id:string(36)`、`seq:int`、`error_code:string\|null`、`duration_ms:int`（**服务端 `started_at → finished_at`；L1 计入指标**）、`queue_ms:int`、`attempt:int(1~3)` | 即时 flush | **以 `task_id` + `status` 去重**；`canceled` **不走本事件** | `REQ-GEN-001`、`REQ-GEN-008`、`REQ-NF-001`、`REQ-TRACK-002` | `RT-EDIT-001`、`RT-PREVIEW-001` | `EL-PREVIEW-009`、`EL-PREVIEW-011` | `TaskHub.onTaskEvent(terminal)` 回调内（本地 `reportedTaskIds` 判定首次） |
-| `EVT_gen_task_canceled` | 用户主动取消生成（**旁路**） | 点 `EL-PREVIEW-015` / `EL-WORK-023`「停止生成」且 `#44a` 返回成功、状态置 `canceled` **之后** | `task_id:string(36)`、`progress:int(0~100)`、`elapsed_ms:int`、`entry:enum{preview,workbench}` | 即时 flush | 以 `task_id` 去重；**不得与 `failed` 合并**、**不计入重试次数** | `REQ-GEN-005` | `RT-PREVIEW-001`、`RT-WORK-001` | `EL-PREVIEW-015`、`EL-PREVIEW-016`、`EL-WORK-023` | `#44a` 成功回调内（分支按 `status` **互斥枚举**，非 `if` 串联） |
-| `EVT_patch_writeback_done` | 增量写回**成功** | `#79` 返回成功、Toast「已写回工程：新增 {n} 个、替换 {m} 个文件」**渲染之后**、面板刷新**之前** | `project_id:string(36)`、`patch_id:string(36)`、`create_count:int`、`replace_count:int`、`skipped_count:int`、`duration_ms:int` | 即时 flush | `dedup_key` = `patch_id`；同一 `patch_id` 只报 1 次 | `REQ-PATCH-001` | `UI-WORK-001` / `RT-WORK-001` | `EL-WORK-037` | `#79` 成功回调内（Toast 之后）；**不上报文件路径文本** |
-| `EVT_patch_writeback_failed` | 增量写回**失败** | `#79` 返回 400/409/超时/网络异常，且**错误提示渲染之后**（含**冲突整批拒绝**、**硬禁碰/越界拦截**、**XML 既有 id 丢失拦截**） | `project_id:string(36)`、`error_code:string`（`INVALID_ARGUMENT`/`VERSION_CONFLICT`/`UPSTREAM_TIMEOUT`/`UPSTREAM_UNAVAILABLE`/`INTERNAL`/`NETWORK_ERROR`）、`block_reason:enum{conflict,forbidden_path,id_removal,no_increment,other}\|null` | 批量 | 同一 `Idempotency-Key` 只报 1 次 | `REQ-PATCH-001` | `UI-WORK-001` | `EL-WORK-037` | `#79` 失败分支回调内；**不上报文件路径文本** |
+| `EVT_edit_drop_rejected` | 拖拽落点被拒收（**旁路 · 辅助路径**：发生于「生成后微调」辅助页 `UI-EDIT-001`） | 前端落点校验失败并渲染 `EL-EDIT-012` **之后**；**或** `#36` 返回 400 **之后**；第 201 个控件时渲染 `EL-EDIT-013` **之后** | `reject_reason:enum{outside_canvas,invalid_hierarchy,limit_exceeded,unsupported_widget}`、`widget_type:string`（37 项枚举之一）、`current_count:int(0~200)` | 批量 | 同一 `widget_type` + 同一 `reject_reason` 在 1s 内只报 1 次 | `REQ-UIEDIT-001` | `RT-EDIT-001` | `EL-EDIT-012`、`EL-EDIT-013`、`EL-EDIT-004` | 落点校验失败分支 / `#36` 的 400 分支回调 |
+| `EVT_edit_event_config` | 配置事件面板（**辅助路径**） | 勾选/取消 `EL-EDIT-032`~`034`，且 `#42` 草稿保存成功、服务端回写 `element_id` **之后**〔2026-10-22 口径变更：原挂 `#40`，见 §版本变更〕 | `element_id:string(24)`（**归一化大写零填充**）、`event_types:string[]⊆{click,long_click,double_click}`、`action_type:enum{none}`（**固定 `none`**）、`count:int(1~3)` | 批量 | 同一 `element_id` 在 1s 内只报 1 次（**只报最终态**） | `REQ-UIEDIT-004` | `RT-EDIT-001` | `EL-EDIT-032`、`EL-EDIT-033`、`EL-EDIT-034`、`EL-EDIT-035` | `#42` 草稿保存成功回调内（**只报「配了哪类事件」，不报动作语义**）。**全部取消 → 空集不可表达（`count` 下限 `1`），该 `element_id` 不上报** |
+| `EVT_edit_element_voided` | 删除控件（id 作废）（**辅助路径**；`void` 单向终态不变） | 点 `EL-EDIT-040` / `EL-EDIT-017` 并经 `EL-EDIT-043` 二次确认、`#38` 返回成功、节点已移出渲染树 **之后** | `element_id:string(24)`、`widget_type:string`、`child_count:int` | 即时 flush | 同一 `element_id` 只报 1 次（**`void` 是单向终态**） | `REQ-UIEDIT-008`、`REQ-UIEDIT-009` | `RT-EDIT-001` | `EL-EDIT-040`、`EL-EDIT-017`、`EL-EDIT-046`、`EL-EDIT-052` | `#38` 成功回调内（节点移出渲染树之后） |
+| `EVT_edit_submit_blocked` | 点「提交变更」但**被拦截**（**辅助路径 · 辅助再生成**） | 点 `EL-EDIT-037` 且以下任一成立并给出提示**之后**（**不发 `#43`**）：告知未确认 / 外发开关关闭 / 存在 `unset` 假设 / 离线 / 无页面 | `block_reason:enum{notice_unconfirmed,egress_disabled,assumption_unset,offline,no_page}`、`page_id:string(36)` | 批量 | 同一 `block_reason` 在 1s 内只报 1 次 | `REQ-UIEDIT-001`、`REQ-AUTH-004`、`REQ-REVIEW-004` | `RT-EDIT-001` | `EL-EDIT-037` | `EL-EDIT-037` 的 `onClick` 拦截分支（**成功分支见下一条，二者互斥**） |
+| `EVT_edit_submit_success` | 提交编辑变更（**辅助路径 · 辅助再生成**；**原 ★节点 6，2026-10-29 降为辅助**，**不计入主流程漏斗节点 6**） | 点 `EL-EDIT-037` 且前置通过、`#43` 返回 **202** 且 `task_id` + `seq` 写入 **之后**（**首次收到 `queued` 之前**；**由辅助页 `EL-EDIT-037` 发起** —— 主流程入口 = `EL-WORK-039`，见 `EVT_gen_spec_accepted`） | `task_id:string(36)`、`seq:int`、`page_id:string(36)`、`element_count:int(0~200)`、`widget_type_dist:object{<widget_type>:int}` | 即时 flush | `dedup_key` = `Idempotency-Key`；同一 `task_id` 只报 1 次 | `REQ-UIEDIT-001`、`REQ-GEN-001`、`REQ-NF-006` | `RT-EDIT-001` | `EL-EDIT-037` | `EditorStore.submitChanges()` 的 `onAccepted(task_id, seq)` 回调内 |
+| `EVT_gen_spec_blocked` | 点「由 Spec 生成代码」但**被前置拦截**（**点击但被拦截**） | 点 `EL-WORK-039` 且以下任一成立并给出原因**之后**（**不发 `#43`**）：告知未确认 / 外发开关关闭 / 目标接入点 `ambiguous=true` 且未指定 / 离线 / 无页面或该页 `UI-Spec` 未就绪 | `block_reason:enum{notice_unconfirmed,egress_disabled,target_ambiguous,offline,no_page,no_spec}`、`page_id:string(36)\|null` | 批量 | 同一 `block_reason` 在 1s 内只报 1 次 | `REQ-GEN-011`、`REQ-AUTH-004` | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-039` | `EL-WORK-039` 的 `onClick` 拦截分支（**成功分支见 `EVT_gen_spec_accepted`，二者互斥**） |
+| `EVT_gen_spec_accepted` | **主流程生成任务创建**（点「由 Spec 生成代码」· 由 `UI-Spec` 直出 · `REQ-GEN-011`） | 点 `EL-WORK-039` 且**前置全部满足**（告知已确认 / 外发开关开启 / `ambiguous=false` 或已指定目标接入点 / 页面与其 `UI-Spec` 存在）后、`#43` 返回 **202** 且 `task_id` + `seq` 写入 **之后**（**首次收到 `queued` 之前**） | `task_id:string(36)`、`seq:int`、`page_id:string(36)`、`source:enum{spec_generate}`（**固定值**）、`input_hash:string`（**`UI-Spec` 快照哈希**，**非用户文本**）、`target:string\|null`（随 `#43` 的 `target` 回传；平台自动识别时为 `null`）、`element_count:int(0~200)` | 即时 flush | `dedup_key` = `Idempotency-Key`；同一 `task_id` 只报 1 次 | `REQ-GEN-011`、`REQ-NF-006` | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-039` | `#43` 的 202 回调内（`task_id` + `seq` 写入之后） |
+| `EVT_gen_target_ambiguous`〔2026-11-03 转正〕 | **目标接入点待指定**提示条 + 候选清单**展示**（`#80` 返回 `ambiguous=true`） | `#80` 返回 `ambiguous=true` 且 `EL-WORK-040` 提示条 + `EL-WORK-041` 候选**渲染之后** | `page_id:string(36)`、`candidate_count:int(0~n)`（`items[]` 条数）、`source_kind:enum{imported}`（**仅已接入工程 `imported` 会出现本事件**） | 即时 flush | 同一 `session_id` + 同一 `page_id` 在 3s 内只报 1 次 | `REQ-GEN-013`〔**转正**〕 | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-040`、`EL-WORK-041` | `#80` 的 `ambiguous=true` 分支（提示条渲染之后） |
+| `EVT_gen_target_specified`〔2026-11-03 转正〕 | **用户显式指定目标接入点**（选中候选 / 「由你指定」） | 用户选中候选并确认、所选值写入待提交态 **之后**（该值**随 `#43` 的 `target` 回传**；**未指定不得上报**） | `page_id:string(36)`、`module:string`、`activity:string`、`layout:string`（**均为工程结构标识、非用户内容**）、`specified_by:enum{candidate,manual}`、`candidate_count:int`、`confidence:number\|null`（选中候选的置信度 0~1；自定义时 `null`） | 即时 flush | 同一 `session_id` + 同一 `page_id` 只报 1 次（改选**不重复**） | `REQ-GEN-013`〔**转正**〕 | `RT-WORK-001` / `UI-WORK-001` | `EL-WORK-041` | `EL-WORK-041` 的确认回调内（写入待提交态之后） |
+| `EVT_gen_task_enqueued` | 生成任务入队（**主流程** = 由 `EL-WORK-039` 发起 / 辅助 = 提交变更、预览重生成、对话） | `TaskHub.onTaskEvent` **首次**收到该 `task_id` 的 `queued` 事件时 | `task_id:string(36)`、`seq:int`、`source:enum{spec_generate,edit_submit,preview_regenerate,chat_generate}`（`spec_generate` = 由 `EL-WORK-039` 发起的主流程生成，2026-10-29 新增取值） | 批量 | **以 `task_id` 去重**（SSE 重连不重复计数） | `REQ-GEN-001`、`REQ-GEN-007` | `RT-WORK-001`、`RT-EDIT-001`、`RT-PREVIEW-001` | `EL-WORK-039`、`EL-EDIT-037`、`EL-PREVIEW-009` | `TaskHub.onTaskEvent` 的 `queued` 分支（本地 `queuedTaskIds` 集合判定首次） |
+| **★`EVT_gen_task_terminal`** | 生成任务终态（**漏斗节点 6**；**主流程 = 由 `EL-WORK-039` 直出**，辅助 = 提交变更等） | `TaskHub.onTaskEvent` 收到该 `task_id` 终态（`succeeded` / `failed` / `timeout`）且产物引用写入 **之后** | `status:enum{succeeded,failed,timeout}`、`task_id:string(36)`、`seq:int`、`error_code:string\|null`、`duration_ms:int`（**服务端 `started_at → finished_at`；L1 计入指标**）、`queue_ms:int`、`attempt:int(1~3)`、`source:enum{spec_generate,edit_submit,preview_regenerate,chat_generate}`（与 `EVT_gen_task_enqueued` **同源同值**；**主流程漏斗节点 6 只计 `source=spec_generate`**） | 即时 flush | **以 `task_id` + `status` 去重**；`canceled` **不走本事件** | `REQ-GEN-001`、**`REQ-GEN-011`**、`REQ-GEN-008`、`REQ-NF-001`、`REQ-TRACK-002` | `RT-WORK-001`、`RT-PREVIEW-001`、`RT-EDIT-001` | `EL-WORK-039`、`EL-PREVIEW-009`、`EL-PREVIEW-011` | `TaskHub.onTaskEvent(terminal)` 回调内（本地 `reportedTaskIds` 判定首次） |
+| `EVT_gen_task_canceled` | 用户主动取消生成（**旁路**；主流程（`EL-WORK-039` 发起）与辅助（`EL-EDIT-037` 发起）**取消口径相同**） | 点 `EL-PREVIEW-015` / `EL-WORK-023`「停止生成」且 `#44a` 返回成功、状态置 `canceled` **之后** | `task_id:string(36)`、`progress:int(0~100)`、`elapsed_ms:int`、`entry:enum{preview,workbench}` | 即时 flush | 以 `task_id` 去重；**不得与 `failed` 合并**、**不计入重试次数** | `REQ-GEN-005` | `RT-PREVIEW-001`、`RT-WORK-001` | `EL-PREVIEW-015`、`EL-PREVIEW-016`、`EL-WORK-023` | `#44a` 成功回调内（分支按 `status` **互斥枚举**，非 `if` 串联） |
+| `EVT_patch_writeback_done` | 增量写回**成功**（**主流程**：由 `EL-WORK-039` 生成后写回所选工程根 / **辅助**：点 `EL-WORK-037`「写回工程」） | `#79` 返回成功、Toast「已写回工程：新增 {n} 个、替换 {m} 个文件」**渲染之后**、面板刷新**之前** | `project_id:string(36)`、`patch_id:string(36)`、`create_count:int`、`replace_count:int`、`skipped_count:int`、`duration_ms:int`、`trigger:enum{auto_after_generate,manual_panel}`（**主流程生成后自动写回** / 手动点写回） | 即时 flush | `dedup_key` = `patch_id`；同一 `patch_id` 只报 1 次 | `REQ-PATCH-001`、**`REQ-GEN-012`** | `UI-WORK-001` / `RT-WORK-001` | `EL-WORK-039`、`EL-WORK-037` | `#79` 成功回调内（Toast 之后）；**不上报文件路径文本** |
+| `EVT_patch_writeback_failed` | 增量写回**失败**（**主流程自动写回**与**手动写回**同口径） | `#79` 返回 400/409/超时/网络异常，且**错误提示渲染之后**（含**冲突整批拒绝**、**硬禁碰/越界拦截**、**XML 既有 id 丢失拦截**） | `project_id:string(36)`、`error_code:string`（`INVALID_ARGUMENT`/`VERSION_CONFLICT`/`UPSTREAM_TIMEOUT`/`UPSTREAM_UNAVAILABLE`/`INTERNAL`/`NETWORK_ERROR`）、`block_reason:enum{conflict,forbidden_path,id_removal,no_increment,other}\|null`、`trigger:enum{auto_after_generate,manual_panel}` | 批量 | 同一 `Idempotency-Key` 只报 1 次 | `REQ-PATCH-001`、**`REQ-GEN-012`** | `UI-WORK-001` | `EL-WORK-037` | `#79` 失败分支回调内；**不上报文件路径文本** |
 
-### 3.8 预览与验证（回答 `G-006`、漏斗节点 8）
+#### 3.7.1 `EVT_edit_*`（5 条）逐条复核结论 —— 「辅助路径」定性（**不删、不降实现**）
+
+> 依据 `K3`（= B 方案：拖拽编辑**保留为「生成后微调」辅助页**、**不占主流程节点**）+ `UI-Spec §4.8`「**52 个 `EL-EDIT-*` 实现保留、零删除、零降级**」+ `术语表`「**生成后微调**」词条。
+
+| 事件 | 原定性 | 本轮定性 | **是否仍可能触发** | 依据（元素 / 回调 / 接口是否仍在） |
+|---|---|---|---|---|
+| `EVT_edit_drop_rejected` | 旁路 | **旁路 · 辅助路径** | **是** | 辅助页画布与落点规则保留：`EL-EDIT-004`（控件面板）、`EL-EDIT-012`/`013`（落点/上限提示）**逐字保留**，`#36` 仍在（`UI-Spec §4.8`；`REQ-UIEDIT-001`） |
+| `EVT_edit_event_config` | 辅助 | **辅助路径** | **是** | 事件面板 `EL-EDIT-032`~`035` 与 `#42` 草稿保存仍在；`action_type` **仍固定 `none`**（`REQ-UIEDIT-004`） |
+| `EVT_edit_element_voided` | 辅助 | **辅助路径** | **是** | `EL-EDIT-040`/`017` + 二次确认 `EL-EDIT-043` + `#38` 仍在，id 台账 `EL-EDIT-051` 可查；`void` 单向终态不变（`REQ-UIEDIT-008`/`009`；`G-013` 仍成立） |
+| `EVT_edit_submit_blocked` | 点击被拦 | **辅助路径（点击被拦）** | **是** | `EL-EDIT-037` 仍存在，其前置拦截五类（告知/外发/假设 `unset`/离线/无页面）不变（`REQ-UIEDIT-001`、`REQ-AUTH-004`、`REQ-REVIEW-004`） |
+| `EVT_edit_submit_success` | **★漏斗节点 6** | **辅助路径**（**节点 6 资格取消**） | **是** | 辅助再生成仍走 `EL-EDIT-037` → `#43` → 202，`EditorStore.submitChanges()` 仍在；**但不再计入主流程漏斗节点 6**（节点 6 主触发改 `EVT_gen_spec_accepted`，见 §6） |
+
+- **复核结论：「不再可能触发」的事件 = 0 条。** 逐条核对 `UI-Spec §4.8`（`EL-EDIT-001`~`052` 全保留）与 `页面规格§6`（原文未变）：上表 5 条事件所依附的**元素、回调与接口 `#36`/`#38`/`#42`/`#43` 全部仍在**，**无一条失去触发路径** → **一条都不删、不合并、不改参数**（`K3`=B 的直接后果）。
+- **唯一语义变化**：`EVT_edit_submit_success` 的**漏斗身份**（原 ★节点 6 → 辅助路径）与 `EVT_gen_*` 的**主流程身份**（由 `EL-WORK-039` 发起）。**事件名、参数、上报时机、去重规则一律未改**。
+
+### 3.8 预览与验证（回答 `G-006`、漏斗节点 7）
 
 | 事件名 | 触发场景 | 精确触发时机 | 上报参数（名:类型=取值） | 上报时机 | 去重规则 | 对应 REQ-ID | 页面 | 元素 | 埋码点 |
 |---|---|---|---|---|---|---|---|---|---|
 | `EVT_verify_failed` | L1 验证失败（**旁路**，与生成失败分开） | `#49` 返回 L1 终态 `failed` 且 `verify_failed` 态**渲染之后** | `failed_rules:string[]⊆{syntax,structure,element_id_mapping,style_range,reference}`、`task_id:string(36)`、`attempt:int(1~3)`、`error_code:string` | 即时 flush | 以 `task_id` + `attempt` 去重 | `REQ-GEN-002`、`REQ-GEN-004` | `RT-PREVIEW-001` | `EL-PREVIEW-012`、`EL-PREVIEW-010` | `VerifyStore` 失败回调（`#49` 终态、失败态渲染之后）；**只报规则名，不报代码内容** |
-| **★`EVT_preview_refreshed`** | 预览刷新完成（**漏斗节点 8**） | **L1 `passed`** 且 `PreviewStore.applyPreview(seq)` **内部已完成内容替换之后**（该方法**只在 `seq > appliedSeq` 时被调用**） | `seq:int`、`task_id:string(36)`、`l1_duration_ms:int`、`page_id:string(36)` | 即时 flush | **`seq` 单调递增，只报最新**：旧响应后到**不上报** | `REQ-PREVIEW-001`、`REQ-PREVIEW-004`、`REQ-GEN-006` | `RT-PREVIEW-001` | `EL-PREVIEW-002`、`EL-PREVIEW-003` | `PreviewStore.applyPreview(seq)` 内部（内容替换之后） |
+| **★`EVT_preview_refreshed`** | 预览刷新完成（**漏斗节点 7**；本期预览 = **生成的构件（XML / Kotlin 片段）静态预览**，`K6`；主流程与辅助两条路径共用本事件，靠前置任务的 `source` 区分） | **L1 `passed`** 且 `PreviewStore.applyPreview(seq)` **内部已完成内容替换之后**（该方法**只在 `seq > appliedSeq` 时被调用**） | `seq:int`、`task_id:string(36)`、`l1_duration_ms:int`、`page_id:string(36)` | 即时 flush | **`seq` 单调递增，只报最新**：旧响应后到**不上报** | `REQ-PREVIEW-001`、`REQ-PREVIEW-004`、`REQ-GEN-006` | `RT-PREVIEW-001` | `EL-PREVIEW-002`、`EL-PREVIEW-003` | `PreviewStore.applyPreview(seq)` 内部（内容替换之后） |
 | `EVT_l2_reported` | 本地构建结果回传 | `#46` 回传到达且 `l2_result.reported=true` 写入 **之后** | `task_id:string(36)`、`l2_passed:bool`、`l2_duration_ms:int`（**仅记录**）、`log_digest_len:int` | 批量 | 以 `task_id` 去重（**未回传不报**） | `REQ-GEN-003`、`REQ-NF-001` | `RT-VER-001`、`RT-PREVIEW-001` | `EL-VER-028`、`EL-PREVIEW-014` | `TaskHub` 收到 `#46` 后的回调内 |
 
 > ⚠️ **L1 / L2 严格分层**：`EVT_l2_reported.l2_duration_ms` **不得混入** `G-002` 的 L1 指标（`REQ-NF-001`、项目约束 2）；
 > 平台侧**不得**出现任何「构建 / 打包 / 编译」类埋点（`REQ-GEN-009`，**负向约束**）。
 
-### 3.9 交付与版本（回答 `G-008`、漏斗节点 9）
+### 3.9 交付与版本（回答 `G-008`、漏斗节点 8）
 
 | 事件名 | 触发场景 | 精确触发时机 | 上报参数（名:类型=取值） | 上报时机 | 去重规则 | 对应 REQ-ID | 页面 | 元素 | 埋码点 |
 |---|---|---|---|---|---|---|---|---|---|
-| **★`EVT_deliver_done`** | 交付完成（**漏斗节点 9**） | 点 `EL-VER-025`「下载工程源码」/ `EL-VER-027`「导出 Spec 包」且 `#60`/`#61` 返回成功、**下载已触发之后** | `deliver_type:enum{android_source,spec_package}`、`version_seq:int`、`file_count:int`、`duration_ms:int`（**不含任何文件内容**） | 即时 flush | `dedup_key` = `Idempotency-Key`；同一 `version_seq` + `deliver_type` 在同一 `session_id` 内只报 1 次 | `REQ-DELIVER-001`、`REQ-NF-006` | `RT-VER-001` | `EL-VER-025`、`EL-VER-027`、`EL-VER-026` | `DeliverStore.onDownloaded()` 回调内（下载触发之后） |
+| **★`EVT_deliver_done`** | 交付完成（**漏斗节点 8**；交付形态 = **工程内改动 + 变更清单 + 一键回滚**，落点 = 所选工程根，`K4`/`REQ-GEN-012`） | 点 `EL-VER-025`「下载工程源码」/ `EL-VER-027`「导出 Spec 包」且 `#60`/`#61` 返回成功、**下载已触发之后** | `deliver_type:enum{android_source,spec_package}`、`version_seq:int`、`file_count:int`、`duration_ms:int`（**不含任何文件内容**） | 即时 flush | `dedup_key` = `Idempotency-Key`；同一 `version_seq` + `deliver_type` 在同一 `session_id` 内只报 1 次 | `REQ-DELIVER-001`、`REQ-NF-006` | `RT-VER-001` | `EL-VER-025`、`EL-VER-027`、`EL-VER-026` | `DeliverStore.onDownloaded()` 回调内（下载触发之后） |
 | `EVT_version_rolled_back` | 整包回滚 | 点 `EL-VER-018`「确认回滚」且 `#57` 返回（成功或失败均报）且 UI 状态已整体回退/更新 **之后** | `result:enum{succeeded,failed}`、`target_version_seq:int`、`from_version_seq:int`、`duration_ms:int` | 即时 flush | `dedup_key` = `Idempotency-Key`；同一次回滚只报 1 次 | `REQ-DELIVER-003` | `RT-VER-001` | `EL-VER-018`、`EL-VER-020`、`EL-VER-021` | `#57` 回调内（成功与失败两个分支） |
 
 > **导出被拒（403）不再单独设事件**：统一走 `EVT_auth_forbidden`（`resource=deliverable`），
@@ -250,13 +276,13 @@
 
 | 事件名 | 触发场景 | 精确触发时机 | 上报参数（名:类型=取值） | 上报时机 | 去重规则 | 对应 REQ-ID | 页面 | 元素 | 埋码点 |
 |---|---|---|---|---|---|---|---|---|---|
-| `EVT_aiegress_notice_shown` ★合规 | 外发告知弹窗展示 | `EL-GLOBAL-004` 弹窗容器**挂载（`onShow`）完成且逐字文案渲染之后** | `trigger_scene:enum{upload_first,generate_first,workbench_generate}` | 即时 flush | 同一 `trigger_scene` 在**同一 `session_id`** 内只报 1 次（`consent_acknowledged_at` 为 `null` 时才会出现） | `REQ-AUTH-004` | `RT-UPLOAD-001`、`RT-EDIT-001`、`RT-WORK-001` | `EL-GLOBAL-004`、`EL-GLOBAL-005`、`EL-GLOBAL-006` | 弹窗组件 `CMP-004` 的 `onShow` 生命周期（渲染之后） |
+| `EVT_aiegress_notice_shown` ★合规 | 外发告知弹窗展示（**首次生成前的暴露点自 2026-10-29 起以主流程入口 `EL-WORK-039` 为准**，`REQ-GEN-011`） | `EL-GLOBAL-004` 弹窗容器**挂载（`onShow`）完成且逐字文案渲染之后** | `trigger_scene:enum{upload_first,generate_first,workbench_generate}` | 即时 flush | 同一 `trigger_scene` 在**同一 `session_id`** 内只报 1 次（`consent_acknowledged_at` 为 `null` 时才会出现） | `REQ-AUTH-004` | `RT-UPLOAD-001`、`RT-EDIT-001`、`RT-WORK-001` | `EL-WORK-039`（触发入口）、`EL-GLOBAL-004`、`EL-GLOBAL-005`、`EL-GLOBAL-006` | 弹窗组件 `CMP-004` 的 `onShow` 生命周期（渲染之后） |
 | `EVT_aiegress_notice_confirmed` ★合规 | 用户确认告知 | 点 `EL-GLOBAL-007`「我已知悉，继续」且 `#68` PUT 返回成功、`consent_acknowledged_at` 写入 **之后**、**原动作继续执行之前** | `consent_acknowledged_at:datetime`（UTC）、`trigger_scene:enum{upload_first,generate_first,workbench_generate}` | 即时 flush | 同一 `trigger_scene` 只报 1 次（**成功后不再弹窗**） | `REQ-AUTH-004` | 同上 | `EL-GLOBAL-007` | `#68` PUT 成功回调内（**不上报 PRD 正文**） |
 | `EVT_aiegress_notice_write_failed` ★合规 | 确认状态写入失败 | `#68` PUT 返回失败且弹窗内错误条「确认状态没保存成功。」**渲染之后** | `error_code:string`、`trigger_scene:enum` | 即时 flush | 同一 `trigger_scene` + `error_code` 在 3s 内只报 1 次 | `REQ-AUTH-004` | 同上 | `EL-GLOBAL-004`、`EL-GLOBAL-007` | `#68` PUT 失败分支回调 |
 | `EVT_aiegress_notice_canceled` ★合规 | 用户拒绝 / 关闭告知弹窗 | 点 `EL-GLOBAL-008`「取消」**或**按 `Esc` 关闭弹窗，且**原动作未执行** **之后** | `trigger_scene:enum{upload_first,generate_first,workbench_generate}` | 即时 flush | 同一 `trigger_scene` 在 1s 内只报 1 次 | `REQ-AUTH-004` | 同上 | `EL-GLOBAL-008` | 弹窗关闭回调内（**判定原动作未执行之后**） |
 | `EVT_aiegress_disabled` ★合规 | 用户关闭外发开关 | 切换 `EL-CAP-019` 至 `false` 且 `#68` PUT 返回成功、Toast「已关闭「PRD 与代码外发第三方大模型」。」**渲染之后** | `egress_enabled:bool=false`、`disabled_reason_len:int`（**只报文案长度，不报全文**） | 即时 flush | 同一 `session_id` 内的同一取值只报 1 次 | `REQ-AUTH-004` | `RT-CAP-001` | `EL-CAP-019`、`EL-CAP-020`、`EL-CAP-021` | `#68` PUT 成功回调内（`egress_enabled=false`） |
 | `EVT_aiegress_enabled` ★合规 | 用户重新开启外发开关 | 切换 `EL-CAP-019` 至 `true` 且 `#68` PUT 返回成功 **之后** | `egress_enabled:bool=true` | 即时 flush | 同上 | `REQ-AUTH-004` | `RT-CAP-001` | `EL-CAP-019` | `#68` PUT 成功回调内（`egress_enabled=true`） |
-| `EVT_gen_blocked_by_egress` ★合规 | 外发关闭导致生成类任务不可用 | ① 生成入口置灰并给出原因文案**渲染之后**（`EL-EDIT-037` / `EL-WORK-027`）；**或** ② `#10`/`#12`/`#43`/`#58` 返回 `UPSTREAM_UNAVAILABLE` 且原因**渲染之后** | `entry:enum{upload,edit_submit,preview_regenerate,chat_generate,capability}`、`code:string=UPSTREAM_UNAVAILABLE` | 即时 flush | 同一 `entry` 在 3s 内只报 1 次 | `REQ-AUTH-004`、`AC-AU-09` | `RT-EDIT-001`、`RT-WORK-001`、`RT-UPLOAD-001`、`RT-CAP-001` | `EL-EDIT-037`、`EL-WORK-027`、`EL-UPLOAD-014`、`EL-CAP-021` | 入口置灰分支 / 不可用错误码分支（**用于证明「没有静默降级」**） |
+| `EVT_gen_blocked_by_egress` ★合规 | 外发关闭导致生成类任务不可用 | ① 生成入口置灰并给出原因文案**渲染之后**（**`EL-WORK-039`〔主流程〕** / `EL-EDIT-037`〔辅助〕 / `EL-WORK-027`）；**或** ② `#10`/`#12`/`#43`/`#58` 返回 `UPSTREAM_UNAVAILABLE` 且原因**渲染之后** | `entry:enum{upload,spec_generate,edit_submit,preview_regenerate,chat_generate,capability}`（`spec_generate` = 主流程入口 `EL-WORK-039`，2026-10-29 新增取值）、`code:string=UPSTREAM_UNAVAILABLE` | 即时 flush | 同一 `entry` 在 3s 内只报 1 次 | `REQ-AUTH-004`、`AC-AU-09` | `RT-EDIT-001`、`RT-WORK-001`、`RT-UPLOAD-001`、`RT-CAP-001` | **`EL-WORK-039`**、`EL-EDIT-037`、`EL-WORK-027`、`EL-UPLOAD-014`、`EL-CAP-021` | 入口置灰分支（**用于证明「没有静默降级」**） |
 
 **合规证据链的三段式**（供测试按 `AC-AU-08` / `AC-AU-09` 直接断言）：
 
@@ -276,7 +302,7 @@
 | 候选埋点 | 涉及元素 / REQ | **不提的理由** |
 |---|---|---|
 | 项目列表曝光 / 搜索 / 排序 / 翻页 / 每页条数 | `EL-PROJ-003`、`007`、`008`、`033`、`035`；`REQ-PROJ-002`、`REQ-NF-004` | **无业务问题**：列表是导航页，其唯一有价值的转化是「是否进入项目」，已由 `EVT_proj_open_workbench` 单事件回答；搜索/翻页不改变任何漏斗口径 |
-| 控件逐次拖入**成功** | `EL-EDIT-004`；`REQ-UIEDIT-001` | **无增量业务问题**：控件类型分布已在 `EVT_edit_submit_success.widget_type_dist` **一次性**覆盖（对应节点 6 口径）；逐次上报只增数据量、不增解释力。**只埋「拖了但没放成」**（`EVT_edit_drop_rejected`） |
+| 控件逐次拖入**成功** | `EL-EDIT-004`；`REQ-UIEDIT-001` | **无增量业务问题**：控件类型分布已在 `EVT_edit_submit_success.widget_type_dist` **一次性**覆盖（**原节点 6 口径**；该事件自 2026-10-29 起为**辅助路径**，见 §3.7.1）；逐次上报只增数据量、不增解释力。**只埋「拖了但没放成」**（`EVT_edit_drop_rejected`） |
 | 属性面板 11 项改值 / 尺寸手柄拖拽 | `EL-EDIT-023`~`028`、`EL-EDIT-009`；`REQ-UIEDIT-003` | **无业务问题**：样式改动**本地即时生效、不触发代码生成**（`AC-ED-04`）；行为高频且不可解释。若需「用户调了哪些属性」，属可用性研究或 B 线范畴 |
 | 控件树过滤 / 展开折叠 / id 台账抽屉 | `EL-EDIT-015`、`016`、`051`；`REQ-UIEDIT-005` | **无业务问题**：纯本地视图态（过滤不走接口），与任何指标无关 |
 | 编辑态 ↔ 预览态切换 | `EL-WORK-010`~`012`；`REQ-UIEDIT-006` | **无业务问题**：切换频次不能解释任何流失或质量指标；且两态共享同一路由、会污染 `referrer_page` 口径 |
@@ -296,12 +322,15 @@
 | **自动开审 / 回写后自动重审（自动发起的 `#16`）** | `EL-REVIEW-054`；`REQ-REVIEW-001`、`REQ-REVIEW-002` | **不算用户提交**：`EVT_review_submit` 的语义是「**用户提交动作**」（触发时机 = 点 `EL-REVIEW-026` 且二次确认通过），自动发起**不报**该事件；「审核是否真的跑了」由 `EVT_review_verdict` 还原，**漏斗节点 3 不丢**〔2026-10-26〕 |
 | 预览「近似预览」差异清单展开 | `EL-PREVIEW-004`、`006`；`REQ-PREVIEW-003` | **无业务问题**：差异清单是**常驻说明**，展开行为不可解释；若要看「近似渲染是否被误解」，需先有反馈入口，本期无 |
 | 空态 / 加载态 / 错误态的出现 | 各页 `EL-*-0xx` | **已被覆盖**：错误率由各流程的 `blocked` / `failed` 事件与全局 `EVT_auth_forbidden` 覆盖；纯展示态无独立业务问题 |
-| 页面 PV / UV（通用浏览统计） | 全部 `RT-*` | **无业务问题**：漏斗已由 9 个节点事件还原，页面级 PV 无法解释任何转化或流失 |
+| 页面 PV / UV（通用浏览统计） | 全部 `RT-*` | **无业务问题**：漏斗已由 8 个节点事件还原，页面级 PV 无法解释任何转化或流失 |
 | 切换登录方式（分段控件 `EL-AUTH-017` 点击） | `EL-AUTH-017`；`REQ-AUTH-001`（`#72a`） | **无业务问题**：切换本身不是业务结果。「两种登录方式各自是否被真正使用」由**结果事件**回答 —— 账号密码走 `EVT_auth_password_login`（`result=success`）、飞书扫码走 `EVT_auth_scan_success`；且 `#72a` 未启用账号密码登录时 `EL-AUTH-017` **不渲染**（直接呈现飞书扫码），此时根本不存在该点击 |
 | 登录方式下发（`#72a GET /auth/methods`） | `EL-AUTH-017`、`EL-AUTH-021`；`REQ-AUTH-001` | **无用户行为**：服务端下发「可用登录方式 + 开发登录提示文案（`password_login_hint`）」，前端据此决定默认展示与是否渲染分段控件；这是**渲染输入**，不是用户动作 |
 | 大模型选择器展开 / 收起 / 查看不可用原因 | `EL-GLOBAL-009`；`REQ-REVIEW-001`（派生） | **无增量业务问题**：展开不改变 `effective_model`；有业务意义的是「**换了哪个模型**」，已由 `EVT_llm_model_switch` 单事件回答。不可用项**置灰不可选**（`available=false`），其原因是 `#71.items[].reason` 的**清单自带字段**，无需埋点复述 |
 | 审核页「模型标签」`EL-REVIEW-051` 的展示 / 悬停 | `EL-REVIEW-051`；`REQ-REVIEW-001` | **已被覆盖**：标签内容 = `#17` 出参 `model`（服务端口径），展示行为无独立业务问题；「这份判定是谁给的」由 `#17.model` 与 `EVT_llm_model_switch` 互相印证回答（`G-014`，§3.13） |
 
+| **主流程生成入口 `EL-WORK-039` 自身的曝光 / 展示次数** | `EL-WORK-039`；`REQ-GEN-011` | **无业务问题**：入口的可用性由 `EVT_gen_spec_blocked`（**点击但被拦截**，带 `block_reason`）与 `EVT_gen_spec_accepted`（**点击成功触发**）二分还原，两者之和即点击量；纯曝光属页面级 PV（同「页面 PV/UV 不埋」口径）。**首次生成前的合规「暴露」由 `EVT_aiegress_notice_shown`（`trigger_scene=generate_first`）承担**，不另设入口曝光事件〔2026-10-29〕 |
+| **变更清单逐文件明细的展示（`EL-WORK-038`）** | `EL-WORK-038`；`REQ-GEN-012` | **无增量业务问题**：写回量与文件数为 `EVT_patch_writeback_done.create_count` / `replace_count` / `skipped_count` **一次覆盖**；逐文件明细接口未提供（`[缺口-UI-14]`），**不得为新增真实控件发明事件**〔2026-10-29〕 |
+| **目标接入点选择器的展开 / 收起 / 候选悬停（`EL-WORK-041`）** | `EL-WORK-041`；`REQ-GEN-013` | **无业务问题**：业务含义已由**提示条展示**（`EVT_gen_target_ambiguous`）与**用户选定**（`EVT_gen_target_specified`）两条承载；展开/悬停是纯视图态〔2026-10-29 · **正式基线**〕 |
 | **AI 处理过程（`ai.step` 的展示）** | 它是 **SSE 观察面**（服务端推、不落库、刷新后补发），**不是埋点事件** | 需要统计「过程被看了多久」时应另立事件，本期**不埋**〔2026-10-22〕 |
 | **切换对话线程（`EL-WORK-033`）** | 属**实现细节级交互**，其业务含义已由对话业务事件（`EVT_chat_*`）覆盖；单独埋会与 `page_rt` 口径重复 | 本期**不埋**〔2026-10-22〕 |
 | **对话面板收起 / 展开（`EL-WORK-031`/`032`）** | 纯载体开合，**不含业务意图**（收起 ≠ 结束会话） | 本期**不埋**〔2026-10-22〕 |
@@ -367,16 +396,20 @@
 | 对话空消息/超长被拦 | `UI-WORK-001` | 点「发送」但内容为空/超长 | `EVT_chat_send_blocked` | 否（点击但被拦截） |
 | 对话回复结束 | `UI-WORK-001` | SSE 流结束或 60s 超时 | `EVT_chat_reply_terminal` | 否（辅助） |
 | 对话失败重发 | `UI-WORK-001` | 点「重发」 | `EVT_chat_resend` | 否（辅助） |
-| 拖拽落点被拒 | `UI-EDIT-001` | 拖控件到非法落点 | `EVT_edit_drop_rejected` | 否（旁路） |
-| 配置事件面板 | `UI-EDIT-001` | 勾选点击/长按/双击 | `EVT_edit_event_config` | 否（辅助） |
-| 删除控件（id 作废） | `UI-EDIT-001` | 二次确认后删除 | `EVT_edit_element_voided` | 否（辅助：影响 B 线与测试定位） |
-| 提交变更被拦截 | `UI-EDIT-001` | 点「提交变更」但前置不满足 | `EVT_edit_submit_blocked` | 否（点击但被拦截） |
-| **提交编辑变更** | `UI-EDIT-001` | 点「提交变更」且 `#43` 返回 202 | `EVT_edit_submit_success` | **是（★节点 6）** |
-| 生成任务入队 | `UI-EDIT-001`、`UI-PREVIEW-001` | 首次收到 `queued` | `EVT_gen_task_enqueued` | 否（辅助：排队时长） |
-| **代码生成完成** | `UI-PREVIEW-001` | 任务终态 `succeeded`/`failed`/`timeout` | `EVT_gen_task_terminal` | **是（★节点 7）** |
+| 拖拽落点被拒（辅助页） | `UI-EDIT-001` | 拖控件到非法落点 | `EVT_edit_drop_rejected` | 否（旁路 · **辅助路径**） |
+| 配置事件面板 | `UI-EDIT-001` | 勾选点击/长按/双击 | `EVT_edit_event_config` | 否（**辅助路径**） |
+| 删除控件（id 作废） | `UI-EDIT-001` | 二次确认后删除 | `EVT_edit_element_voided` | 否（**辅助路径**：影响 B 线与测试定位） |
+| 提交变更被拦截 | `UI-EDIT-001` | 点「提交变更」但前置不满足 | `EVT_edit_submit_blocked` | 否（点击但被拦截 · **辅助路径**） |
+| 提交编辑变更（**辅助：生成后微调**） | `UI-EDIT-001` | 点「提交变更」且 `#43` 返回 202 | `EVT_edit_submit_success` | 否（**辅助路径 · 辅助再生成**；**原 ★节点 6，2026-10-29 降级**） |
+| **主流程：由 Spec 生成代码（点击成功触发）** | `UI-WORK-001` | 点 `EL-WORK-039` 且前置全部满足 → `#43` 返回 202 | `EVT_gen_spec_accepted` | 否（辅助：**节点 6 的主流程触发点**，`REQ-GEN-011`） |
+| 主流程生成入口被前置拦截 | `UI-WORK-001` | 点 `EL-WORK-039` 但告知未确认 / 外发关闭 / 接入点未指定 / 离线 / 页面未就绪 | `EVT_gen_spec_blocked` | 否（点击但被拦截） |
+| 目标接入点待指定（2026-11-03 转正） | `UI-WORK-001` | `#80` 返回 `ambiguous=true` → 提示条与候选展示 | `EVT_gen_target_ambiguous`〔2026-11-03 转正〕 | 否（**正式基线**，随`#80`） |
+| 用户指定目标接入点（2026-11-03 转正） | `UI-WORK-001` | 选中候选并确认 → 随 `#43.target` 回传 | `EVT_gen_target_specified`〔2026-11-03 转正〕 | 否（**正式基线**，随`#80`） |
+| 生成任务入队 | `UI-WORK-001`（主流程）、`UI-EDIT-001`、`UI-PREVIEW-001` | 首次收到 `queued` | `EVT_gen_task_enqueued` | 否（辅助：排队时长） |
+| **代码生成完成（由 Spec 直出）** | `UI-WORK-001`（主流程入口发起）、`UI-PREVIEW-001`（进度与结果面） | 任务终态 `succeeded`/`failed`/`timeout` | `EVT_gen_task_terminal` | **是（★节点 6）** |
 | 用户停止生成 | `UI-PREVIEW-001`、`UI-WORK-001` | 点「停止生成」 | `EVT_gen_task_canceled` | 否（旁路） |
 | L1 验证失败 | `UI-PREVIEW-001` | `#49` 返回 failed | `EVT_verify_failed` | 否（旁路） |
-| **预览刷新完成** | `UI-PREVIEW-001` | L1 通过且内容已替换 | `EVT_preview_refreshed` | **是（★节点 8）** |
+| **预览刷新完成**（构件静态预览） | `UI-PREVIEW-001` | L1 通过且内容已替换 | `EVT_preview_refreshed` | **是（★节点 7）** |
 | 本地构建结果回传 | `UI-VER-001`、`UI-PREVIEW-001` | `#46` 到达 | `EVT_l2_reported` | 否（仅记录） |
 | 保存能力配置并生成 | `UI-CAP-001` | 点「保存并生成」 | `EVT_cap_save_generated` | 否（辅助） |
 | 取消已生成过的能力 | `UI-CAP-001` | 关开关 + 二次确认 | `EVT_cap_disable_confirmed` | 否（辅助） |
@@ -386,7 +419,7 @@
 | 用户拒绝外发告知 | 同上 | 点「取消」/ `Esc` | `EVT_aiegress_notice_canceled` | 否（★合规） |
 | 关闭 / 重开外发开关 | `UI-CAP-001` | 切换 `EL-CAP-019` | `EVT_aiegress_disabled` / `EVT_aiegress_enabled` | 否（★合规） |
 | 外发关闭致生成不可用 | `UI-EDIT-001`、`UI-WORK-001`、`UI-UPLOAD-001`、`UI-CAP-001` | 入口置灰 / `UPSTREAM_UNAVAILABLE` | `EVT_gen_blocked_by_egress` | 否（★合规） |
-| **交付完成** | `UI-VER-001` | 点「下载工程源码」/「导出 Spec 包」 | `EVT_deliver_done` | **是（★节点 9）** |
+| **交付完成** | `UI-VER-001` | 点「下载工程源码」/「导出 Spec 包」 | `EVT_deliver_done` | **是（★节点 8）** |
 | 整包回滚 | `UI-VER-001` | 二次确认「确认回滚」 | `EVT_version_rolled_back` | 否（辅助：质量反向指标） |
 
 ---
@@ -409,11 +442,12 @@
 | `platform` | string | 固定 `web` | 本期平台侧只有 Web 工作台（桌面浏览器） |
 | `page_rt` | string(24) | `RT-*`（App Spec §3 的 13 条路由） | 事件发生时的路由 |
 | `prev_rt` | string(24) \| null | 上一路由 `RT-*` | **来源页**；无上一页时为 `null`（**不填 `''`**） |
-| `project_id` | string(36) \| null | 系统 UUID（`数据模型 E1`） | **系统生成、非用户内容**，可直接上报；**项目名等用户文本一律不上报**。`UI-AUTH-001` 的场景为 `null` |
+| `project_id` | string(36) \| null | 系统 UUID（`数据模型 E1`） | **系统生成、非用户内容**，可直接上报；**项目名、工程名、工程根路径等用户/本机文本一律不上报**（`REQ-INTAKE-001`、`REQ-GEN-012`）。`UI-AUTH-001` 的场景为 `null` |
 | `dedup_key` | string(64) \| null | 业务幂等键（各事件表内给出） | 用于「同一次用户意图只上报一次」 |
 | `seq` | int \| null | 生成任务序号（`数据模型 E14`） | 仅任务类事件使用 |
+| `source` | string(24) \| null | 生成任务的**触发来源** `enum{spec_generate,edit_submit,preview_regenerate,chat_generate}` | **2026-10-29 新增**：`spec_generate` = 由 `EL-WORK-039` 直出的主流程生成；**漏斗节点 6 只计 `spec_generate`** |
 
-**上报体禁含项（硬约束，测试按此断言）**：`PRD 正文`、`生成的业务代码`、`对话消息正文`、`文件名`、`项目名`、`任何密钥/令牌`、`open_id 明文`、**`登录表单输入（用户名 / 密码，含其长度、掩码与哈希）`**（末项为 2026-10-21 本机落地新增；`REQ-AUTH-005`、`REQ-AUTH-008`、`REQ-TRACK-003`、`AC-AU-05/06`）。
+**上报体禁含项（硬约束，测试按此断言）**：`PRD 正文`、`生成的业务代码`、`对话消息正文`、`文件名`、`项目名`、**`工程根路径 / 工程名文本`**、`任何密钥/令牌`、`open_id 明文`、**`登录表单输入（用户名 / 密码，含其长度、掩码与哈希）`**（末项为 2026-10-21 本机落地新增；`REQ-AUTH-005`、`REQ-AUTH-008`、`REQ-TRACK-003`、`AC-AU-05/06`）。
 
 **上报通道与时机（`REQ-TRACK-003`、`接口契约 #62`）**：
 
@@ -431,7 +465,9 @@
 
 ## 6 漏斗定义
 
-> 依据 `埋点-需求包 §3`：**9 节点**，逐节点绑定事件，必须能**逐节点还原**（`AC-TR-01`）。
+> 依据 `埋点-需求包 §3`：**8 节点**（**9 → 8：移除「编辑」节点 · `K3` · 2026-10-29**），逐节点绑定事件，必须能**逐节点还原**（`AC-TR-01`）。
+> **节点名对照（`baseline/术语表.md`「漏斗（8 节点）」）**：新建项目 → 上传 → 门禁通过 → 拆解 → Spec → **生成** → 预览 → 交付。
+> **辅助路径（不占节点）**：可视化拖拽编辑（**生成后微调**）—— 由 `EL-EDIT-037` 发起的**辅助再生成**、`EVT_edit_*` 全部走辅助观测，**不进本漏斗**。
 
 ```mermaid
 flowchart LR
@@ -439,18 +475,18 @@ flowchart LR
     N2 --> N3["③ 门禁结果产生<br/>EVT_review_verdict<br/>passed / blocked"]
     N3 --> N4["④ 拆解完成<br/>EVT_split_done"]
     N4 --> N5["⑤ Spec 生成完成<br/>EVT_spec_gen_done<br/>overall=succeeded"]
-    N5 --> N6["⑥ 提交编辑变更<br/>EVT_edit_submit_success"]
-    N6 --> N7["⑦ 代码生成完成<br/>EVT_gen_task_terminal<br/>status=succeeded"]
-    N7 --> N8["⑧ 预览刷新完成<br/>EVT_preview_refreshed"]
-    N8 --> N9["⑨ 交付完成<br/>EVT_deliver_done"]
+    N5 --> N6["⑥ 代码生成完成（由 Spec 直出）<br/>EVT_gen_task_terminal<br/>status=succeeded 且 source=spec_generate"]
+    N6 --> N7["⑦ 预览刷新完成<br/>EVT_preview_refreshed"]
+    N7 --> N8["⑧ 交付完成<br/>EVT_deliver_done"]
 
     N2 -. 旁路 .-> B1["解析 partial / failed<br/>EVT_upload_parse_terminal"]
-    N7 -. 旁路 .-> B2["生成 failed / timeout<br/>EVT_gen_task_terminal"]
-    N7 -. 旁路 .-> B3["用户取消<br/>EVT_gen_task_canceled"]
-    N7 -. 旁路 .-> B4["L1 验证失败<br/>EVT_verify_failed"]
-    N6 -. 旁路 .-> B5["外发开关关闭<br/>EVT_gen_blocked_by_egress"]
+    N6 -. 旁路 .-> B2["生成 failed / timeout<br/>EVT_gen_task_terminal"]
+    N6 -. 旁路 .-> B3["用户取消<br/>EVT_gen_task_canceled"]
+    N6 -. 旁路 .-> B4["L1 验证失败<br/>EVT_verify_failed"]
+    N6 -. 旁路 .-> B5["外发开关关闭 / 前置未满足<br/>EVT_gen_blocked_by_egress、EVT_gen_spec_blocked"]
     N5 -. 旁路 .-> B6["Spec 部分成功<br/>EVT_spec_gen_done(partial)"]
     N4 -. 旁路 .-> B7["拆解失败<br/>EVT_split_failed"]
+    N5 -. 辅助 · 不占节点 .-> X1["可视化拖拽编辑（生成后微调）<br/>EVT_edit_submit_success → 辅助再生成"]
 ```
 
 | 节点 | 节点名 | 绑定事件 | 计为「到达」的判定（**可判定**） | 归属 REQ | 备注 |
@@ -460,10 +496,9 @@ flowchart LR
 | 3 | 门禁结果产生 | `EVT_review_verdict` | `verdict ∈ {passed, blocked}`（**阻断也算到达**，计「到达未通过」） | `REQ-REVIEW-001` | `failed` / `superseded` **不计到达** |
 | 4 | 拆解完成 | `EVT_split_done` | 拆解任务成功、**5 个角色包落库之后**上报 | `REQ-SPLIT-001` | 某角色 0 条仍计到达（`empty_role_count` 参数体现） |
 | 5 | Spec 生成完成 | `EVT_spec_gen_done` | `overall=succeeded` | `REQ-SPEC-001` | `partial` **单独统计、不计成功**（`AC-SC-02`） |
-| 6 | 提交编辑变更 | `EVT_edit_submit_success` | 生成任务创建成功、返回 `task_id` + `seq` **之后** | `REQ-UIEDIT-001` | 被拦截走 `EVT_edit_submit_blocked`，不计到达 |
-| 7 | 代码生成完成 | `EVT_gen_task_terminal` | `status=succeeded` | `REQ-GEN-001` | `failed`/`timeout` 走旁路；`canceled` **另有事件**、不计失败 |
-| 8 | 预览刷新 | `EVT_preview_refreshed` | **L1 `passed` 且预览内容已替换之后** | `REQ-PREVIEW-001` | 旧 `seq` 结果不上报（`REQ-GEN-006`） |
-| 9 | 交付完成 | `EVT_deliver_done` | 交付归档完成 / 导出成功**之后** | `REQ-DELIVER-001` | 403 走 `EVT_auth_forbidden`，不计到达 |
+| 6 | **代码生成完成（由 Spec 直出）** | `EVT_gen_task_terminal`（**`status=succeeded` 且 `source=spec_generate`**）；前置观测 = `EVT_gen_spec_accepted` | 由 `EL-WORK-039` 直出的任务**创建成功**（`#43` 202、`task_id`+`seq` 写入之后）**且**该任务终态 `succeeded`（`task_id` 串联） | `REQ-GEN-011`（触发）/ `REQ-GEN-001`（终态） | **由 `EL-EDIT-037` 发起的辅助再生成不计入本节点**（走辅助路径）；`failed`/`timeout` 走旁路；`canceled` **另有事件**、不计失败；点击但被拦截走 `EVT_gen_spec_blocked`，不计到达 |
+| 7 | 预览刷新 | `EVT_preview_refreshed` | **L1 `passed` 且（构件）预览内容已替换之后** | `REQ-PREVIEW-001` | 旧 `seq` 结果不上报（`REQ-GEN-006`）；本期预览 = **构件（XML / Kotlin 片段）静态预览**（`K6`） |
+| 8 | 交付完成 | `EVT_deliver_done` | 交付归档完成 / 导出成功**之后** | `REQ-DELIVER-001` | 403 走 `EVT_auth_forbidden`，不计到达；交付形态 = **工程内改动 + 变更清单 + 一键回滚**（`REQ-GEN-012`） |
 
 **必埋的负向（旁路）事件清单**（`埋点-需求包 §3` 要求，本期一条不少）：
 
@@ -473,8 +508,11 @@ flowchart LR
 | 验证失败 | `EVT_verify_failed` | L1 逐规则结果，**只报失败规则名**；与生成失败**分开**（`REQ-GEN-008`） |
 | 生成取消 | `EVT_gen_task_canceled` | **独立事件**，带取消时 `progress`；**不得与失败合并**（`REQ-GEN-005`） |
 | 外发开关关闭导致生成不可用 | `EVT_gen_blocked_by_egress` | 入口置灰 / `UPSTREAM_UNAVAILABLE` 分支；**证明没有静默降级**（`REQ-AUTH-004`） |
+| **主流程生成被前置拦截** | `EVT_gen_spec_blocked` | 点 `EL-WORK-039` 但告知未确认 / 外发关闭 / `ambiguous=true` 未指定接入点 / 离线 / 页面未就绪；**与 `EVT_gen_spec_accepted` 互斥**（`REQ-GEN-011`）。**本行为「点击被拦」事件（附节 C 归「辅助」），列入本表仅为「必埋负向」齐备性，不计入旁路 8 条**（与 `EVT_gen_blocked_by_egress` 同处理，见本表合计算式） |
+| **写回失败（含越界整批拒绝 / 409 冲突零写入）** | `EVT_patch_writeback_failed` | `#79` 失败分支；`block_reason ∈ {conflict,forbidden_path,id_removal,no_increment,other}`（`REQ-PATCH-001`、`REQ-GEN-012`） |
+| 其余旁路（`AC-TR-01` 计数用） | `EVT_upload_rejected`、`EVT_split_failed`、`EVT_review_loopback_exceeded`、`EVT_intake_failed`、`EVT_edit_drop_rejected`（**辅助路径**） | **负向旁路合计 8 条** = 本表 3 条（验证失败 / 生成取消 / 写回失败）+ 本行 5 条；`EVT_gen_task_terminal` 的 `failed`/`timeout` 分支（**同一事件的旁路分支**，不另计）、`EVT_gen_spec_blocked`（**点击被拦 · 附节 C 归「辅助」**，不另计）与 `EVT_gen_blocked_by_egress`（**★合规**，不另计）**均不重复计入** |
 
-**漏斗口径补充**：`G-001` 的分子分母一律**按用户去重**；`EVT_auth_session_expired` / `EVT_auth_forbidden` 期间的中断**不计入任何节点的到达**。
+**漏斗口径补充**：`G-001` 的分子分母一律**按用户去重**；`EVT_auth_session_expired` / `EVT_auth_forbidden` 期间的中断**不计入任何节点的到达**。**主流程/辅助分离**：节点 6 只统计 `source=spec_generate` 的生成任务；由辅助页（`EL-EDIT-037`）或对话发起的生成**不计入节点 6**（`EVT_gen_spec_accepted` 亦不单独计节点，仅作节点 6 的前置观测）。
 
 ---
 
@@ -521,10 +559,10 @@ flowchart LR
 | `EVT_edit_event_config` | 勾选「点击」+「双击」→ 等草稿保存成功 → 查日志 | 1 条；`event_types=["click","double_click"]`；`action_type=none` | **只报类别，不报动作语义**；1s 内连续勾选 → 只报最终态 1 条；**保存失败 → 不上报**；**全部取消 → 不上报** |
 | `EVT_edit_element_voided` | 删除控件 → 查日志 | 1 条；`element_id` 为归一化形式 | 同一 `element_id` **不得出现第二条**（`void` 单向终态）；**作废 id 之后不得再产生新事件**（`REQ-UIEDIT-009`） |
 | `EVT_edit_submit_blocked` | 未确认告知时点「提交变更」→ 查日志 | 1 条；`block_reason=notice_unconfirmed`；**无 `#43` 请求** | **与 `EVT_edit_submit_success` 互斥**，同一次点击只可能出现其一 |
-| `EVT_edit_submit_success` | 提交变更 → 查日志 | 1 条；`task_id` + `seq` 非空；`widget_type_dist` 合计 = `element_count` | ① 3s 连点 → 只 1 条；② 提交中继续编辑 → **不阻塞**，后续提交各 1 条 |
+| `EVT_edit_submit_success` | 在**辅助页**提交变更 → 查日志 | 1 条；`task_id` + `seq` 非空；`widget_type_dist` 合计 = `element_count` | ① 3s 连点 → 只 1 条；② 提交中继续编辑 → **不阻塞**，后续提交各 1 条；③ **在主流程入口 `EL-WORK-039` 点击 → 不产生本事件**（走 `EVT_gen_spec_accepted`），且**不计入漏斗节点 6** |
 | `EVT_gen_task_enqueued` | 提交后观察 → 查日志 | 1 条/`task_id` | **SSE 重连 → 不重复** |
-| `EVT_gen_task_terminal` | 生成成功 / 失败 / 超时各一次 → 查日志 | 各 1 条；`duration_ms` 与 `started_at/finished_at` 一致；`L2` 耗时**不在**其中 | ① **旧响应后到 → 不上报**（`REQ-GEN-006`）；② **取消 → 走 `EVT_gen_task_canceled`，本事件不出**（互斥）；③ 重复轮询同一终态 → 只 1 条 |
-| `EVT_gen_task_canceled` | 生成中点「停止生成」→ 查日志 | 1 条；`progress ∈ [0,100]`；**无成功/失败事件** | **不得与 `failed` 合并**；非 `running` 时点 → 400，**不报本事件** |
+| `EVT_gen_task_terminal` | 生成成功 / 失败 / 超时各一次 → 查日志 | 各 1 条；`duration_ms` 与 `started_at/finished_at` 一致；`L2` 耗时**不在**其中；`source` 与发起入口一致 | ① **旧响应后到 → 不上报**（`REQ-GEN-006`）；② **取消 → 走 `EVT_gen_task_canceled`，本事件不出**（互斥）；③ 重复轮询同一终态 → 只 1 条 |
+| `EVT_gen_task_canceled` | 生成中点「停止生成」→ 查日志 | 1 条；`progress ∈ [0,100]`；**无成功/失败事件**；主流程与辅助两条路径均报 | **不得与 `failed` 合并**；非 `running` 时点 → 400，**不报本事件** |
 | `EVT_verify_failed` | 构造 L1 不过的产物 → 查日志 | 1 条；`failed_rules` 非空；**无代码内容** | `attempt` 递增 1→3；`n=0` 后停止自动重试（不再产生本事件） |
 | `EVT_preview_refreshed` | L1 通过 → 查日志 | 1 条；`seq` 单调递增 | **旧 `seq` 后到 → 不上报**（写入点位于 `applyPreview` 内部） |
 | `EVT_l2_reported` | 本地构建后回传 → 查日志 | 1 条/`task_id`；**未回传 → 无事件**（不是失败态） | 重复回传 → 只 1 条；**L2 耗时不得进入 L1 指标** |
@@ -536,7 +574,7 @@ flowchart LR
 | `EVT_aiegress_notice_canceled` | 点「取消」/ `Esc` → 查日志 | 1 条；**原动作未执行**（无 `EVT_upload_start` / 无 `EVT_edit_submit_*`） | 连续开关弹窗 → 1s 内只 1 条 |
 | `EVT_aiegress_disabled` | 关闭开关 → 查日志 | 1 条；`egress_enabled=false` | 重复切换同值 → 只 1 条/会话 |
 | `EVT_aiegress_enabled` | 重新开启 → 查日志 | 1 条；`egress_enabled=true` | 同上 |
-| `EVT_gen_blocked_by_egress` | 关闭开关后点「提交变更」→ 查日志 | 1 条；`entry=edit_submit`；`code=UPSTREAM_UNAVAILABLE`；**界面有明确原因**（`AC-AU-09`） | **不得出现「点了没反应」且无本事件**的情况（否则判「静默降级」失败） |
+| `EVT_gen_blocked_by_egress` | 关闭开关后 ① 点 `EL-WORK-039`（主流程）② 点「提交变更」（辅助）→ 各查日志 | 各 1 条；①`entry=spec_generate` ②`entry=edit_submit`；`code=UPSTREAM_UNAVAILABLE`；**界面有明确原因**（`AC-AU-09`） | **不得出现「点了没反应」且无本事件**的情况（否则判「静默降级」失败） |
 | `EVT_deliver_done` | 下载工程源码 → 查日志 | 1 条；`deliver_type=android_source`；**无文件内容** | ① 未生成过 → 按钮置灰，**不报**；② 403 → `EVT_auth_forbidden`；③ 同一版本同一会话重复下载 → 只 1 条 |
 | `EVT_version_rolled_back` | 回滚成功 / 失败各一次 → 查日志 | 各 1 条；`result` 正确 | 回滚失败 → **1 条 `failed`**（不得报成功）；回滚中不自动重试 |
 | `EVT_llm_model_switch` | 在 `EL-GLOBAL-009` 从 A 模型切到 B 模型 → 查日志；随后**立即**跑一次审核，对比 `#17` 出参 `model` 与评分卡 `EL-REVIEW-051` | 恰 1 条；`result=succeeded`、`from_model=A`、`to_model=B`；该次审核的 `#17.model`（= `EL-REVIEW-051` 显示值）**等于 `B`**（**正向印证**，§3.13 注②） | ① 选中的就是当前生效模型 → **不报**；② 选中置灰的 `available=false` 项 → **不可选**，无事件；③ `#71a` 返回 400 → **1 条 `result=failed` 且 `effective_model` 未变**；④ 3s 内重复提交同一 `from→to` → 只 1 条；⑤ 从未切换过模型 → **0 条**（`model` 取服务端默认值） |
@@ -544,13 +582,17 @@ flowchart LR
 | `EVT_intake_click` | 在项目列表点「接入已有工程」入口 → 查上报日志 | 恰 1 条；`entry=header`；**不含工程路径 / 工程名文本** | 同一 `element_id` **300ms** 内连点 → 只 1 条（弹窗打开前上报） |
 | `EVT_intake_done` | 接入一次合法的本机 Android 工程 → 查日志 | 恰 1 条；`counts_items`/`counts_modules`/`counts_dependencies`/`warnings_count` 与 `#73` 返回一致；`project_name_chars` = 工程名长度；`duration_ms ≥ 0`；**不上报工程名与工程根路径文本** | 同目录重复接入（`Idempotency-Key` 重放）→ 同一 `project_id` 只 1 条 |
 | `EVT_intake_failed` | ① 根目录为空；② 未勾选只读授权；③ 填相对路径 / 目录不存在 / 非 Android 工程；④ 服务端 400/404/超时 → 各查日志 | 每次失败 1 条；`error_code` ∈ `{INVALID_ARGUMENT,NOT_FOUND,VERSION_CONFLICT,UPSTREAM_TIMEOUT,UPSTREAM_UNAVAILABLE,NETWORK_ERROR}`、`block_reason` ∈ `{no_root,no_consent,not_android,other}`（前端拦截**不发 `#73`** 也上报）；**不得上报路径 / 工程名文本** | 同一 `Idempotency-Key` 只报 1 次 |
-| `EVT_patch_writeback_done` | 已有成功生成任务的项目点「写回工程」→ 查日志 | 恰 1 条；`create_count`/`replace_count`/`skipped_count` 与 `#79` 出参一致；`duration_ms ≥ 0`；**不上报文件路径文本** | 同一 `patch_id` 重放 → 只 1 条（`dedup_key = patch_id`） |
-| `EVT_patch_writeback_failed` | ① 提交与既有文件冲突的补丁（未带 overwrite）；② 命中硬禁碰 / 越界；③ 替换 `res/layout/*.xml` 丢失既有 `@+id`；④ 无安全增量 → 各查日志 | 每次失败 1 条；`error_code` ∈ `{INVALID_ARGUMENT,VERSION_CONFLICT,UPSTREAM_TIMEOUT,UPSTREAM_UNAVAILABLE,INTERNAL,NETWORK_ERROR}`；`block_reason` ∈ `{conflict,forbidden_path,id_removal,no_increment,other}` | 同一 `Idempotency-Key` 只报 1 次 |
+| `EVT_patch_writeback_done` | ① 主流程（由 `EL-WORK-039` 生成后自动写回）；② 辅助（点「写回工程」）→ 各查日志 | 恰 1 条；`create_count`/`replace_count`/`skipped_count` 与 `#79` 出参一致；`duration_ms ≥ 0`；`trigger` 与实际路径一致；**不上报文件路径与工程名文本** | 同一 `patch_id` 重放 → 只 1 条（`dedup_key = patch_id`） |
+| `EVT_patch_writeback_failed` | ① 提交与既有文件冲突的补丁（未带 overwrite）；② 命中硬禁碰 / 越界；③ 替换 `res/layout/*.xml` 丢失既有 `@+id`；④ 无安全增量 → 各查日志 | 每次失败 1 条；`error_code` ∈ `{INVALID_ARGUMENT,VERSION_CONFLICT,UPSTREAM_TIMEOUT,UPSTREAM_UNAVAILABLE,INTERNAL,NETWORK_ERROR}`；`block_reason` ∈ `{conflict,forbidden_path,id_removal,no_increment,other}`；`trigger` 与实际路径一致；**不上报工程名/路径文本** | 同一 `Idempotency-Key` 只报 1 次 |
+| `EVT_gen_spec_accepted` | 在已生成 Spec 的项目点 `EL-WORK-039`「由 Spec 生成代码」→ 查日志 | 恰 1 条；`task_id` + `seq` 非空；`source=spec_generate`；`input_hash` = 当前 `UI-Spec` 快照哈希；`element_count` = 该页元素数；**不含用户文本** | ① `Idempotency-Key` 重放 → 同一 `task_id` 只 1 条；② 3s 内连点 → 只 1 条；③ **与 `EVT_gen_spec_blocked` 互斥**（同一次点击只出现其一）；④ 由辅助页/对话发起 → **不报本事件** |
+| `EVT_gen_spec_blocked` | ① 未确认告知；② 外发开关关闭；③ `ambiguous=true` 且未指定接入点；④ 离线；⑤ 页面/`UI-Spec` 未就绪 → 各点 `EL-WORK-039` 查日志 | 每次 1 条；`block_reason` ∈ 6 值枚举；**界面有明确原因**；**不发 `#43`**（网络面板可验） | 同一 `block_reason` 1s 内只 1 条；**与 `EVT_gen_spec_accepted` 互斥**；**不得出现「点了没反应」且无本事件**的情况（否则判「静默降级」失败，`AC-AU-09`） |
+| `EVT_gen_target_ambiguous`〔2026-11-03 转正〕 | `#80` 返回 `ambiguous=true` → 提示条与候选渲染 → 查日志 | 恰 1 条；`candidate_count` = `items[]` 条数；`source_kind=imported` | `items=[]` 且 `ambiguous=false`（含 `source_kind=new`）→ **0 条**；同一 `session_id`+`page_id` 3s 内只 1 条；**`#80` 已转正，计入 63** |
+| `EVT_gen_target_specified`〔2026-11-03 转正〕 | ① 选中候选确认；② 选「由你指定」自定义 → 查日志 | 各 1 条；`specified_by` 与实际一致；所选值 **随 `#43.target` 回传**（`EVT_gen_spec_accepted.target` 非空） | 同一 `session_id`+`page_id` 只 1 条（改选不重复）；**未指定 → 0 条**；**`#80` 已转正** |
 ### 7.2 通用验收断言（每条事件都适用，测试可直接写成用例）
 
 | # | 断言 | 判定 |
 |---|---|---|
-| V-01 | 事件名 ∈ 本 Spec 的 **59 条**枚举 | 出现枚举外事件名 = **失败**（含拼写、大小写、下划线不合法） |
+| V-01 | 事件名 ∈ 本 Spec 的 **63 条**枚举（**含随 `#80` 转正的 2 条**；`#80` 已转正（无回退）） | 出现枚举外事件名 = **失败**（含拼写、大小写、下划线不合法） |
 | V-02 | 事件名**小写下划线**、形式为 `EVT_<模块>_<动作>` | 出现 `EVT_PROJ_*` 这类**大写**形式 = **失败** |
 | V-03 | 带 `element_id` 的事件，其值**必须是 `UI-Spec` 中真实存在的 `EL-*`**，且为**归一化大写零填充**形式 | 自造 id / 别名 / 小写形式 = **失败**（`REQ-UIEDIT-009`） |
 | V-04 | **作废（`void`）的 `EL-*` 不得再出现在任何新事件的 `element_id` 中** | 出现 = **失败**（可查 `#41` 台账） |
@@ -578,7 +620,7 @@ flowchart LR
 
 | 验收条目 | 本 Spec 的判定依据 |
 |---|---|
-| `AC-TR-01`（可还原漏斗） | §6 的 9 节点 × 绑定事件；按 `G-001` 口径可逐节点还原 |
+| `AC-TR-01`（可还原漏斗） | §6 的 **8 节点** × 绑定事件；按 `G-001` 口径可逐节点还原（**辅助路径不计入**） |
 | `AC-TR-02`（成功/失败均有事件且带耗时） | `EVT_gen_task_terminal`（成功/失败/超时 + `duration_ms`）、`EVT_verify_failed`（+ `attempt`）、`EVT_split_failed`、`EVT_spec_gen_done` |
 | `AC-AU-08`（首传前显式告知，未确认不能继续） | `EVT_aiegress_notice_shown` + `..._confirmed` + `..._canceled`（**取消后无 `EVT_upload_start`**） |
 | `AC-AU-09`（关闭开关 → 不可用且给原因，不静默降级） | `EVT_aiegress_disabled` + `EVT_gen_blocked_by_egress` |
@@ -641,7 +683,7 @@ flowchart LR
 
 ## 9 需求追溯表
 
-> **逐行对齐 `需求条目表.md` 的 95 条 `REQ-ID`**（与 `platform/requirements/需求追溯矩阵-骨架.md` 的「埋点」列口径一致）。
+> **逐行对齐 `需求条目表.md` 的 98 条 `REQ-ID`**（2026-10-29 去拖拽编辑 +3：`REQ-GEN-011`/`012`/`013`）（与 `platform/requirements/需求追溯矩阵-骨架.md` 的「埋点」列口径一致）。
 > **覆盖状态四态**：`OK`（已覆盖，写出承接事件）/ `GAP`（有缺口，挂编号）/ `N/A`（不适用，写理由）/ `Deferred`（延后，注明由谁覆盖）。**不允许留空。**
 > 骨架中判为 `N/A` 的 4 条（`REQ-BASE-001`、`REQ-NF-002`、`REQ-AUTH-007`、`REQ-DESIGN-001`）**原样保留 `N/A`**。
 
@@ -663,7 +705,7 @@ flowchart LR
 | `REQ-REVIEW-001` | 门禁审核与评分卡（证据/绑定 revision/过期） | `EVT_review_submit`、`EVT_review_verdict`、`EVT_llm_model_switch`（**派生**：`#71`/`#71a`） | OK | ★节点 3；`superseded` 为 `verdict` 取值；**门禁结论随模型而变** → 审核所用模型以 `#17.model`（`EL-REVIEW-051`）为准，`EVT_llm_model_switch` 提供切换时间线与动机，两者互印证（`G-014`，§3.13 注） |
 | `REQ-REVIEW-002` | 回写原 PRD（快照/仅 Accept/删改 0 行） | `EVT_review_writeback` | OK | `deleted_lines`+`modified_lines`=0 可核验 |
 | `REQ-REVIEW-003` | 待澄清清单与逐条作答 | EVT_review_submit_blocked（定义保留） | OK | 文档映射存在，但B9正常disabled路径无可达埋码点；不代表事件落地完成 |
-| `REQ-REVIEW-004` | 假设 Accept/Convert（unset 阻止生成） | `EVT_edit_submit_blocked`（`assumption_unset`） | OK | 落点在生成入口 |
+| `REQ-REVIEW-004` | 假设 Accept/Convert（unset 阻止生成） | `EVT_edit_submit_blocked`（`assumption_unset`，辅助入口）、`EVT_gen_spec_blocked`（主流程入口的前置拦截，`block_reason` 覆盖告知/外发/接入点/离线/页面） | OK | 落点在生成入口（主流程 `EL-WORK-039` / 辅助 `EL-EDIT-037`） |
 | `REQ-REVIEW-005` | 门禁标准维护与版本号 | `EVT_review_standard_saved` | OK | `[拆解缺口-Q3]`（归属）不影响埋点 |
 | `REQ-REVIEW-006` | 一键采纳 = 仅批量勾选 | `EVT_review_writeback`（`accepted_items_count`） | OK | 最终采纳量已覆盖，不单独埋 |
 | `REQ-REVIEW-007` | agent 输出校验与降级 | `EVT_review_verdict`（`malformed`） | OK | 作为参数承载，不新增事件 |
@@ -681,7 +723,7 @@ flowchart LR
 | `REQ-SPEC-003` | 导出 Spec 需鉴权 | `EVT_spec_export`、`EVT_auth_forbidden`（`resource=spec_export`） | OK | 403 走统一事件 |
 | `REQ-SPEC-004` | 需求追溯矩阵（四态 + 孤儿检测） | — | N/A | 展示物，四态由 `#67`（已转基线）给出，**无用户行为需埋点** |
 | `REQ-PROOF-001` | 角色校对与《补充要求清单》 | — | N/A | 校对为自动过程；回流行为由对话事件覆盖 |
-| `REQ-UIEDIT-001` | 拖拽生成代码 + 落点拒收 + 上限 200 | `EVT_edit_drop_rejected`、`EVT_edit_submit_blocked`、`EVT_edit_submit_success` | OK | ★节点 6 |
+| `REQ-UIEDIT-001` | 拖拽生成代码 + 落点拒收 + 上限 200（**辅助：生成后微调**） | `EVT_edit_drop_rejected`、`EVT_edit_submit_blocked`、`EVT_edit_submit_success` | OK | **原 ★节点 6，2026-10-29 起为辅助路径**（「编辑」节点已移除）；三事件全部保留，见 §3.7.1 |
 | `REQ-UIEDIT-002` | 画布手机样式 + 三重选中表达 | — | N/A | 选中/微调为高频本地操作，无业务问题 |
 | `REQ-UIEDIT-003` | 属性面板 11 项 | — | N/A | 本地即时生效、**不触发生成**（`AC-ED-04`）；`[拆解缺口-Q2]` 不影响埋点 |
 | `REQ-UIEDIT-004` | 事件面板 3 项 + 只生成空存根 | `EVT_edit_event_config` | OK | **只报配了哪类事件**；`action_type` 固定 `none` |
@@ -691,7 +733,7 @@ flowchart LR
 | `REQ-UIEDIT-008` | 删除控件 id 作废 | `EVT_edit_element_voided` | OK | 保护 B 线埋点与测试用例定位（`G-013`） |
 | `REQ-UIEDIT-009` | 元素 id 规则与归一化 | 全部带 `element_id` 的事件（**参数级约束**） | OK | 落为 V-03 / V-04 断言，不单独设事件 |
 | `REQ-UIEDIT-010` | 控件面板 37 项 | — | N/A | 本地筛选（不走接口）；控件类型分布已在节点 6 事件覆盖 |
-| `REQ-GEN-001` | 提交变更 → 生成代码（幂等/原子落盘） | `EVT_edit_submit_success`、`EVT_gen_task_enqueued`、`EVT_gen_task_terminal` | OK | ★节点 6 / 7 |
+| `REQ-GEN-001` | 生成代码（幂等/原子落盘）；**主流程触发 = 由 Spec 直出** | `EVT_gen_spec_accepted`（主流程）、`EVT_edit_submit_success`（辅助）、`EVT_gen_task_enqueued`、`EVT_gen_task_terminal`（`source` 区分） | OK | **★节点 6**（由旧节点 7 顺延；`REQ-GEN-011` 为主触发） |
 | `REQ-GEN-002` | L1 五条规则 | `EVT_verify_failed`（`failed_rules`） | OK | 规则名为枚举，**不含代码内容** |
 | `REQ-GEN-003` | L2 本地构建验证 | `EVT_l2_reported` | OK | **仅记录、不计平台指标** |
 | `REQ-GEN-004` | L1 失败重试上限 3 | `EVT_verify_failed`（`attempt`） | OK | `attempt=3` 后停止自动重试 |
@@ -701,7 +743,7 @@ flowchart LR
 | `REQ-GEN-008` | 5min 超时；生成失败 ≠ 验证失败 | `EVT_gen_task_terminal`（`timeout`）、`EVT_verify_failed` | OK | 两条独立路径、两个事件 |
 | `REQ-GEN-009` | 只发源码、不做服务端构建 | `EVT_l2_reported` | OK | **负向约束**：本 Spec **不含**任何构建/编译类事件 |
 | `REQ-GEN-010` | 外部依赖 60s 超时 + 退避 | `EVT_gen_task_terminal`（`error_code`） | OK | 超时以 `error_code` 可辨识 |
-| `REQ-PREVIEW-001` | 预览刷新时机 = L1 完成后 | `EVT_preview_refreshed` | OK | ★节点 8 |
+| `REQ-PREVIEW-001` | 预览刷新时机 = L1 完成后（**构件静态预览**，`K6`） | `EVT_preview_refreshed` | OK | **★节点 7**（旧节点 8 顺延） |
 | `REQ-PREVIEW-002` | 预览六态 | `EVT_gen_task_terminal`、`EVT_verify_failed`、`EVT_preview_refreshed` | OK | 生成失败 / 验证失败两态由两个事件区分 |
 | `REQ-PREVIEW-003` | 网页近似渲染 + 差异清单 | — | N/A | 呈现说明，无用户行为；需先有反馈入口才可度量 `[埋点-Q12]` |
 | `REQ-PREVIEW-004` | 显示序号 + 时间戳 | `EVT_preview_refreshed`（`seq`） | OK | 时间戳随公共参数 `client_ts` 与任务 `finished_at` 上报 |
@@ -719,7 +761,7 @@ flowchart LR
 | `REQ-NF-003` | 并发编辑冲突统一处理 | — | N/A | 本期单用户场景低频；**建议**下一期由全局拦截器统一埋一条「冲突检测」类事件（本期**不定义**、不进事件字典） |
 | `REQ-NF-004` | 列表类全站统一 | — | N/A | 列表类行为不埋（§3.12） |
 | `REQ-NF-005` | 时间口径（UTC；无 1970） | 全部带时间参数的事件 | OK | 落为 V-07 断言 |
-| `REQ-NF-006` | 提交类操作幂等 | `EVT_proj_create_success`、`EVT_upload_start`、`EVT_chat_send_success`、`EVT_edit_submit_success`、`EVT_review_submit`（均带 `dedup_key`） | OK | 3s 内只产生一次副作用 |
+| `REQ-NF-006` | 提交类操作幂等 | `EVT_proj_create_success`、`EVT_upload_start`、`EVT_chat_send_success`、`EVT_edit_submit_success`、**`EVT_gen_spec_accepted`**、`EVT_review_submit`（均带 `dedup_key`） | OK | 3s 内只产生一次副作用 |
 | `REQ-NF-007` | 多步写入原子性 | `EVT_gen_task_terminal`（`failed`） | OK | 中断以失败态可观测，无半成品事件 |
 | `REQ-NF-008` | 平台 API 约定 | — | N/A | 技术约定，无用户行为 |
 | `REQ-AUTH-001` | 飞书扫码登录 + 401 处理 | `EVT_auth_scan_success`、`EVT_auth_login_failed`、`EVT_auth_session_expired`、`EVT_auth_logout`、`EVT_auth_password_login`（**2026-10-21 本机落地 · 阶段替换**） | OK | 依赖 `#63`~`#66`（`[缺口-API-01]` **已闭合**，2026-10-21 转基线）→ `[埋点-Q9]` 已闭合；另：本地账号密码登录（`#72`/`#72a`）属**阶段替换**（原文要求「不另建用户名/密码」），生产必须关闭 → `[埋点-Q13]`；本地登录下的 `user_hash` 口径**未定** → `[埋点-Q14]` |
@@ -730,23 +772,26 @@ flowchart LR
 | `REQ-AUTH-006` | 项目隔离（`project_id` 强制过滤） | 全部带 `project_id` 的事件 | OK | 登录类事件 `project_id=null`，已在 §5 显式列举 |
 | `REQ-AUTH-007` | 数字资产安全增强策略本期不做 | — | N/A | 骨架已判 `N/A` |
 | `REQ-AUTH-008` | 个人数据最小化与清理 | `EVT_proj_deleted` | OK | 保留期与清理口径**已转正式**（§8.2；明细 180 天 / 随项目 30 天物理清除 / 随账号注销删除）；`deleted_at` 为清理时间基准（`[拆解缺口-Q7]`、`[埋点-Q4]` **已闭合**） |
-| `REQ-DELIVER-001` | 交付归档与导出（需鉴权） | `EVT_deliver_done`、`EVT_auth_forbidden`（`resource=deliverable`） | OK | ★节点 9 |
+| `REQ-DELIVER-001` | 交付归档与导出（需鉴权） | `EVT_deliver_done`、`EVT_auth_forbidden`（`resource=deliverable`） | OK | **★节点 8**（旧节点 9 顺延） |
 | `REQ-DELIVER-002` | 版本归档页（时间线/diff） | — | N/A | 展示型；版本号随交付事件上报 |
 | `REQ-DELIVER-003` | 整包回滚（全成或全不成） | `EVT_version_rolled_back` | OK | `result=succeeded/failed` 二分 |
 | `REQ-DELIVER-004` | 回环产物归档不物理删除 | — | N/A | 服务端行为，无用户动作 |
 | `REQ-DESIGN-001` | 设计参考（UE） | — | N/A | 骨架已判 `N/A`（`[拆解缺口-Q10]`） |
-| `REQ-TRACK-001` | 平台自身埋点：主流程漏斗 9 节点 | §6 的 9 个节点事件（+ 旁路 9 条） | OK | **本 Spec 主体**；回填 `App-Spec §10` 见附节 A |
+| `REQ-TRACK-001` | 平台自身埋点：**主流程漏斗 8 节点** | §6 的 **8 个节点事件**（+ 旁路 8 条；辅助路径不计入） | OK | **本 Spec 主体**；回填 `App-Spec §10` 见附节 A（**`App-Spec §10.1` 已随动至 36 行 / 8 节点 / 63 事件** → 见 §10 `[埋点-Q18]`〔✅ 已闭合〕） |
 | `REQ-TRACK-002` | 生成成功/失败均有事件且带耗时 | `EVT_gen_task_terminal`、`EVT_verify_failed`、`EVT_preview_refreshed`（`l1_duration_ms`）、`EVT_l2_reported` | OK | `AC-TR-02`；**L1/L2 分层** |
 | `REQ-TRACK-003` | 批量上报 + 失败静默重试 + 不含正文 | 全部事件的上报通道（§5） | OK | 落为 V-09 / V-10 / V-11 断言 |
 
 | `REQ-INTAKE-001` | 接入已有工程 | `EVT_intake_click`、`EVT_intake_done`、`EVT_intake_failed` | OK | 辅助事件（**非漏斗节点**）；参数不含路径 / 工程名文本 |
 | `REQ-INTAKE-002` | 工程约束（查看 / 编辑） | — | N/A | 无独立业务问题，**显式不埋** |
 | `REQ-INTAKE-003` | 约束注入下游 | — | N/A | 服务端提示词层，客户端不可观测，**显式不埋** |
-| `REQ-PATCH-001` | 增量写回（应用 / 记录 / 回滚） | `EVT_patch_writeback_done`、`EVT_patch_writeback_failed` | OK | 辅助 + 旁路；**不上报文件路径文本** |
-**覆盖率小结（本表口径，机核）**：**95 行**已逐行对齐 = `OK` **70 条** + `N/A` **25 条** + `GAP` **0 条** + `Deferred` **0 条**；**无空白行**（2026-10-29 二期 `REQ-PATCH-001` 转正）。
+| `REQ-PATCH-001` | 增量写回（应用 / 记录 / 回滚） | `EVT_patch_writeback_done`、`EVT_patch_writeback_failed`（`trigger` 区分主流程自动写回 / 手动） | OK | 辅助 + 旁路；**不上报文件路径与工程名文本**；与 `REQ-GEN-012` 为**同一件事的两个环节** |
+| `REQ-GEN-011` | **主流程：由 Spec 直出代码**（不经画布 · S7 核心节点） | `EVT_gen_spec_accepted`（主流程任务创建）、`EVT_gen_spec_blocked`（点击被拦）、`EVT_gen_task_terminal`（`source=spec_generate`，**★节点 6**） | OK | **★节点 6 的触发点**；`K1`/`K2`/`K5`；**本轮新增**（2026-10-29）；`G-015` |
+| `REQ-GEN-012` | **写回所选（已接入）工程根**（brownfield 默认；交付 = 工程内改动 + 变更清单 + 一键回滚） | `EVT_patch_writeback_done`、`EVT_patch_writeback_failed`（`trigger=auto_after_generate`） | OK | **复用** `REQ-PATCH-001` 的写回事件（同环节）+ `trigger` 参数区分；**不上报工程路径 / 工程名文本**；`K4`；**本轮新增**（2026-10-29） |
+| `REQ-GEN-013` | **目标接入点识别**（`#80`，2026-11-03 转正） | `EVT_gen_target_ambiguous`〔2026-11-03 转正〕、`EVT_gen_target_specified`〔2026-11-03 转正〕 | **OK**〔2026-11-03 转正〕 | （`#80` 已转正；无回退）；`K5`；见 `[埋点-Q16]` / `[拆解缺口-Q17]`；**本轮新增**（2026-10-29） |
+**覆盖率小结（本表口径，机核）**：**98 行**已逐行对齐 = `OK` **73 条** + `N/A` **25 条** + `GAP` **0 条** + `Deferred` **0 条**；**无空白行**（2026-10-29 去拖拽编辑 +3：`REQ-GEN-011`/`012` → `OK`、`REQ-GEN-013` → `OK`）。
 `N/A` 的 25 条中，4 条沿用骨架判定（`REQ-BASE-001`、`REQ-NF-002`、`REQ-AUTH-007`、`REQ-DESIGN-001`），其余 21 条的理由逐条写在备注列（汇总口径见 §3.12）。
 原两条 `GAP`（`REQ-SPLIT-002`、`REQ-AUTH-008`）已随 `[拆解缺口-Q6]`/`[拆解缺口-Q7]` 的裁决**于 2026-10-21 复核为 `OK`**（`P0-补口裁决单` §4），**`GAP` 归零**；`[埋点-Q1]`/`[埋点-Q2]` 仍为开放项，但**不影响本表判定**。
-**本表行数不因 2026-10-21 本机落地扩展而变化**：新增的 2 条事件分别承接到**既有** `REQ-AUTH-001`（阶段替换）与 `REQ-REVIEW-001`（派生），**未新增 `REQ-ID`**，故本轮为 **95 行**（`OK` 70 / `N/A` 25 / `GAP` 0 / `Deferred` 0；2026-10-29 二期 `REQ-PATCH-001` 转正、工程接入 +3）。
+**本表行数随 `REQ-ID` 增减而变（仅随上游）**：2026-10-29 去拖拽编辑 +3 行 → **98 行**（与 `需求条目表.md` 的 98 条一致；（`#80` 已转正；无回退））。**本表行数不因 2026-10-21 本机落地扩展而变化**：新增的 2 条事件分别承接到**既有** `REQ-AUTH-001`（阶段替换）与 `REQ-REVIEW-001`（派生），**未新增 `REQ-ID`**，故**截至二期（`REQ-PATCH-001` 转正、工程接入 +3）结束时为 95 行**（`OK` 70 / `N/A` 25 / `GAP` 0 / `Deferred` 0），**其后 2026-10-29 去拖拽编辑轮 +3 即为现行 98 行**。
 
 ---
 
@@ -770,6 +815,9 @@ flowchart LR
 | `[埋点-Q12]` | **「人工修订率」类二阶质量指标本期不埋**（知识库编辑 / 接口维护 / 属性调整 / 近似预览误解） | P2 | §3.12 的 N/A 条目 | **建议：列入下一期「生成质量」专项**，届时统一设计一组质量反向指标，避免本期指标重复与噪音 | 待 PM |
 | `[埋点-Q13]` | **本地账号密码登录（`#72`）与 `REQ-AUTH-001`「登录方式 = 飞书扫码登录、**不另建用户名/密码**」直接冲突**：该登录方式是否长期保留？生产关闭后 `EVT_auth_password_login` 是否随之作废？ | P1 | `EVT_auth_password_login`；`REQ-AUTH-001` | **建议：保留事件定义、随能力开关停用上报**（不删定义，避免历史数据断档）：`#72a` 未启用时 `EL-AUTH-017`/`EL-AUTH-020` 不渲染 → 事件自然为 0，无需额外分支。**需 PM 明确「生产是否保留本地登录」并同步 `REQ-AUTH-001` 的表述** | 待 PM（本机开发阶段扩展，未过门禁） |
 | `[埋点-Q14]` | **本地账号密码登录下 `user_hash` 口径缺失**：`user_hash` 原定义为服务端由飞书 `open_id` 做 `HMAC-SHA256`，本地登录**没有 `open_id`** → 登录后全部事件的**用户级去重**（`G-001` 分母、`G-010`）无落点 | P1 | 全部事件的 `user_hash`；`G-001`、`G-010` | **建议**：服务端对本地账号 `user_id` 用**同一 salt 的同一函数**做 `HMAC-SHA256`，前端仍不上报任何账号标识（不得下发盐、不得落明文）。**同时需明确**：同一人若两种方式都登录过，其 `user_hash` 是否应相同 —— 不同则会被算作两个用户，**直接抬高漏斗分母** | 待 PM / 接口角色（`#72` 为开发阶段扩展） |
+| `[埋点-Q16]` | **`#80`（目标接入点识别）已于 2026-11-03 转正** → `REQ-GEN-013` 与 `EVT_gen_target_ambiguous` / `EVT_gen_target_specified` **已落地**（不再挂起）。 | P1 | `EVT_gen_target_ambiguous`〔2026-11-03 转正〕、`EVT_gen_target_specified`〔2026-11-03 转正〕、`G-015`、`REQ-GEN-013` | **状态**：本 Spec 以「2026-11-03 转正」落两条事件，不删、不替换；`REQ-GEN-013` 转 `OK`（`Deferred` 0），事件总数保持 **63**（`#80` 已转正，无回退） | ✅ **已闭合**（2026-11-03） |
+| `[埋点-Q17]` | **主流程生成入口（`EL-WORK-039`）是否需要一条独立的「入口曝光」事件？** 本轮以「点击即二分（`EVT_gen_spec_accepted` / `EVT_gen_spec_blocked`）+ 首次生成前的合规暴露 `EVT_aiegress_notice_shown`（`trigger_scene=generate_first`）」承担 | P2 | `EL-WORK-039`；`REQ-GEN-011`；`G-015` | **建议：不设**（与「页面 PV / UV 不埋」同口径，见 §3.12）；若产品需要「入口可见但从未点击」的比例，属**页面级可用性研究**，建议下一期与「生成质量」专项一并设计（`[埋点-Q12]`） | 待 PM |
+| `[埋点-Q18]` | **`App-Spec §10.1` 曾记「漏斗 9 节点 / 32 行」**（其 `[缺口-APP-06]` 明写「待 `埋点-Spec` 重同步后本 Spec 再随动」）—— 本 Spec 已完成 8 节点重同步；**`App-Spec` 现已随动至 36 行 / 8 节点 / 63 事件**（`App-Spec v0.2.19a` 已销 `[缺口-APP-06]`），`测试-Spec` 亦已 63 / 8 节点 | P1 | 跨文档一致性（`App-Spec §10.1` 36 行 / 8 节点 / 63 事件、`测试-Spec` 用例事件名） | **已执行**：`App-Spec §10/§10.1` 与 `测试-Spec` 的随动（含新增 4 条事件在 `App-Spec §10.1` 的埋码点行）已完成；**本 Spec 不代改其他 Spec**（硬约束） | ✅ **已闭合**（2026-10-29） |
 | `[埋点-Q15]` | **是否给 `EVT_review_verdict` 增 `model` 参数**（让埋点侧自带「本次判定所用模型」，免去与服务端 `#17` 做时间线 join）？ | P2 | `EVT_review_verdict`；`G-014` | **建议：下一轮门禁前随基线一起加**（与 `#17.model` **同源同值**，**不得由前端推断**）；**本期不改既有事件**，`G-014` 暂以 `#17.model` + `EVT_llm_model_switch` 时间线印证（§3.13 注②③） | 待 PM / 接口角色 |
 
 **既有缺口引用（原样带出、不重复裁决；状态按 `P0-补口裁决单` 于 2026-10-21 复核，**全部已闭合**）**：`[拆解缺口-Q6]`（深度无落点 → **已闭合**：项目级 `E1.depth`）、`[拆解缺口-Q7]`（埋点无实体承载 → **已闭合**：只走 `#62`、不留业务库）、`[拆解缺口-Q8]`（`AC-ED-18/19` 编号复用 → **已闭合**：已重编为 `AC-ED-21`/`AC-ED-22`）、`[拆解缺口-Q12]`（埋点阶段表述 → **已闭合**：统一为 UI→接口→App→埋点→测试）、`[缺口-API-01]`（鉴权链路无接口 → **已闭合**：`#63`~`#66` 转基线）、`[缺口-API-03]`（`loopback_round` 缺字段 → **已闭合**：`#6` 出参提供）、`[缺口-API-05]`（`#58` 冲突结构未定义 → **已闭合**：`conflicts[]`/`alignment_table[]` 转基线）、`[缺口-API-06]`（外发开关无落点，P0 合规 → **已闭合**：`#68` 转基线）、`[缺口-UI-06]`（= `[缺口-API-06]` → **已闭合**）、**`[冲突-UI-02]`**（门禁标准配置页独立与否 → **已裁决：按现状无独立页**，落为 `RT-REVIEW-001` 的抽屉锚点 `?drawer=gate-standard`；`EVT_review_standard_saved` 的页面列保持 `RT-REVIEW-001` / `UI-REVIEW-001`，13 页与 `page_rt` 枚举**不变**）。
@@ -779,7 +827,7 @@ flowchart LR
 
 ### B9 本轮边界
 
-事件词典仍54条，未新增/删除/重排事件。默认自动开审、changed且核验成功的自动复审均不报 EVT_review_submit；正常手动提交仅 canSubmit=true（含!documentError）后可达；初次#17→#8与写回后均比较服务端返回version/content_hash，不由浏览器算摘要。canWrite也要求!documentError；superseded重新审核disabled=!canSubmit，stale文档错禁用。原文、supplement、answer、假设内容、content_hash 不增设事件参数；深链只有 sector/doc 标识，不带正文。当前 submit_blocked 定义与可达实现有缺口，详见 B9，计数不等于落地率。
+事件词典**当时 54 条**〔**B9 轮 · 历史留档**；现行 **63 条**〕，未新增/删除/重排事件。默认自动开审、changed且核验成功的自动复审均不报 EVT_review_submit；正常手动提交仅 canSubmit=true（含!documentError）后可达；初次#17→#8与写回后均比较服务端返回version/content_hash，不由浏览器算摘要。canWrite也要求!documentError；superseded重新审核disabled=!canSubmit，stale文档错禁用。原文、supplement、answer、假设内容、content_hash 不增设事件参数；深链只有 sector/doc 标识，不带正文。当前 submit_blocked 定义与可达实现有缺口，详见 B9，计数不等于落地率。
 ## 11 变更记录
 
 | 版本 | 日期 | 变更内容 | 变更人 |
@@ -798,6 +846,7 @@ flowchart LR
 | **v0.1.9** | **2026-10-26** | **B9 审核补充与复审闭环（按代码同步）**：正文/深链/状态8元素显式不埋；#23→GET8核验后才发writeback；disabled无点击，submit_blocked当前缺可达埋码点如实登记；事件54、漏斗9不变，EL435；详见 `reviews/B9-审核补充与复审闭环-20261026.md`。不代表实机/真实模型验收完成，不追加历史一致性报告 **同版增量补正**：#8摘要由服务端生成；初次#17→#8版本/hash核验，documentError禁用写回与手动复审；same-suggestion非空且正文包含才继承；KB历史绑定当前document_id。主Agent已跑b2 25/25、b3 21/21、b4 18/18；新脚本首轮47/47，门槛强化后46/47（01静态匹配待测试agent修订/复跑），不声称最终47通过。 | 文档同步 |
 | **v0.1.11** | **2026-10-29** | **「第 27 轮一致性校对（`§㊸`）销项」**：① §9 追溯表 **91 → 94 行**（+`REQ-INTAKE-001`/`002`/`003`；覆盖率小结 `OK` 68→**69**、`N/A` 23→**25**）；② §2 V-01 与 §3 计数核对、附节 C 沿革与 §0 处的 `54` **全量改为 57**（§3.2 = 5 → **8**、辅助 32 → **35**）；③ 沿革串补 `435`/`447`（原止于 427）。**事件名与编号零重排** | 埋点角色（`§㊸` 销项） |
 | **v0.1.12** | **2026-10-29** | **「工程接入（二期 · 增量写回）」**：① §3.7 新增 2 条事件 `EVT_patch_writeback_done`（写回成功，含 `create_count`/`replace_count`/`skipped_count`/`duration_ms`，**不上报路径文本**）/ `EVT_patch_writeback_failed`（写回失败，`error_code` + `block_reason`：`conflict`/`forbidden_path`/`id_removal`/`no_increment`/`other`）；② **事件总数 57 → 59**，附节 C 同步（2 行）；③ §9 追溯表 **94 → 95 行**（+`REQ-PATCH-001`，`OK` 69→**70**）；④ §1 关联文档 `UI-Spec` 元素 **447 → 450**、`接口-Spec` **78 → 82**。**未改任何既有 `EVT_*` 编号** | 埋点角色（工程接入二期） |
+| **v0.1.13** | **2026-10-29** | **「去拖拽编辑 · Spec 直出代码」S5 埋点 Spec 重同步**（决策 `K1`~`K6` 全按推荐）：① **主流程漏斗 9 → 8 节点** —— 移除「编辑」节点，节点 6/7/8 = **生成 / 预览 / 交付**（`§6` 图与判定表同步：节点 6 改绑 `EVT_gen_task_terminal`（`status=succeeded` 且 `source=spec_generate`），前置观测 = `EVT_gen_spec_accepted`）；② **5 条 `EVT_edit_*` 逐条复核后全部保留、降为「辅助路径」**（`K3`=B：52 个 `EL-EDIT-*` 实现保留为「生成后微调」辅助页）—— **「不再可能触发」的事件 = 0 条**（逐条依据见新增 **§3.7.1**）；其中 **`EVT_edit_submit_success` 由 ★节点 6 降为辅助路径**（事件名/参数/去重/上报时机**一律未改**）；③ **新增 4 条事件**：`EVT_gen_spec_accepted`（主流程生成任务创建）、`EVT_gen_spec_blocked`（点击但被前置拦截，6 值 `block_reason`）—— 二者互斥、二分还原入口点击；`EVT_gen_target_ambiguous` / `EVT_gen_target_specified`〔**草案 · 待批**，随草案 `#80`〕；**事件总数 59 → 63**（含随 `#80` 转正的 2 条；不批准 → **61**），**附节 C 同步（+4 行）**；④ **参数级变更（只增不改口径）**：`EVT_gen_task_enqueued` / `EVT_gen_task_terminal` 增 **`source`**（新取值 `spec_generate`；**节点 6 只计 `spec_generate`**）、`EVT_gen_blocked_by_egress.entry` 增 `spec_generate`、`EVT_patch_writeback_done` / `failed` 增 **`trigger`**；⑤ **`REQ-GEN-012`（写回所选工程根）复用写回事件并承接**（与 `REQ-PATCH-001` = 同一件事的两个环节）；⑥ **§2 新增 `G-015`**（主流程生成入口的点击/拦截与目标接入点），`G-001` 改 8 节点、`G-002` 增 `source` 分组；⑦ **§4 场景清单 52 → 56 行**（5 条 `EVT_edit_*` 改标辅助路径 + 4 条新增）；⑧ **§7.1 逐事件验证 +4 行**（59 → 63）、**§7.2 `V-01` 59 → 63**、**§7.4 `AC-TR-01` 改 8 节点**；⑨ **§9 追溯表 95 → 98 行**（`+REQ-GEN-011`/`012`/`013`；`OK` 70→**72**、`Deferred` 0→**1**）；⑩ 关联文档 `UI-Spec` **450 → 453**、`接口-Spec` **82 + 草案 `#80`**（待批、不计入）；⑪ **§10 新增 `[埋点-Q16]`（`#80` 已转正 → 两条草案事件去留 + 回退数值 `63 → 61` / `98 → 97`）、`[埋点-Q17]`（入口曝光是否单设）、`[埋点-Q18]`（`App-Spec §10.1` / `测试-Spec` 随动）**；⑫ **既有 `EVT_*` / `G-0xx` / 节号编号零重排**（新事件行落既有 `§3.7`，不新开节号）。依据：`主流程变更-去拖拽编辑-Spec直出代码-需求提案-v0.1.md` + `reviews/变更回写记录-去拖拽编辑-20261029.md`（第 7 步） | 埋点角色（S5 重同步） |
 
 ## 附节 A ★ `App-Spec §10` 埋码点回填对照表（**25 个编号行 + 1 行补充映射**）
 
@@ -818,16 +867,16 @@ flowchart LR
 | 8 | `EVT_REVIEW_WRITEBACK` | **`EVT_review_writeback`** | `RT-REVIEW-001` | `EL-REVIEW-031`、`EL-REVIEW-028` | `#23`→GET8正文回读核验成功分支 | 命名规范化；新增 `accepted_items_count` |
 | 9 | `EVT_SPLIT_DONE` | **`EVT_split_done`** | `RT-SPLIT-001` / `UI-SPLIT-001` | `EL-SPLIT-008`~`010` | `SplitStore.onSuccess()`（`#29` 返回、5 包落库之后） | 命名规范化；★节点 4；新增 `empty_role_count` |
 | 10 | `EVT_SPEC_GEN_DONE` | **`EVT_spec_gen_done`** | `RT-SPEC-001` / `UI-SPEC-001` | `EL-SPEC-013`、`EL-SPEC-003`~`007`、`EL-SPEC-014` | `SpecStore.onGenerateResponse(result)` | 命名规范化；★节点 5；`duration_ms_by_role` 五键 |
-| 11 | `EVT_EDIT_SYNC_SUBMIT` | **`EVT_edit_submit_success`** | `RT-EDIT-001` / `UI-EDIT-001` | `EL-EDIT-037` | `EditorStore.submitChanges()` 的 `onAccepted(task_id, seq)`（`#43` 202） | **改名**（原「SYNC」表述与「提交变更」语义不符）；★节点 6 |
+| 11 | `EVT_EDIT_SYNC_SUBMIT` | **`EVT_edit_submit_success`** | `RT-EDIT-001` / `UI-EDIT-001` | `EL-EDIT-037` | `EditorStore.submitChanges()` 的 `onAccepted(task_id, seq)`（`#43` 202） | **改名**（原「SYNC」表述与「提交变更」语义不符）；**原 ★节点 6，2026-10-29 起为辅助路径** |
 | 12 | `EVT_EDIT_DROP_REJECTED` | **`EVT_edit_drop_rejected`** | `RT-EDIT-001` | `EL-EDIT-012`、`EL-EDIT-013`、`EL-EDIT-004` | 落点校验失败分支 / `#36` 的 400 分支 | 命名规范化；`reject_reason` 四值枚举 |
 | 13 | `EVT_EDIT_EVENT_CONFIG` | **`EVT_edit_event_config`** | `RT-EDIT-001` | `EL-EDIT-032`~`034`、`EL-EDIT-035` | `#42` 成功回调〔2026-10-22 由 `#40` 改挂〕 | 命名规范化；`action_type` **固定 `none`** |
 | 14 | `EVT_GEN_TASK_ENQUEUED` | **`EVT_gen_task_enqueued`** | `RT-EDIT-001` / `RT-PREVIEW-001` | `EL-EDIT-037`、`EL-PREVIEW-009` | `TaskHub.onTaskEvent` 的 `queued` 分支（首次） | 命名规范化；`task_id` 去重 |
-| 15 | `EVT_GEN_TASK_TERMINAL` | **`EVT_gen_task_terminal`** | `RT-EDIT-001` / `RT-PREVIEW-001` | `EL-PREVIEW-009`、`EL-PREVIEW-011` | `TaskHub.onTaskEvent(terminal)`（`reportedTaskIds` 判定首次） | 命名规范化；★节点 7；**L1 计入、L2 不计** |
+| 15 | `EVT_GEN_TASK_TERMINAL` | **`EVT_gen_task_terminal`** | `RT-EDIT-001` / `RT-PREVIEW-001` | `EL-PREVIEW-009`、`EL-PREVIEW-011` | `TaskHub.onTaskEvent(terminal)`（`reportedTaskIds` 判定首次） | 命名规范化；**★节点 6**（2026-10-29 由旧节点 7 顺延）；**L1 计入、L2 不计** |
 | 16 | `EVT_GEN_TASK_CANCELED` | **`EVT_gen_task_canceled`** | `RT-PREVIEW-001` / `UI-PREVIEW-001` | `EL-PREVIEW-015`、`EL-PREVIEW-016`、`EL-WORK-023` | `#44a` 成功回调（**互斥枚举分支**） | 命名规范化；**独立事件、不与失败合并** |
-| 17 | `EVT_PREVIEW_REFRESHED` | **`EVT_preview_refreshed`** | `RT-PREVIEW-001` / `UI-PREVIEW-001` | `EL-PREVIEW-002`、`EL-PREVIEW-003` | `PreviewStore.applyPreview(seq)` **内部**（内容替换之后） | 命名规范化；★节点 8；`seq` 单调去重 |
+| 17 | `EVT_PREVIEW_REFRESHED` | **`EVT_preview_refreshed`** | `RT-PREVIEW-001` / `UI-PREVIEW-001` | `EL-PREVIEW-002`、`EL-PREVIEW-003` | `PreviewStore.applyPreview(seq)` **内部**（内容替换之后） | 命名规范化；**★节点 7**（2026-10-29 由旧节点 8 顺延）；`seq` 单调去重 |
 | 18 | `EVT_VERIFY_FAILED` | **`EVT_verify_failed`** | `RT-PREVIEW-001` | `EL-PREVIEW-012`、`EL-PREVIEW-010` | `VerifyStore` 失败回调（`#49` 终态） | 命名规范化；**只报失败规则名** |
 | 19 | `EVT_L2_REPORTED` | **`EVT_l2_reported`** | `RT-VER-001` / `RT-PREVIEW-001` | `EL-VER-028`、`EL-PREVIEW-014` | `TaskHub` 收到 `#46` 后的回调 | 命名规范化；**仅记录、不计指标** |
-| 20 | `EVT_DELIVER_DONE` | **`EVT_deliver_done`** | `RT-VER-001` / `UI-VER-001` | `EL-VER-025`、`EL-VER-027`、`EL-VER-026` | `DeliverStore.onDownloaded()`（下载触发之后） | 命名规范化；★节点 9 |
+| 20 | `EVT_DELIVER_DONE` | **`EVT_deliver_done`** | `RT-VER-001` / `UI-VER-001` | `EL-VER-025`、`EL-VER-027`、`EL-VER-026` | `DeliverStore.onDownloaded()`（下载触发之后） | 命名规范化；**★节点 8**（2026-10-29 由旧节点 9 顺延） |
 | 21 | `EVT_DELIVER_FORBIDDEN` | **`EVT_auth_forbidden`**（`resource=deliverable`） | `RT-VER-001` | `EL-VER-025`、`EL-VER-027` | 全局响应拦截器 403 分支 | **合并**：403 是同一全局路径、同一文案，分散成多事件会让「越权率」需 union 多个事件 |
 | 22 | `EVT_AI_EGRESS_NOTICE_SHOWN` | **`EVT_aiegress_notice_shown`** | `RT-UPLOAD-001` / `RT-EDIT-001` / `RT-WORK-001` | `EL-GLOBAL-004`、`005`、`006` | 弹窗组件 `CMP-004` 的 `onShow`（渲染之后） | 命名规范化；★合规证据链第 1 环 |
 | 23 | `EVT_AI_EGRESS_NOTICE_CONFIRMED` | **`EVT_aiegress_notice_confirmed`** | 同上 | `EL-GLOBAL-007` | `#68` PUT 成功回调（**原动作继续之前**） | 命名规范化；**不上报 PRD 正文** |
@@ -837,6 +886,7 @@ flowchart LR
 
 **回填后的三处一致性（供校对 Agent 比对）**：`埋点-Spec` 的事件名 ↔ `App-Spec §10.1` 的埋码位置 ↔ `测试-Spec` 的用例事件名
 —— 本表即三者的**对照基准**（`需求追溯矩阵 §三-4`），事件名总表见 **附节 C**。
+> **遗留待校（非本轮引入）**：本表 #8 `EVT_review_writeback` 的元素列（`EL-REVIEW-028`）与 §3.4 事件字典（`EL-REVIEW-031`、`EL-REVIEW-061`）不一致，**随 S6 跨文档校对一并核正**（`V-03`）；本轮依评审 F7 仅**声明**、不改值。
 
 ---
 
@@ -865,7 +915,7 @@ flowchart LR
 |---|---|---|
 | ① | **B 线不经事件面板配置**：事件面板只生成**空回调存根**（`action_type` 本期仅 `none`），B 线埋点由**方案 + 代码**两条路径落地 | 项目约束 4；`§F14 补充块⑩`（`D-Q13`） |
 | ② | **B 线事件不进平台埋点库**：只写进用户工程，**不得**经 `#62` 上报到平台 | 见 `[埋点-Q10]`；避免与 A 线事件名撞名 |
-| ③ | **B 线的 `element_id` 与 A 线的 `EL-*` 是两套命名空间**：A 线用**平台自己的** **450** 个元素（2026-10-29 工程接入 +12；B9 +8）（沿革：412 → 419〔2026-10-21 本机落地〕→ 424〔2026-10-22 对话面板〕→ **425**〔2026-10-23 审核页写回入口 `EL-REVIEW-052`〕→ **426**〔2026-10-26 审核页未通过项补充信息 `EL-REVIEW-053`〕→ **427**〔2026-10-26 审核流程优化 `EL-REVIEW-054`〕→ **435**〔2026-10-26 B9 +8〕→ **447**〔2026-10-29 工程接入 +12〕→ **450**〔2026-10-29 二期写回 +3〕）；B 线用**用户项目**的 `EL-*`（`数据模型 E6`，由服务端集中分配） | `REQ-UIEDIT-009`；两者都遵同一规范但**互不引用** |
+| ③ | **B 线的 `element_id` 与 A 线的 `EL-*` 是两套命名空间**：A 线用**平台自己的** **453** 个元素（2026-10-29 去拖拽编辑 +3、二期写回 +3、工程接入 +12；B9 +8）（沿革：412 → 419〔2026-10-21 本机落地〕→ 424〔2026-10-22 对话面板〕→ **425**〔2026-10-23 审核页写回入口 `EL-REVIEW-052`〕→ **426**〔2026-10-26 审核页未通过项补充信息 `EL-REVIEW-053`〕→ **427**〔2026-10-26 审核流程优化 `EL-REVIEW-054`〕→ **435**〔2026-10-26 B9 +8〕→ **447**〔2026-10-29 工程接入 +12〕→ **450**〔2026-10-29 二期写回 +3〕→ **453**〔2026-10-29 去拖拽编辑 +3：`EL-WORK-039`/`040`/`041`〕）；B 线用**用户项目**的 `EL-*`（`数据模型 E6`，由服务端集中分配） | `REQ-UIEDIT-009`；两者都遵同一规范但**互不引用** |
 
 ### B.3 状态四态流转（`数据模型 E12`）
 
@@ -891,17 +941,18 @@ draft ──S4 定方案──▶ confirmed ──S7 写入用户安卓工程─
 | 埋码点 | 页面 `RT-CART-001` / 元素 `EL-CART-007` / `setOnClickListener` 内（校验通过后、发请求前） |
 | 去重规则 | 同一 `order_draft_id` 只上报 1 次 |
 | 上报时机 | 批量 |
-| 对应 `REQ-ID` | `REQ-CART-003`（该项目自己的 REQ-ID） |
+| 对应 `REQ-ID` | `REQ-<示例>-000`（该项目自己的 REQ-ID；**非本平台 REQ 形态，不入机核集合**） |
 
-> ⚠️ **示例中的 `EL-CART-007` 与 `REQ-CART-003` 属格式示意，不代表本平台的元素或需求**；
-> 本平台的元素以 `UI-Spec` 的 **450** 个 `EL-*`（2026-10-29 工程接入 +12；B9 +8）（沿革：412 → 419〔2026-10-21〕→ 424〔2026-10-22〕→ **425**〔2026-10-23〕→ **426**〔2026-10-26 审核流程优化前〕→ **427**〔2026-10-26〕→ **435**〔2026-10-26 B9 +8〕→ **447**〔2026-10-29 工程接入 +12〕→ **450**〔2026-10-29 二期写回 +3〕）为唯一权威来源，需求以 `需求条目表` 的 95 条 `REQ-ID` 为唯一权威来源。
+> ⚠️ **示例中的 `EL-CART-007` 与 `REQ-<示例>-000` 属格式示意，不代表本平台的元素或需求**；
+> 本平台的元素以 `UI-Spec` 的 **453** 个 `EL-*`（2026-10-29 去拖拽编辑 +3、二期写回 +3、工程接入 +12；B9 +8）（沿革：412 → 419〔2026-10-21〕→ 424〔2026-10-22〕→ **425**〔2026-10-23〕→ **426**〔2026-10-26 审核流程优化前〕→ **427**〔2026-10-26〕→ **435**〔2026-10-26 B9 +8〕→ **447**〔2026-10-29 工程接入 +12〕→ **450**〔2026-10-29 二期写回 +3〕→ **453**〔2026-10-29 去拖拽编辑 +3〕）为唯一权威来源，需求以 `需求条目表` 的 **98** 条 `REQ-ID` 为唯一权威来源。
 
 ---
 
-## 附节 C 事件名总表（59 条，供一致性比对）
+## 附节 C 事件名总表（63 条，供一致性比对）
 
 > 用途：`需求追溯矩阵 §三-4`「**埋点事件名 ↔ App 埋点位置 ↔ 测试用例事件名** 三处一致」的核对索引。
 > **事件名一律小写下划线**；同一名称在本 Spec 内**不重复定义**。
+> **「对应 REQ-ID」列为主线主承载、非全量** —— 个别事件另挂 `REQ-NF-*` 等（如 `EVT_gen_spec_accepted` 除 `REQ-GEN-011` 外还有 `REQ-NF-006`），**全量以 §3 事件字典为准**，本列不作全量比对源。
 
 | 事件名 | 章节 | 对应 REQ-ID | 漏斗/旁路/合规 |
 |---|---|---|---|
@@ -923,24 +974,28 @@ draft ──S4 定方案──▶ confirmed ──S7 写入用户安卓工程─
 | `EVT_chat_resend` | §3.6 | `REQ-CHAT-002` | 辅助 |
 | `EVT_chat_send_blocked` | §3.6 | `REQ-CHAT-001` | 辅助（点击被拦） |
 | `EVT_chat_send_success` | §3.6 | `REQ-CHAT-001` | 辅助 |
-| `EVT_deliver_done` | §3.9 | `REQ-DELIVER-001` | **★节点 9** |
-| `EVT_edit_drop_rejected` | §3.7 | `REQ-UIEDIT-001` | 旁路 |
-| `EVT_edit_element_voided` | §3.7 | `REQ-UIEDIT-008`、`009` | 辅助 |
-| `EVT_edit_event_config` | §3.7 | `REQ-UIEDIT-004` | 辅助 |
-| `EVT_edit_submit_blocked` | §3.7 | `REQ-UIEDIT-001`、`REQ-AUTH-004` | 辅助（点击被拦） |
-| `EVT_edit_submit_success` | §3.7 | `REQ-UIEDIT-001`、`REQ-GEN-001` | **★节点 6** |
+| `EVT_deliver_done` | §3.9 | `REQ-DELIVER-001` | **★节点 8** |
+| `EVT_edit_drop_rejected` | §3.7 | `REQ-UIEDIT-001` | 旁路（**辅助路径**） |
+| `EVT_edit_element_voided` | §3.7 | `REQ-UIEDIT-008`、`009` | 辅助（**辅助路径**） |
+| `EVT_edit_event_config` | §3.7 | `REQ-UIEDIT-004` | 辅助（**辅助路径**） |
+| `EVT_edit_submit_blocked` | §3.7 | `REQ-UIEDIT-001`、`REQ-AUTH-004` | 辅助（点击被拦 · **辅助路径**） |
+| `EVT_edit_submit_success` | §3.7 | `REQ-UIEDIT-001`、`REQ-GEN-001` | 辅助（**辅助路径 · 辅助再生成**；**原 ★节点 6，2026-10-29 降级**） |
 | `EVT_gen_blocked_by_egress` | §3.11 | `REQ-AUTH-004` | ★合规 |
 | `EVT_gen_task_canceled` | §3.7 | `REQ-GEN-005` | 旁路 |
-| `EVT_patch_writeback_done` | §3.7 | `REQ-PATCH-001` | 辅助（写回成功） |
-| `EVT_patch_writeback_failed` | §3.7 | `REQ-PATCH-001` | 旁路（写回失败） |
+| `EVT_patch_writeback_done` | §3.7 | `REQ-PATCH-001`、**`REQ-GEN-012`** | 辅助（写回成功） |
+| `EVT_patch_writeback_failed` | §3.7 | `REQ-PATCH-001`、**`REQ-GEN-012`** | 旁路（写回失败） |
 | `EVT_gen_task_enqueued` | §3.7 | `REQ-GEN-001`、`007` | 辅助 |
-| `EVT_gen_task_terminal` | §3.7 | `REQ-GEN-001`、`008`、`REQ-NF-001` | **★节点 7** |
+| `EVT_gen_task_terminal` | §3.7 | `REQ-GEN-001`、`008`、**`REQ-GEN-011`**、`REQ-NF-001` | **★节点 6**（`status=succeeded` 且 `source=spec_generate`） |
+| `EVT_gen_spec_accepted` | §3.7 | `REQ-GEN-011` | 辅助（节点 6 的**主流程触发点**） |
+| `EVT_gen_spec_blocked` | §3.7 | `REQ-GEN-011`、`REQ-AUTH-004` | 辅助（点击被拦） |
+| `EVT_gen_target_ambiguous` | §3.7 | `REQ-GEN-013` | 辅助〔2026-11-03 转正〕 |
+| `EVT_gen_target_specified` | §3.7 | `REQ-GEN-013` | 辅助〔2026-11-03 转正〕 |
 | `EVT_intake_click` | §3.2 | `REQ-INTAKE-001` | 辅助（点击） |
 | `EVT_intake_done` | §3.2 | `REQ-INTAKE-001`、`REQ-INTAKE-002` | 辅助（接入成功） |
 | `EVT_intake_failed` | §3.2 | `REQ-INTAKE-001` | 旁路（接入失败） |
 | `EVT_l2_reported` | §3.8 | `REQ-GEN-003`、`REQ-NF-001` | 仅记录 |
 | `EVT_llm_model_switch` | §3.13 | `REQ-REVIEW-001`（派生） | 辅助 |
-| `EVT_preview_refreshed` | §3.8 | `REQ-PREVIEW-001`、`004` | **★节点 8** |
+| `EVT_preview_refreshed` | §3.8 | `REQ-PREVIEW-001`、`004` | **★节点 7** |
 | `EVT_proj_create_blocked` | §3.2 | `REQ-PROJ-001` | 辅助（点击被拦） |
 | `EVT_proj_create_click` | §3.2 | `REQ-PROJ-001` | 辅助 |
 | `EVT_proj_create_success` | §3.2 | `REQ-PROJ-001` | **★节点 1** |
@@ -965,7 +1020,9 @@ draft ──S4 定方案──▶ confirmed ──S7 写入用户安卓工程─
 | `EVT_verify_failed` | §3.8 | `REQ-GEN-002`、`004` | 旁路 |
 | `EVT_version_rolled_back` | §3.9 | `REQ-DELIVER-003` | 辅助 |
 
-**计数核对**：上表 **59 条** = §3 各分节之和（**§3.1 = 6**、§3.2 = 8、§3.3 = 5、§3.4 = 6、§3.5 = 5、§3.6 = 4、§3.7 = 10、§3.8 = 3、§3.9 = 2、§3.10 = 2、§3.11 = 7、**§3.13 = 1**；**§3.12 为「明确不埋」清单、不含事件，故不计入**）= **59**。
-**漏斗节点 9 条**（★节点 1~9 各 1 条）+ **旁路 6 条** + **★合规 7 条** + **辅助 37 条**（原 30 + 本机落地 2 + 工程接入 3 + 二期写回 2）= 59。
+**计数核对**：上表 **63 条** = §3 各分节之和（**§3.1 = 6**、§3.2 = 8、§3.3 = 5、§3.4 = 6、§3.5 = 5、§3.6 = 4、**§3.7 = 14**、§3.8 = 3、§3.9 = 2、§3.10 = 2、§3.11 = 7、**§3.13 = 1**；**§3.12 为「明确不埋」清单、不含事件，故不计入**）= **63**。
+**分类计数（2026-10-29 逐行重核）**：**漏斗节点 8 条**（★节点 1~8 各 1 条）+ **旁路 8 条** + **★合规 7 条** + **辅助 / 仅记录 40 条** = **63**。
+> **与上一轮的差额说明（含口径修正）**：上一轮记「**旁路 6 + 辅助 37**」（当时未把 2026-10-29 新入的 2 条失败类事件从「辅助」移入「旁路」）。本轮**逐行实点**得：**旁路 8** = 原 6 + 2（`EVT_intake_failed`、`EVT_patch_writeback_failed`）；**辅助 40** = 原 37 + 1（`EVT_edit_submit_success` 由 ★节点 6 **降为辅助**）+ 2（新增 `EVT_gen_spec_accepted` / `EVT_gen_spec_blocked`）+ 2（随 `#80` 转正的 2 条）− 2（移入旁路）。节点 8 + 旁路 8 + 合规 7 + 辅助 40 = **63**。**以本次逐行重核为准**。
+> **状态**：`#80` 已于 **2026-11-03 转正**，`EVT_gen_target_ambiguous`/`specified` 2 条为正式基线；**无回退**（总数仍 **63**）。
 
 ---

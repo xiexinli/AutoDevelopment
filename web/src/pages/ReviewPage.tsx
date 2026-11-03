@@ -592,6 +592,12 @@ export default function ReviewPage() {
         </Space>
       </Card>
 
+      {verdict === "failed" && (
+        <Alert type="error" showIcon style={{ marginBottom: 12 }}
+          message="审核未成功完成（大模型调用失败或限流超时），未产出有效结论。"
+          action={<Button size="small" type="primary" onClick={() => void start(true)}>重新审核</Button>} />
+      )}
+
       {superseded && (
         <Alert type="warning" showIcon style={{ marginBottom: 12 }}
           message={`这份评分卡已过期（PRD 已更新到 ${revisionId.slice(-6)}）。`}
@@ -709,10 +715,20 @@ export default function ReviewPage() {
         {questions.length === 0 ? (
           <Empty description={
             <div>
-              <div>没有待澄清项，可以直接进入拆解。</div>
+              <div>
+                {verdict === "failed"
+                  ? "审核未成功完成，未生成待澄清项。"
+                  : verdict === "passed"
+                  ? "没有待澄清项，可以直接进入拆解。"
+                  : "当前无待澄清项，请处理上方评分卡中的未通过检查项。"}
+              </div>
             </div>
           }>
-            <Button type="primary" onClick={enterSplit}>进入需求拆解</Button>
+            {verdict === "failed" ? (
+              <Button type="primary" onClick={() => void start(true)}>重新审核</Button>
+            ) : (
+              <Button type="primary" disabled={verdict !== "passed"} onClick={enterSplit}>进入需求拆解</Button>
+            )}
           </Empty>
         ) : (
           <Collapse

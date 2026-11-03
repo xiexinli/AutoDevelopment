@@ -2,12 +2,17 @@ import type { FastifyInstance } from 'fastify';
 import { ApiError } from '../core/envelope.ts';
 import { assertProjectAccess,currentUser } from '../core/auth.ts';
 import { assertIfMatch } from '../core/idempotency.ts';
-import { all } from '../db/index.ts';
-import { loadPage,ensurePage,draft,saveTree,loadElement,findNode,removeNode,events,defaultStyle,type Node,type Page } from '../core/editor.ts';
+import { all,get } from '../db/index.ts';
+import { readMeta } from '../core/revisions.ts';
+import { parseUiSpec } from '../adapters/uispec.ts';
+import { recognizeTargets } from '../adapters/targeting.ts';
+import { loadPage,ensurePage,syncPagesFromSpec,successfulUiSpec,draft,saveTree,loadElement,findNode,removeNode,events,defaultStyle,type Node,type Page } from '../core/editor.ts';
 const send=(req:any,reply:any,data:any,status=200)=>reply.status(status).send({code:'OK',message:'',data,request_id:String(req.id)});
 export function registerEditorRoutes(app:FastifyInstance):void {
  app.get<{Params:{project_id:string}}>('/api/v1/projects/:project_id/pages',async(req,reply)=>{
-  const user=currentUser(req);assertProjectAccess(user,req.params.project_id);ensurePage(req.params.project_id);
+  const user=currentUser(req);assertProjectAccess(user,req.params.project_id);
+  // 页面来源自 2026-10-29 起 = S5 `UI-Spec`（`K2`）；没有 UI-Spec 时回落占位页（辅助编辑仍可用）。
+  if(!syncPagesFromSpec(req.params.project_id))ensurePage(req.params.project_id);
   return send(req,reply,{items:all<Page>(`SELECT page_id,module_code,name,order_index,status FROM tbl_page WHERE project_id=? ORDER BY order_index,page_id`,req.params.project_id)});
  });
  app.get<{Params:{page_id:string}}>('/api/v1/pages/:page_id/draft',async(req,reply)=>send(req,reply,draft(loadPage(currentUser(req),req.params.page_id))));
@@ -58,5 +63,18 @@ export function registerEditorRoutes(app:FastifyInstance):void {
   if(req.query.confirm!=='true')throw new ApiError('INVALID_ARGUMENT','删除元素需要显式 confirm=true。');
   const page=loadPage(user,e.page_id),d=draft(page);saveTree(page,removeNode(d.tree,e.element_id),d.version);
   return send(req,reply,{element_id:e.element_id,status:'void'});
+ });
+ // `#80` 目标接入点识别（2026-11-03 由草案转正式基线，`K5`）：**纯读、无副作用**，不要求 Idempotency-Key。
+ app.get<{Params:{project_id:string;page_id:string}}>('/api/v1/projects/:project_id/pages/:page_id/target-candidates',async(req,reply)=>{
+  const user=currentUser(req),projectId=req.params.project_id;assertProjectAccess(user,projectId);
+  const page=loadPage(user,req.params.page_id);
+  if(page.project_id!==projectId)throw new ApiError('NOT_FOUND');
+  const proj=get<{source_kind:string}>(`SELECT source_kind FROM tbl_project WHERE project_id=?`,projectId);
+  const imported=proj?.source_kind==='imported';
+  const pack=readMeta<Record<string,unknown>>(projectId,'constraints')??null;
+  // 仅确认「该页在 UI-Spec 里存在」；识别本身只依赖模块 / 页面名 / 工程清单。
+  const spec=successfulUiSpec(projectId);
+  if(spec){try{parseUiSpec(spec,page.module_code);}catch{/* 该页在 UI-Spec 无元素：不改识别结论 */}}
+  return send(req,reply,recognizeTargets({moduleCode:page.module_code,pageName:page.name,pack,imported}));
  });
 }

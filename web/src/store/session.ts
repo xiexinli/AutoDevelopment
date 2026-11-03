@@ -440,6 +440,8 @@ export interface SuccessfulPreview { task_id: string; seq: number; at: string; t
 export interface PageDraft {
   tree: ElementNode[]; id_base: Record<string, number>; version: number; updated_at: string;
   last_success: SuccessfulPreview | null; running_tasks: GenerationReceipt[]; latest_seq: number;
+  /** `#43` 输入 = S5 `UI-Spec`（自 2026-10-29）：该页 UI-Spec 的规范哈希 + 是否就绪（无 UI-Spec 时为 null/false）。 */
+  spec_input_hash?: string | null; spec_ready?: boolean;
 }
 export interface TaskState {
   task_id: string; type: string; page_id?: string; project_id?: string;
@@ -499,14 +501,23 @@ export async function hashTree(tree: ElementNode[]): Promise<string> {
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** #43 服务端读取已保存的树；base_seq 是项目最新 code_gen 序号，缺失 400 / 过旧 409。 */
-export function submitGeneration(pageId: string, payload: { input_hash: string; base_seq: number }, signal?: AbortSignal) {
+/** `#43` 服务端读取 S5 `UI-Spec`（自 2026-10-29）；`base_seq` 是项目最新 code_gen 序号，缺失 400 / 过旧 409。
+ *  `target` = `#80` 目标接入点（`K5`；`ambiguous=true` 时由用户显式指定）。 */
+export function submitGeneration(pageId: string, payload: { input_hash: string; base_seq: number; target?: TargetCandidate }, signal?: AbortSignal) {
   if (!Number.isSafeInteger(payload.base_seq) || payload.base_seq < 0) {
     throw new ApiError("INVALID_ARGUMENT", 400, "提交生成必须提供项目最新 base_seq（非负整数）。");
   }
   return request<GenerationReceipt>(`/pages/${encodeURIComponent(pageId)}/generations`, {
-    method: "POST", body: { input_hash: payload.input_hash, base_seq: payload.base_seq }, signal, idempotencyKey: newIdempotencyKey(),
+    method: "POST", body: { input_hash: payload.input_hash, base_seq: payload.base_seq, ...(payload.target ? { target: { module: payload.target.module, activity: payload.target.activity, layout: payload.target.layout } } : {}) },
+    signal, idempotencyKey: newIdempotencyKey(),
   });
+}
+
+/** `#80` 目标接入点候选（自 2026-11-03 由草案转正式基线）。纯读，无副作用。 */
+export interface TargetCandidate { module: string; activity: string; layout: string; confidence: number; reasons: string[] }
+export function fetchTargetCandidates(projectId: string, pageId: string, signal?: AbortSignal) {
+  return request<{ items: TargetCandidate[]; ambiguous: boolean }>(
+    `/projects/${encodeURIComponent(projectId)}/pages/${encodeURIComponent(pageId)}/target-candidates`, { signal });
 }
 
 /** #44 / #45 重连轮询 */
